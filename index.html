@@ -292,7 +292,7 @@ body {
         <button class="btn big" data-go="settings">Настройки</button>
       </div>
       <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.3 · прототип</p>
+      <p class="ver">Версия 0.4 · прототип</p>
     </div>
   </div>
 
@@ -491,13 +491,16 @@ const AU = {
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5;
     const master = ctx.createGain(); master.gain.value = (typeof SET !== 'undefined' ? SET.vol / 100 : .8) * .9; this.master = master; master.connect(comp); comp.connect(ctx.destination);
     // Короткая «комнатная» реверберация для объёма
-    const len = ctx.sampleRate * 1.3, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    const len = ctx.sampleRate * 1.8, ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
-    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .22; rev.connect(wet); wet.connect(master);
+    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .3; rev.connect(wet); wet.connect(master);
     this.out = master; this.rev = rev;
-    const nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0);
+    const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     this.noise = nb;
+    const bb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), bd = bb.getChannelData(0);
+    let last = 0; for (let i = 0; i < bd.length; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; bd[i] = last * 3.5; }
+    this.brown = bb;
   },
   bus(pan, vol) {
     const ctx = this.ctx, g = ctx.createGain(); g.gain.value = vol;
@@ -519,35 +522,106 @@ const AU = {
     g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     s.connect(f); f.connect(g); g.connect(dst); s.start(t0, Math.random() * .5); s.stop(t0 + dur + .02);
   },
+  shaper(k) {
+    this.shapers ||= {};
+    if (this.shapers[k]) return this.shapers[k];
+    const n = 1024, c = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = i / n * 2 - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); }
+    const w = this.ctx.createWaveShaper(); w.curve = c; w.oversample = '2x'; return this.shapers[k] = w;
+  },
+  // Генератор с фильтром и перегрузом: из этих кирпичиков собраны все звуки
+  osc(dst, type, f0, f1, t0, dur, vol, o = {}) {
+    const ctx = this.ctx, s = ctx.createOscillator(), g = ctx.createGain();
+    s.type = type; s.frequency.setValueAtTime(f0, t0); s.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur * (o.bend || 1));
+    if (o.detune) s.detune.value = o.detune;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + (o.a || .004)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    let node = s;
+    if (o.lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; f.Q.value = o.q || 1; node.connect(f); node = f; }
+    if (o.drive) { const w = ctx.createWaveShaper(); w.curve = this.shaper(o.drive).curve; node.connect(w); node = w; }
+    node.connect(g); g.connect(dst); s.start(t0); s.stop(t0 + dur + .03);
+  },
+  nz(dst, ftype, f0, f1, q, t0, dur, vol, o = {}) {
+    const ctx = this.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = o.brown ? this.brown : this.noise; s.playbackRate.value = o.rate || (.85 + Math.random() * .3);
+    f.type = ftype; f.Q.value = q; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + (o.a || .003)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    let node = f;
+    if (o.drive) { const w = ctx.createWaveShaper(); w.curve = this.shaper(o.drive).curve; f.connect(w); node = w; }
+    s.connect(f); node.connect(g); g.connect(dst); s.start(t0, Math.random() * .6); s.stop(t0 + dur + .03);
+  },
+  bubbles(dst, t, n, vol) { for (let i = 0; i < n; i++) { const f = 380 + Math.random() * 700, tt = t + Math.random() * .12; this.osc(dst, 'sine', f, f * (1.6 + Math.random()), tt, .045, vol); } },
+  crackle(dst, t, n, spread, vol) { for (let i = 0; i < n; i++) this.nz(dst, 'highpass', 2500 + Math.random() * 4000, 1500, 1, t + Math.random() * spread, .02 + Math.random() * .03, vol * (.5 + Math.random() * .5)); },
+  heart(dst, t, vol) {
+    this.osc(dst, 'sine', 75, 38, t, .2, vol, { drive: 2 }); this.nz(dst, 'lowpass', 400, 80, 1, t, .12, vol * .35, { brown: true });
+    this.osc(dst, 'sine', 64, 34, t + .24, .22, vol * .8, { drive: 2 }); this.nz(dst, 'lowpass', 350, 70, 1, t + .24, .12, vol * .3, { brown: true });
+  },
   play(kind, x = 0, vol = 1) {
     if (!this.ctx || !this.on || this.ctx.state !== 'running') return;
-    const now = this.ctx.currentTime, gap = { boom: .05, die: .035, hit: .03 }[kind] ?? .045;
+    const now = this.ctx.currentTime, gap = { boom: .06, die: .04, hit: .035, shot: .05, beat: .3 }[kind] ?? .05;
     if (now - (this.last[kind] || 0) < gap) return;
     this.last[kind] = now;
-    const b = this.bus(x / 4, vol), t = now, r = 1 + (Math.random() - .5) * .12;
+    const boost = { spit: 2.2, shot: 1.8, zip: 1.8, coin: 1.6, hit: 1.5, dart: 1.2 }[kind] || 1;
+    const b = this.bus(x / 4, vol * boost), t = now, r = 1 + (Math.random() - .5) * .16, R = () => .85 + Math.random() * .3;
     switch (kind) {
-      case 'pop':   this.hiss(b, 'bandpass', 2200 * r, 900, 3, t, .07, .35); this.tone(b, 'sine', 320 * r, 120, t, .08, .25); break;
-      case 'thump': this.tone(b, 'sine', 150 * r, 45, t, .2, .7); this.hiss(b, 'lowpass', 900, 120, 1, t, .14, .35); break;
-      case 'spit':  this.hiss(b, 'bandpass', 500 * r, 2400, 4, t, .14, .4); this.tone(b, 'triangle', 240 * r, 520, t, .09, .1); break;
-      case 'dart':  this.hiss(b, 'highpass', 3000, 6000, 1, t, .06, .22); this.tone(b, 'triangle', 1100 * r, 260, t, .09, .18); break;
-      case 'shot':  this.tone(b, 'triangle', 720 * r, 210, t, .07, .14); this.hiss(b, 'bandpass', 1800, 700, 2, t, .05, .12); break;
-      case 'lob':   this.tone(b, 'sine', 210 * r, 90, t, .12, .35); this.hiss(b, 'lowpass', 700, 200, 1, t, .1, .2); break;
-      case 'boom':  this.hiss(b, 'lowpass', 2400 * r, 90, 1, t, .5, .75); this.tone(b, 'sine', 95 * r, 32, t, .45, .8); break;
-      case 'zip':   this.tone(b, 'sawtooth', 1500 * r, 180, t, .14, .07); this.hiss(b, 'bandpass', 4000, 900, 2, t, .12, .2); break;
-      case 'hit':   this.hiss(b, 'bandpass', 3200 * r, 1500, 5, t, .03, .18); break;
-      case 'die':   this.hiss(b, 'bandpass', 700 * r, 180, 2, t, .16, .45); this.tone(b, 'sine', 260 * r, 70, t, .14, .22); break;
-      case 'leak':  this.tone(b, 'sawtooth', 90, 55, t, .35, .25); this.tone(b, 'sine', 70, 35, t, .4, .6); break;
-      case 'place': this.tone(b, 'sine', 180, 70, t, .16, .55); this.hiss(b, 'bandpass', 2600, 1200, 4, t + .03, .05, .25); break;
-      case 'merge': this.hiss(b, 'bandpass', 300, 4200, 2, t, .45, .4); this.tone(b, 'sine', 120, 60, t + .4, .2, .6); this.hiss(b, 'highpass', 5000, 8000, 1, t + .42, .08, .3); break;
-      case 'coin':  this.hiss(b, 'bandpass', 5200, 4200, 8, t, .05, .2); break;
-      case 'ui':    this.hiss(b, 'bandpass', 3000, 2400, 6, t, .03, .15); this.tone(b, 'sine', 600, 400, t, .04, .08); break;
-      case 'wave':  this.tone(b, 'sine', 110, 50, t, .3, .8); this.tone(b, 'sine', 110, 50, t + .32, .3, .8); this.hiss(b, 'lowpass', 600, 100, 1, t, .5, .25); break;
-      case 'siren': for (let i = 0; i < 3; i++) { this.tone(b, 'triangle', 380, 760, t + i * .5, .25, .18); this.tone(b, 'triangle', 760, 380, t + i * .5 + .25, .25, .18); } break;
-      case 'ult':   this.hiss(b, 'bandpass', 200, 3000, 1.5, t, .35, .5); this.tone(b, 'sine', 70, 30, t + .3, .5, .9); this.hiss(b, 'lowpass', 3000, 80, 1, t + .3, .6, .6); break;
-      case 'organ': this.tone(b, 'sine', 60, 40, t, .25, .9); break;
-      case 'win':   this.hiss(b, 'bandpass', 200, 5000, 1.2, t, .8, .5); this.tone(b, 'sine', 90, 40, t + .7, .6, .9); break;
-      case 'lose':  this.tone(b, 'sawtooth', 160, 40, t, 1.2, .25); this.tone(b, 'sine', 80, 30, t, 1.2, .8); break;
+      case 'pop':   // нейтрофил: хлёсткий шлепок
+        this.nz(b, 'bandpass', 2200 * r, 500, 2.5, t, .07, .5); this.osc(b, 'sine', 480 * r, 130, t, .08, .4, { drive: 3 }); this.nz(b, 'highpass', 7000, 5000, 1, t, .012, .25); break;
+      case 'thump': // моноцит и IgD: тяжёлый удар с отдачей
+        this.osc(b, 'sine', 190 * r, 40, t, .26, .95, { drive: 4 }); this.nz(b, 'lowpass', 1600, 150, 1, t, .1, .5); this.nz(b, 'bandpass', 900, 300, 3, t + .01, .08, .25); break;
+      case 'spit':  // макрофаг и дендритная: влажный «плевок» с пузырями
+        this.nz(b, 'bandpass', 320 * r, 2200, 7, t, .18, .55); this.nz(b, 'lowpass', 900, 200, 1, t, .1, .3, { brown: true }); this.bubbles(b, t + .03, 3, .12); break;
+      case 'dart':  // киллеры: тонкий свист и щелчок
+        this.nz(b, 'highpass', 5000 * r, 3000, 1, t, .05, .3); this.osc(b, 'triangle', 2000 * r, 280, t, .1, .25); this.osc(b, 'sine', 120, 60, t, .06, .3); break;
+      case 'shot':  // антитела: мягкий «пфф» с эхом
+        this.osc(b, 'square', 1000 * R(), 260, t, .07, .12, { lp: 2400 }); this.nz(b, 'bandpass', 2600, 1100, 3, t, .05, .2);
+        this.osc(b, 'square', 900 * R(), 240, t + .08, .06, .04, { lp: 1800 }); break;
+      case 'lob':   // гранулы: миномётный «тунк»
+        this.osc(b, 'sine', 280 * r, 70, t, .16, .55, { drive: 2 }); this.nz(b, 'lowpass', 1200, 200, 1, t, .12, .35); this.nz(b, 'bandpass', 600, 1800, 2, t + .02, .25, .12); break;
+      case 'boom':  // взрыв: суббас, рокот, треск
+        this.osc(b, 'sine', 95 * r, 26, t, .7, .9, { drive: 5 }); this.nz(b, 'lowpass', 3800 * r, 70, .8, t, .65, .8, { drive: 3 });
+        this.nz(b, 'lowpass', 600, 60, 1, t + .02, .9, .45, { brown: true }); this.crackle(b, t + .03, 7, .35, .18); break;
+      case 'zip':   // пронзатели: рассекающий выстрел
+        this.osc(b, 'sawtooth', 2600 * r, 150, t, .17, .1, { drive: 3, lp: 5000 }); this.nz(b, 'bandpass', 7000, 700, 4, t, .16, .3); this.nz(b, 'lowpass', 1500, 300, 1, t + .05, .2, .15); break;
+      case 'hit': {
+        const f = [1900, 2700, 3500][Math.random() * 3 | 0] * r;
+        this.nz(b, 'bandpass', f, f * .5, 6, t, .035, .28); this.osc(b, 'sine', 750 * r, 260, t, .035, .1); break; }
+      case 'die':   // микроб лопается
+        this.nz(b, 'bandpass', 1100 * r, 140, 1.4, t, .22, .6, { drive: 2 }); this.osc(b, 'sine', 340 * r, 55, t, .18, .35); this.bubbles(b, t + .05, 2, .1); break;
+      case 'leak':  // печень получила урон: тяжёлое сердцебиение и гул
+        this.heart(b, t, 1.1); this.osc(b, 'sawtooth', 110, 70, t, .4, .08, { drive: 4, lp: 600 }); break;
+      case 'beat':  this.heart(b, t, .55); break;
+      case 'place': // клетка встала: мягкое «плюх»
+        this.nz(b, 'bandpass', 500, 2600, 5, t, .12, .35); this.osc(b, 'sine', 240, 80, t, .16, .6, { drive: 2 }); this.nz(b, 'highpass', 6000, 4000, 1, t + .02, .015, .2); this.bubbles(b, t + .04, 2, .08); break;
+      case 'merge': // слияние в звезду: нарастающий вихрь, искры, удар
+        this.nz(b, 'bandpass', 220, 5500, 1.5, t, .5, .5); this.crackle(b, t + .28, 10, .3, .14);
+        this.osc(b, 'sine', 150, 45, t + .48, .3, .9, { drive: 4 }); this.nz(b, 'lowpass', 2500, 100, 1, t + .48, .3, .45); break;
+      case 'coin':  this.osc(b, 'triangle', 2500, 2350, t, .08, .1); this.osc(b, 'triangle', 3300, 3150, t + .055, .1, .08); this.nz(b, 'highpass', 8000, 6000, 1, t, .02, .1); break;
+      case 'ui':    this.nz(b, 'bandpass', 3600, 2600, 8, t, .025, .25); this.osc(b, 'sine', 520, 330, t, .035, .08); break;
+      case 'wave':  // начало волны: два сильных удара сердца и нарастающий гул
+        this.heart(b, t, 1); this.nz(b, 'lowpass', 150, 900, 1, t, 1.1, .25, { brown: true, a: .5 }); this.osc(b, 'sawtooth', 55, 52, t + .1, 1, .05, { lp: 300, a: .4 }); break;
+      case 'siren': // босс: тревога и рокот
+        for (let i = 0; i < 3; i++) { this.osc(b, 'triangle', 420, 820, t + i * .55, .27, .2, { drive: 2 }); this.osc(b, 'triangle', 820, 420, t + i * .55 + .27, .27, .2, { drive: 2 }); }
+        this.nz(b, 'lowpass', 120, 400, 1, t, 1.6, .4, { brown: true, a: .3 }); break;
+      case 'ult':   // ульта иммуноглобулина
+        this.nz(b, 'bandpass', 180, 4200, 1.3, t, .38, .55); this.crackle(b, t + .2, 8, .25, .12);
+        this.osc(b, 'sine', 80, 26, t + .35, .7, 1, { drive: 5 }); this.nz(b, 'lowpass', 3500, 70, 1, t + .35, .7, .7, { drive: 3 }); break;
+      case 'organ': this.heart(b, t, .9); break;
+      case 'win':   this.nz(b, 'bandpass', 200, 5000, 1.2, t, .8, .5); this.crackle(b, t + .4, 16, .6, .14); for (let i = 0; i < 3; i++) this.osc(b, 'sine', 120 + i * 30, 45, t + .7 + i * .22, .3, .8, { drive: 3 }); break;
+      case 'lose':  this.osc(b, 'sawtooth', 180, 35, t, 1.4, .2, { drive: 4, lp: 900 }); this.osc(b, 'sine', 90, 28, t, 1.5, .9); this.nz(b, 'lowpass', 800, 60, 1, t, 1.5, .5, { brown: true }); break;
     }
+  },
+  // Фоновое биение сердца и шум кровотока (не музыка — звук организма)
+  ambient(on, fast = false) {
+    if (!this.ctx) return;
+    clearInterval(this.beatT); this.beatT = null;
+    if (this.bed) { this.bed.g.gain.setTargetAtTime(0, this.ctx.currentTime, .3); const old = this.bed; setTimeout(() => { try { old.s.stop(); } catch (e) {} }, 1200); this.bed = null; }
+    if (!on || !this.on) return;
+    const ctx = this.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    s.buffer = this.brown; s.loop = true; f.type = 'lowpass'; f.frequency.value = 260; f.Q.value = 2;
+    lfo.frequency.value = fast ? 1.3 : 1; lg.gain.value = 120; lfo.connect(lg); lg.connect(f.frequency); lfo.start();
+    g.gain.value = 0; g.gain.setTargetAtTime(.09, ctx.currentTime, .8);
+    s.connect(f); f.connect(g); g.connect(this.out); s.start();
+    this.bed = { s, g };
+    this.beatT = setInterval(() => this.play('beat', 0, fast ? .5 : .32), fast ? 820 : 1100);
   }
 };
 
@@ -563,18 +637,19 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
 
 const scene = new T.Scene();
-scene.background = new T.Color('#13060a');
-scene.fog = new T.Fog('#13060a', 26, 52);
+scene.background = new T.Color('#160510');
+scene.fog = new T.Fog('#160510', 22, 46);
 const camera = new T.PerspectiveCamera(38, 1, .1, 100);
 
-scene.add(new T.HemisphereLight('#ffd9de', '#3a0d16', .35));
+scene.add(new T.HemisphereLight('#ffc6d8', '#2a0718', .45));
 const sun = new T.DirectionalLight('#fff1e6', .95);
 sun.position.set(-5, 12, 6); sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 10, bottom: -10, near: 1, far: 40 });
 sun.shadow.bias = -.0015; sun.shadow.radius = 4;
 scene.add(sun);
-const rim = new T.DirectionalLight('#ff6f86', .45); rim.position.set(6, 4, -8); scene.add(rim);
+const rim = new T.DirectionalLight('#7ad8ff', .4); rim.position.set(7, 5, -9); scene.add(rim);
+const warm = new T.PointLight('#ff4a6a', .6, 14, 2); warm.position.set(0, 3, 0); scene.add(warm);
 
 function canvasTex(w, h, draw) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
@@ -587,87 +662,108 @@ const glowTex = canvasTex(64, 64, (g, w) => {
 });
 glowTex.encoding = T.LinearEncoding;
 
-// Ткань печени: мягкие дольки, сеть светящихся капилляров, тёплые пятна света
-const liverTex = canvasTex(1024, 1024, (g, W, H) => {
-  const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#3a0c16'); bg.addColorStop(1, '#2a0812');
-  g.fillStyle = bg; g.fillRect(0, 0, W, H);
-  const R = 92, hw = Math.sqrt(3) * R;
-  for (let row = -1; row < H / (1.5 * R) + 1; row++) for (let col = -1; col < W / hw + 1; col++) {
-    const cx = col * hw + (row % 2 ? hw / 2 : 0), cy = row * 1.5 * R;
-    const gr = g.createRadialGradient(cx, cy, 6, cx, cy, R * 1.05);
-    gr.addColorStop(0, 'rgba(110,30,48,.9)'); gr.addColorStop(.75, 'rgba(70,16,30,.6)'); gr.addColorStop(1, 'rgba(25,4,10,.9)');
-    g.fillStyle = gr; g.beginPath();
-    for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; g.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a)); }
-    g.closePath(); g.fill();
-    for (let k = 0; k < 18; k++) { const a = k / 18 * Math.PI * 2 + row, rr = R * (.25 + Math.random() * .55); g.fillStyle = 'rgba(255,150,170,.05)'; g.beginPath(); g.ellipse(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 9, 6, a, 0, 7); g.fill(); }
-    g.fillStyle = 'rgba(20,2,8,.85)'; g.beginPath(); g.arc(cx, cy, 6, 0, 7); g.fill();
+/* ---------- Рельефный мир: ткань с холмами, руслом сосуда и светящимися капиллярами ---------- */
+const PATH_Y = -.16;        // кровь течёт в углублении
+function hash2(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
+function vnoise(x, z) {
+  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash2(xi, zi), b = hash2(xi + 1, zi), c = hash2(xi, zi + 1), d = hash2(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, z) { let s = 0, a = .5, f = 1; for (let i = 0; i < 4; i++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= .5; } return s; }
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+const TER = { hash: new Map(), box: new T.Box3(), mesh: null };
+function pathDist(x, z) {
+  const cx = Math.floor(x), cz = Math.floor(z); let best = 81;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const list = TER.hash.get((cx + i) + ',' + (cz + j)); if (!list) continue;
+    for (let k = 0; k < list.length; k += 2) { const dx = list[k] - x, dz = list[k + 1] - z, d = dx * dx + dz * dz; if (d < best) best = d; }
   }
-  // капилляры: ветвящиеся светящиеся линии
-  g.lineCap = 'round';
-  const branch = (x, y, a, w, depth) => {
-    if (depth <= 0 || w < .6) return;
-    g.beginPath(); g.moveTo(x, y);
-    const len = 40 + Math.random() * 70;
-    for (let i = 0; i < 6; i++) { a += (Math.random() - .5) * .5; x += Math.cos(a) * len / 6; y += Math.sin(a) * len / 6; g.lineTo(x, y); }
-    g.shadowColor = '#ff3355'; g.shadowBlur = 8; g.strokeStyle = `rgba(255,80,105,${.18 + w * .06})`; g.lineWidth = w; g.stroke();
-    branch(x, y, a + .45 + Math.random() * .3, w * .72, depth - 1);
-    if (Math.random() < .7) branch(x, y, a - .45 - Math.random() * .3, w * .68, depth - 1);
+  return Math.sqrt(best);
+}
+function boxDist(x, z) {
+  const b = TER.box, dx = Math.max(b.min.x - x, 0, x - b.max.x), dz = Math.max(b.min.z - z, 0, z - b.max.z);
+  return Math.hypot(dx, dz);
+}
+function heightAt(x, z) {
+  const db = boxDist(x, z), dp = pathDist(x, z);
+  let h = (fbm(x * .5 + 3, z * .5) - .5) * .06;                                  // лёгкая неровность поля
+  h += smooth(0, 3.5, db) * (.5 + 2.2 * fbm(x * .16, z * .16)) + db * .09;      // холмы вокруг поля
+  const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.4, .78, dp);        // русло сосуда
+  return Math.min(h, trench + Math.max(0, h) * smooth(.4, 1.2, dp));
+}
+const terrainMat = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: .5, metalness: 0, clearcoat: .55, clearcoatRoughness: .35, emissive: '#ffffff', emissiveIntensity: .55 });
+function buildTerrain() {
+  // точки сосуда в сетку для быстрого расстояния
+  TER.hash.clear();
+  for (let d = 0; d <= PATH.len; d += .12) { const p = pathAt(d); const k = Math.floor(p.x) + ',' + Math.floor(p.z); if (!TER.hash.has(k)) TER.hash.set(k, []); TER.hash.get(k).push(p.x, p.z); }
+  TER.box = new T.Box3(); pads.forEach(p => TER.box.expandByPoint(p.pos)); TER.box.expandByObject(organ); TER.box.expandByPoint(PATH.pts[0]);
+  TER.box.expandByScalar(.9);
+  const c = TER.box.getCenter(new T.Vector3()), sz = TER.box.getSize(new T.Vector3());
+  const W = Math.max(sz.x, sz.z) + 26, res = .17, seg = Math.min(300, Math.ceil(W / res));
+  const geo = new T.PlaneGeometry(W, W, seg, seg); geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), col = new T.Color(), tmp = new T.Color();
+  const P = {
+    floorA: new T.Color('#3a0a1c'), floorB: new T.Color('#5e1530'), bank: new T.Color('#a02842'), bed: new T.Color('#22030a'),
+    valley: new T.Color('#160410'), hill: new T.Color('#4e1a3e'), crest: new T.Color('#9a4a72'), vein: new T.Color('#e8344f')
   };
-  for (let i = 0; i < 9; i++) branch(Math.random() * W, Math.random() * H, Math.random() * 7, 3.2, 5);
-  g.shadowBlur = 0;
-});
-liverTex.wrapS = liverTex.wrapT = T.RepeatWrapping; liverTex.repeat.set(9, 9);
-const ground = new T.Mesh(new T.PlaneGeometry(70, 70), new T.MeshStandardMaterial({ map: liverTex, roughness: .55, metalness: 0, color: '#ffffff' }));
-ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) + c.x, z = pos.getZ(i) + c.z;
+    const h = heightAt(x, z), dp = pathDist(x, z), db = boxDist(x, z), n = fbm(x * .7, z * .7);
+    pos.setXYZ(i, x, h, z);
+    col.copy(P.floorA).lerp(P.floorB, smooth(.3, .75, n));
+    if (db > 0) { tmp.copy(P.valley).lerp(P.hill, smooth(0, 1.6, h)).lerp(P.crest, smooth(1.4, 2.8, h) * .8); col.lerp(tmp, smooth(0, 1.5, db)); }
+    col.lerp(P.bank, (1 - smooth(.45, 1.05, dp)) * .75);
+    col.lerp(P.bed, 1 - smooth(.3, .5, dp));
+    const vein = 1 - smooth(.0, .035, Math.abs(fbm(x * .33 + 9, z * .33) - .5));
+    col.lerp(P.vein, vein * (db > 0 ? .55 : .25));
+    cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
+  }
+  geo.setAttribute('color', new T.BufferAttribute(cols, 3)); geo.computeVertexNormals();
+  // Свечение: капилляры на холмах и тёплое зарево вдоль сосуда
+  const S = 1024, x0 = c.x - W / 2, z0 = c.z - W / 2, k = S / W;
+  const emi = canvasTex(S, S, (g) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, S, S);
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    g.shadowColor = '#ff2a4a'; g.shadowBlur = 22; g.strokeStyle = 'rgba(255,40,70,.22)'; g.lineWidth = 1.4 * k;
+    g.beginPath(); PATH.pts.forEach((p, i) => i ? g.lineTo((p.x - x0) * k, (p.z - z0) * k) : g.moveTo((p.x - x0) * k, (p.z - z0) * k)); g.stroke();
+    const branch = (x, y, a, w, depth) => {
+      if (depth <= 0 || w < .5) return;
+      g.beginPath(); g.moveTo(x, y);
+      for (let i = 0; i < 7; i++) { a += (Math.random() - .5) * .55; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); }
+      g.shadowBlur = 8; g.strokeStyle = `rgba(255,${50 + depth * 14},${80 + depth * 8},${.16 + w * .07})`; g.lineWidth = w * .8; g.stroke();
+      branch(x, y, a + .5 + Math.random() * .3, w * .74, depth - 1);
+      if (Math.random() < .75) branch(x, y, a - .5 - Math.random() * .3, w * .7, depth - 1);
+    };
+    for (let i = 0; i < 30; i++) {
+      let x, y, tries = 0;
+      do { x = Math.random() * S; y = Math.random() * S; tries++; } while (tries < 20 && boxDist(x / k + x0, y / k + z0) < .6);
+      branch(x, y, Math.random() * 7, 3.2, 6);
+    }
+    for (let i = 0; i < 140; i++) { const x = Math.random() * S, y = Math.random() * S; if (boxDist(x / k + x0, y / k + z0) < .5) continue; const r = 2 + Math.random() * 5; const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); gr.addColorStop(0, 'rgba(255,170,200,.5)'); gr.addColorStop(1, 'rgba(255,120,160,0)'); g.fillStyle = gr; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6); }
+  });
+  terrainMat.emissiveMap = emi; terrainMat.needsUpdate = true;
+  if (TER.mesh) { scene.remove(TER.mesh); TER.mesh.geometry.dispose(); }
+  TER.mesh = new T.Mesh(geo, terrainMat); TER.mesh.receiveShadow = true; scene.add(TER.mesh);
+  warm.position.set(c.x, 3.5, c.z);
+}
 
-// Подложка под игровое поле: чуть светлее и тёплее, мягко гаснет к краям
-const plateTex = canvasTex(256, 256, (g, W) => {
-  const gr = g.createRadialGradient(W / 2, W / 2, W * .18, W / 2, W / 2, W / 2);
-  gr.addColorStop(0, 'rgba(255,140,150,.16)'); gr.addColorStop(.7, 'rgba(255,90,110,.08)'); gr.addColorStop(1, 'rgba(255,90,110,0)');
-  g.fillStyle = gr; g.fillRect(0, 0, W, W);
-});
-const plate = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: plateTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
-plate.rotation.x = -Math.PI / 2; plate.position.y = .012; scene.add(plate);
-
-// Плавающие эритроциты и блики света — фон живёт, но не мешает игре
+// Плавающие эритроциты, тромбоциты и блики — фон живёт, но не мешает игре
 const drift = [];
 {
   const rbcGeo = new T.TorusGeometry(.2, .11, 12, 28);
-  const rbcMat = new T.MeshPhysicalMaterial({ color: '#d4283f', roughness: .3, clearcoat: .8, emissive: '#4a0410', emissiveIntensity: .6, transparent: true, opacity: .85 });
-  for (let i = 0; i < 26; i++) {
+  const rbcMat = new T.MeshPhysicalMaterial({ color: '#d4283f', roughness: .3, clearcoat: .8, emissive: '#4a0410', emissiveIntensity: .6 });
+  for (let i = 0; i < 30; i++) {
     const m = new T.Mesh(rbcGeo, rbcMat); m.rotation.set(Math.random() * 3, Math.random() * 3, 0);
-    m.userData = { v: new T.Vector3((Math.random() - .3) * .4, 0, (Math.random() - .5) * .3), spin: (Math.random() - .5) * .8, y: .15 + Math.random() * .25 };
+    m.userData = { v: new T.Vector3((Math.random() - .3) * .5, 0, (Math.random() - .5) * .35), spin: (Math.random() - .5) * .8, y: .35 + Math.random() * .5 };
     m.castShadow = true; scene.add(m); drift.push(m);
   }
-  for (let i = 0; i < 7; i++) {
-    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: i % 2 ? '#ff6b80' : '#ffb38a', blending: T.AdditiveBlending, depthWrite: false, opacity: .12 }));
-    s.scale.set(6, 6, 1); s.userData = { light: true, ph: Math.random() * 6, sp: .05 + Math.random() * .08 }; scene.add(s); drift.push(s);
-  }
-}
-let backBox = new T.Box3(new T.Vector3(-6, 0, -6), new T.Vector3(6, 0, 6));
-function updateBackdrop() {
-  backBox = new T.Box3();
-  pads.forEach(p => backBox.expandByPoint(p.pos)); backBox.expandByObject(organ); backBox.expandByPoint(portal.position);
-  const c = backBox.getCenter(new T.Vector3()), sz = backBox.getSize(new T.Vector3());
-  plate.position.set(c.x, .012, c.z); plate.scale.set(sz.x + 4, sz.z + 4, 1);
-  const outer = backBox.clone().expandByScalar(6);
-  drift.forEach((m, i) => {
-    if (m.userData.light) { m.position.set(c.x + (Math.random() - .5) * sz.x, 1.5, c.z + (Math.random() - .5) * sz.z); return; }
-    // эритроциты только по краям, вне игрового поля
-    let x, z, k = 0;
-    do { x = outer.min.x + Math.random() * (outer.max.x - outer.min.x); z = outer.min.z + Math.random() * (outer.max.z - outer.min.z); k++; }
-    while (k < 30 && x > backBox.min.x - .9 && x < backBox.max.x + .9 && z > backBox.min.z - .9 && z < backBox.max.z + .9);
-    m.position.set(x, m.userData.y, z);
-  });
-}
-function animateBackdrop(dt, now) {
-  for (const m of drift) {
-    if (m.userData.light) { m.material.opacity = .08 + .06 * Math.sin(now * m.userData.sp * 6 + m.userData.ph); m.position.x += Math.sin(now * m.userData.sp + m.userData.ph) * dt * .3; continue; }
-    m.position.addScaledVector(m.userData.v, dt); m.rotation.x += m.userData.spin * dt; m.rotation.z += m.userData.spin * dt * .6;
-    m.position.y = m.userData.y + Math.sin(now + m.rotation.x) * .05;
-    const o = backBox.clone().expandByScalar(7);
-    if (m.position.x > o.max.x) m.position.x = o.min.x; if (m.position.x < o.min.x) m.position.x = o.max.x;
-    if (m.position.z > o.max.z) m.position.z = o.min.z; if (m.position.z < o.min.z) m.position.z = o.max.z;
+  for (let i = 0; i < 40; i++) {
+    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: i % 3 ? '#ff9ab8' : '#8fe8ff', blending: T.AdditiveBlending, depthWrite: false, opacity: .5 }));
+    const sc = .12 + Math.random() * .22; s.scale.set(sc, sc, 1);
+    s.userData = { mote: true, ph: Math.random() * 6, sp: .2 + Math.random() * .4, y: .6 + Math.random() * 2 }; scene.add(s); drift.push(s);
   }
 }
 
@@ -770,14 +866,40 @@ const organ = new T.Group();
 }
 function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
 
-const padGeo = new T.CylinderGeometry(.44, .48, .16, 6);
-const padMat = new T.MeshStandardMaterial({ color: '#a8646c', roughness: .4, metalness: .05, emissive: '#1a0509', emissiveIntensity: .3 });
-const ringGeo = new T.RingGeometry(.36, .44, 6);
+const padGeo = new T.CylinderGeometry(.4, .46, .14, 32);
+const padMat = new T.MeshPhysicalMaterial({ color: '#c97d8e', roughness: .32, metalness: 0, clearcoat: 1, clearcoatRoughness: .2, emissive: '#3a0a18', emissiveIntensity: .35 });
+const padRimGeo = new T.TorusGeometry(.4, .035, 8, 40);
+const padRimMat = new T.MeshStandardMaterial({ color: '#ffd6de', emissive: '#ff6f8f', emissiveIntensity: .35, roughness: .3 });
+const ringGeo = new T.RingGeometry(.4, .52, 40);
+
+function updateBackdrop() {
+  const b = TER.box, c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3());
+  const outer = b.clone().expandByScalar(7);
+  drift.forEach(m => {
+    let x, z, k = 0;
+    do { x = outer.min.x + Math.random() * (outer.max.x - outer.min.x); z = outer.min.z + Math.random() * (outer.max.z - outer.min.z); k++; }
+    while (k < 40 && boxDist(x, z) < (m.userData.mote ? .2 : 1.2));
+    m.position.set(x, heightAt(x, z) + m.userData.y, z);
+  });
+}
+function animateBackdrop(dt, now) {
+  const o = TER.box.clone().expandByScalar(7);
+  for (const m of drift) {
+    const u = m.userData;
+    if (u.mote) { m.position.y += dt * u.sp * .3; m.material.opacity = .25 + .25 * Math.sin(now * u.sp * 3 + u.ph); if (m.position.y > heightAt(m.position.x, m.position.z) + 3) m.position.y = heightAt(m.position.x, m.position.z) + .3; continue; }
+    m.position.addScaledVector(u.v, dt); m.rotation.x += u.spin * dt; m.rotation.z += u.spin * dt * .6;
+    if (m.position.x > o.max.x) m.position.x = o.min.x; if (m.position.x < o.min.x) m.position.x = o.max.x;
+    if (m.position.z > o.max.z) m.position.z = o.min.z; if (m.position.z < o.min.z) m.position.z = o.max.z;
+    const gh = heightAt(m.position.x, m.position.z), inside = boxDist(m.position.x, m.position.z) < 1;
+    const ty = inside ? gh + 1.6 : gh + u.y;
+    m.position.y += (ty - m.position.y) * Math.min(1, dt * 2) + Math.sin(now + m.rotation.x) * .002;
+  }
+}
 const bloodMat = new T.MeshStandardMaterial({ map: bloodTex, roughness: .18, metalness: .05, emissive: '#5a0612', emissiveIntensity: .5, side: T.DoubleSide });
 const wallMat = new T.MeshStandardMaterial({ color: '#d0566a', roughness: .22, metalness: 0, emissive: '#3a0812', emissiveIntensity: .4 });
 
 function buildBoard(L) {
-  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo) o.geometry.dispose(); if (o.material && o.material !== padMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
+  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo && o.geometry !== padRimGeo) o.geometry.dispose(); if (o.material && o.material !== padMat && o.material !== padRimMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
   pads.clear(); pathCells.clear();
   COLS = L.cols; ROWS = L.rows; OX = (COLS + 2) / 2; OZ = (ROWS - 1) / 2;
   const WP = L.wp.filter((q, i, a) => i === 0 || q[0] !== a[i - 1][0] || q[1] !== a[i - 1][1]);
@@ -789,15 +911,24 @@ function buildBoard(L) {
       if (c >= 0 && c < COLS && r >= 0 && r < ROWS) pathCells.add(c + ',' + r);
     }
   }
-  // Сглаженные повороты
-  const P = WP.map(([c, r]) => cellPos(c, r)), out = [P[0].clone()], rad = .55;
+  // Плавные петли вместо прямых углов, сосуд слегка извивается
+  const P = WP.map(([c, r]) => cellPos(c, r)), raw = [P[0].clone()], rad = L.portrait ? .95 : 1.2;
   for (let i = 1; i < P.length - 1; i++) {
     const a = P[i - 1], b = P[i], n = P[i + 1];
     const d1 = b.clone().sub(a).normalize(), d2 = n.clone().sub(b).normalize();
-    const p1 = b.clone().addScaledVector(d1, -rad), p2 = b.clone().addScaledVector(d2, rad);
-    for (let k = 0; k <= 10; k++) { const t = k / 10; out.push(new T.Vector3().addScaledVector(p1, (1 - t) * (1 - t)).addScaledVector(b, 2 * t * (1 - t)).addScaledVector(p2, t * t)); }
+    const r1 = Math.min(rad, a.distanceTo(b) / 2), r2 = Math.min(rad, n.distanceTo(b) / 2), rr = Math.min(r1, r2);
+    const p1 = b.clone().addScaledVector(d1, -rr), p2 = b.clone().addScaledVector(d2, rr);
+    for (let k = 0; k <= 14; k++) { const t = k / 14; raw.push(new T.Vector3().addScaledVector(p1, (1 - t) * (1 - t)).addScaledVector(b, 2 * t * (1 - t)).addScaledVector(p2, t * t)); }
   }
-  out.push(P[P.length - 1].clone());
+  raw.push(P[P.length - 1].clone());
+  const out = [];
+  for (let i = 0; i < raw.length - 1; i++) {
+    const a = raw[i], b = raw[i + 1], n = Math.max(1, Math.ceil(a.distanceTo(b) / .2));
+    for (let k = 0; k < n; k++) out.push(a.clone().lerp(b, k / n));
+  }
+  out.push(raw[raw.length - 1].clone());
+  const ph = Math.random() * 6;
+  out.forEach((v, i) => { const edge = Math.min(1, i / 8, (out.length - 1 - i) / 8); v.x += Math.sin(v.z * 1.25 + ph) * .2 * edge; });
   const cum = [0];
   for (let i = 1; i < out.length; i++) cum.push(cum[i - 1] + out[i].distanceTo(out[i - 1]));
   PATH = { pts: out, cum, len: cum[cum.length - 1] };
@@ -810,7 +941,7 @@ function buildBoard(L) {
     pathAt(d, p); pathAt(d + .05, q); dir.subVectors(q, p).normalize();
     if (d + .05 > PATH.len) { pathAt(d - .05, q); dir.subVectors(p, q).normalize(); }
     side.set(-dir.z, 0, dir.x);
-    pos.push(p.x + side.x * W, .025, p.z + side.z * W, p.x - side.x * W, .025, p.z - side.z * W);
+    pos.push(p.x + side.x * W, PATH_Y, p.z + side.z * W, p.x - side.x * W, PATH_Y, p.z - side.z * W);
     uv.push(0, d / 1.6, 1, d / 1.6);
     if (n > 0) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
     n++;
@@ -826,30 +957,40 @@ function buildBoard(L) {
       pathAt(d, p); pathAt(Math.min(PATH.len, d + .05), q); dir.subVectors(q, p);
       if (dir.lengthSq() < 1e-8) { pathAt(d - .05, q); dir.subVectors(p, q); }
       dir.normalize(); side.set(-dir.z, 0, dir.x);
-      pts.push(new T.Vector3(p.x + side.x * (W + .05) * sgn, .06, p.z + side.z * (W + .05) * sgn));
+      pts.push(new T.Vector3(p.x + side.x * (W + .04) * sgn, PATH_Y + .05, p.z + side.z * (W + .04) * sgn));
     }
-    const wall = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), pts.length * 3, .085, 8), wallMat);
+    const wall = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), pts.length * 3, .07, 8), wallMat);
     wall.castShadow = true; wall.receiveShadow = true; board.add(wall);
   }
 
-  portal.position.copy(PATH.pts[0]);
+  portal.position.copy(PATH.pts[0]).setY(PATH_Y + .02);
   const sc = L.portrait ? 1.15 : 1.5, end = PATH.pts[PATH.pts.length - 1];
   organ.scale.setScalar(sc); organ.position.set(end.x + 1.05 * sc, 0, end.z);
   organ.updateMatrixWorld(true);
   const ob = new T.Box3().setFromObject(organ).expandByScalar(.2);
 
-  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
-    const k = c + ',' + r; if (pathCells.has(k)) continue;
-    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => pathCells.has((c + dc) + ',' + (r + dr)));
-    if (!near || (c + r) % 2) continue;   // площадка через одну — меньше мест, важнее выбор
-    const cp = cellPos(c, r);
-    if (cp.x + .45 > ob.min.x && cp.z > ob.min.z && cp.z < ob.max.z) continue;
-    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, .08, cp.z); m.rotation.y = Math.PI / 6;
-    m.receiveShadow = true; m.castShadow = true; board.add(m);
-    const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
-    hl.rotation.x = -Math.PI / 2; hl.rotation.z = Math.PI / 6; hl.position.set(cp.x, .17, cp.z); board.add(hl);
-    pads.set(k, { c, r, pos: cp, mesh: m, hl, unit: null });
+  // Площадки: на удобном расстоянии от сосуда и не теснее 1,4 друг от друга
+  TER.hash.clear();
+  for (let d = 0; d <= PATH.len; d += .12) { const pp = pathAt(d); const kk = Math.floor(pp.x) + ',' + Math.floor(pp.z); if (!TER.hash.has(kk)) TER.hash.set(kk, []); TER.hash.get(kk).push(pp.x, pp.z); }
+  const cands = [];
+  for (let x = -OX - .5; x <= COLS - OX + .5; x += .25) for (let z = -OZ - .5; z <= ROWS - OZ - .5; z += .25) {
+    const dp = pathDist(x, z); if (dp < .95 || dp > 1.4) continue;
+    if (x + .5 > ob.min.x && z > ob.min.z && z < ob.max.z) continue;
+    if (Math.hypot(x - PATH.pts[0].x, z - PATH.pts[0].z) < 1.3) continue;
+    cands.push({ x, z, score: Math.abs(dp - 1.08) + hash2(x, z) * .05 });
   }
+  cands.sort((a, b) => a.score - b.score);
+  const chosen = [];
+  for (const cd of cands) if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.38)) chosen.push(cd);
+  chosen.forEach((cd, i) => {
+    const cp = new T.Vector3(cd.x, 0, cd.z);
+    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, .05, cp.z); m.receiveShadow = true; m.castShadow = true; board.add(m);
+    const rim = new T.Mesh(padRimGeo, padRimMat); rim.rotation.x = Math.PI / 2; rim.position.set(cp.x, .125, cp.z); board.add(rim);
+    const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
+    hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, .14, cp.z); board.add(hl);
+    pads.set('p' + i, { pos: cp, mesh: m, hl, unit: null });
+  });
+  buildTerrain();
 }
 const stageAspect = () => Math.max(.3, stage.clientWidth / Math.max(1, stage.clientHeight));
 buildBoard(makeLayout(stageAspect()));
@@ -1290,7 +1431,7 @@ function update(dt) {
   // Шипы IgA
   for (let i = G.spikes.length - 1; i >= 0; i--) {
     const z = G.spikes[i]; z.t -= dt;
-    for (const m of z.meshes) { const target = z.t > .4 ? m.userData.h : 0.001; m.scale.y += (target - m.scale.y) * Math.min(1, dt * 12); m.position.y = m.scale.y / 2; }
+    for (const m of z.meshes) { const target = z.t > .4 ? m.userData.h : 0.001; m.scale.y += (target - m.scale.y) * Math.min(1, dt * 12); m.position.y = PATH_Y + m.scale.y / 2; }
     if (z.t <= 0) { z.meshes.forEach(m => scene.remove(m)); z.mat.dispose(); G.spikes.splice(i, 1); }
   }
 
@@ -1308,13 +1449,13 @@ function update(dt) {
     pathAt(e.d, e.pos);
     pathAt(e.d + .1, tmpQ);
     e.wob += dt * (3 + sp * 3);
-    const lift = e.f.size * 1.4 + .05 + Math.sin(e.wob) * .025;
+    const lift = PATH_Y + e.f.size * 1.4 + .05 + Math.sin(e.wob) * .025;
     e.mesh.position.set(e.pos.x, lift, e.pos.z);
     e.mesh.lookAt(tmpQ.x, lift, tmpQ.z);
     if (e.type === 'virus' || e.type === 'coccus') e.mesh.rotateY(now * 3);
     e.squash = Math.max(0, e.squash - dt * 6);
     const sq = 1 + e.squash * .25, bs = e.mesh.userData.bs; e.mesh.scale.set(sq * bs, bs / sq, sq * bs);
-    if (e.segs) e.segs.forEach((s, i) => { pathAt(Math.max(0, e.d - (i + 1) * .27), tmpV); s.position.set(tmpV.x, .28 - i * .012 + Math.sin(e.wob - i * .7) * .04, tmpV.z); });
+    if (e.segs) e.segs.forEach((s, i) => { pathAt(Math.max(0, e.d - (i + 1) * .27), tmpV); s.position.set(tmpV.x, PATH_Y + .28 - i * .012 + Math.sin(e.wob - i * .7) * .04, tmpV.z); });
     const barY = e.f.boss ? 1.1 : e.f.size * 2.8 + .25;
     e.bg.position.set(e.pos.x - e.barW / 2, barY, e.pos.z); e.fill.position.copy(e.bg.position);
     const pct = Math.max(0, e.hp / e.maxHp);
@@ -1638,7 +1779,7 @@ let bannerT = 0;
 function showBanner(title, sub = '') { const b = $('banner'); b.innerHTML = title + (sub ? `<small>${sub}</small>` : ''); b.classList.add('on'); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove('on'), 1800); }
 
 /* ---------- Нажатия по полю ---------- */
-const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.16);
+const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.12);
 let downAt = null;
 renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
 renderer.domElement.addEventListener('pointerup', (e) => {
@@ -1646,7 +1787,7 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const rect = renderer.domElement.getBoundingClientRect();
   ray.setFromCamera({ x: (e.clientX - rect.left) / rect.width * 2 - 1, y: -(e.clientY - rect.top) / rect.height * 2 + 1 }, camera);
   const hit = new T.Vector3(); if (!ray.ray.intersectPlane(plane, hit)) return;
-  const c = Math.round(hit.x + OX), r = Math.round(hit.z + OZ), pad = pads.get(c + ',' + r);
+  let pad = null, bd = .62; pads.forEach(p => { const d = Math.hypot(p.pos.x - hit.x, p.pos.z - hit.z); if (d < bd) { bd = d; pad = p; } });
   if (G.phase === 'menu' || G.phase === 'end') return;
   if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на шестиугольные площадки у сосуда'); return; }
   if (pad && pad.unit) openUnit(pad.unit); else closeUnit();
@@ -1663,13 +1804,13 @@ function startGame(mode) {
   PROF.games++; saveProf();
   Object.assign(G, { mode, phase: 'build', paused: false, coins: 100, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null });
   $('legBtn').classList.remove('on');
-  screenStack = []; show(null); closeUnit();
+  screenStack = []; show(null); closeUnit(); AU.ambient(true, false);
   computeBonus(); rollShop(); highlight(); updateHUD();
   showBanner('Печень', mode === 'campaign' ? '30 волн · в конце босс' : 'Волны без конца · рекорд ' + G.best);
 }
 function startWave() {
   if (G.phase !== 'build') return;
-  G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0;
+  G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0; AU.ambient(true, true);
   if (G.wave % 10 !== 0) { showBanner('Волна ' + G.wave); AU.play('wave', 0, .9); }
   updateHUD();
 }
@@ -1678,11 +1819,11 @@ function waveCleared() {
   G.coins += bonus; G.phase = 'build';
   if (G.mode === 'endless' && G.wave > G.best) { G.best = G.wave; try { localStorage.setItem('immuneBest', G.best); } catch (e) {} }
   if (G.mode === 'campaign' && G.wave >= CAMPAIGN_WAVES) return finish(true);
-  showBanner('Волна отбита', `+${bonus} монет · новые карты`); AU.play('coin', 0, 1);
+  showBanner('Волна отбита', `+${bonus} монет · новые карты`); AU.play('coin', 0, 1); AU.ambient(true, false);
   rollShop(); highlight(); updateHUD();
 }
 function finish(win) {
-  G.phase = 'end'; updateHUD();
+  G.phase = 'end'; updateHUD(); AU.ambient(false);
   const stars = !win ? 0 : G.hp === MAX_HP ? 3 : G.hp > MAX_HP / 2 ? 2 : 1;
   if (win) { PROF.wins++; PROF.liverStars = Math.max(PROF.liverStars, stars); }
   saveProf();
@@ -1754,7 +1895,7 @@ function renderScreen(id) {
 }
 $('avatars').onclick = (e) => { const b = e.target.closest('[data-ava]'); if (!b) return; PROF.avatar = b.dataset.ava; saveProf(); renderScreen('profile'); AU.play('place'); };
 $('pName').oninput = () => { PROF.name = $('pName').value.trim() || 'Игрок'; saveProf(); };
-$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui'); };
+$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui'); if (!SET.sound) AU.ambient(false); };
 $('sVol').oninput = () => { SET.vol = +$('sVol').value; $('sVolText').textContent = SET.vol + '%'; saveSet(); applySettings(); };
 $('sVol').onchange = () => { AU.init(); AU.play('boom', 0, .6); };
 $('sVibro').onchange = () => { SET.vibro = $('sVibro').checked; saveSet(); buzz(40); };
@@ -1767,11 +1908,11 @@ $('resetBtn').onclick = () => {
   try { localStorage.removeItem('immuneBest'); } catch (e) {}
   b.dataset.armed = ''; b.textContent = 'Прогресс сброшен';
 };
-$('pauseBtn').onclick = () => { if (G.phase !== 'build' && G.phase !== 'wave') return; G.paused = true; screenStack = []; show('pause'); AU.play('ui'); };
-$('resumeBtn').onclick = () => { G.paused = false; show(null); AU.play('ui'); };
+$('pauseBtn').onclick = () => { if (G.phase !== 'build' && G.phase !== 'wave') return; G.paused = true; AU.ambient(false); screenStack = []; show('pause'); AU.play('ui'); };
+$('resumeBtn').onclick = () => { G.paused = false; show(null); AU.play('ui'); AU.ambient(true, G.phase === 'wave'); };
 $('quitBtn').onclick = () => goMenu();
 function goMenu() {
-  G.paused = false; G.phase = 'menu';
+  G.paused = false; G.phase = 'menu'; AU.ambient(false);
   for (const e of G.foes) removeFoe(e); G.foes = []; G.queue = [];
   for (const p of G.shots) scene.remove(p.mesh); G.shots = [];
   closeUnit(); screenStack = []; show('menu'); renderScreen('menu'); updateHUD();

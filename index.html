@@ -234,7 +234,26 @@ body {
 #unitSheet .stats div { background: var(--panel-2); border-radius: 8px; padding: 6px; }
 #unitSheet .stats b { display: block; color: var(--ink); font: 700 14px var(--display); font-variant-numeric: tabular-nums; }
 #unitSheet .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#unitSheet .lv { font: 700 12px var(--display); color: #1a0a0e; background: var(--gold); border-radius: 6px; padding: 2px 6px; vertical-align: middle; }
+#unitSheet .up { font-style: normal; color: var(--good); font-size: 12px; }
 .danger { color: #ffb0b8; border-color: #6d1a28; }
+#look { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 14; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 58%; box-shadow: 0 14px 50px #000c; }
+#look[hidden] { display: none; }
+.lookhead { display: flex; justify-content: space-between; align-items: center; }
+.lookhead b { font: 700 17px var(--display); }
+.lookhead .btn { padding: 8px 16px; font-size: 13px; }
+#lookTabs { align-self: stretch; }
+#lookTabs button { flex: 1; }
+#lookBody { overflow-y: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-bottom: 2px; }
+.opt { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 12px; background: var(--panel-2); border: 1.5px solid var(--line); color: var(--ink); font: 600 13px var(--body); text-align: left; cursor: pointer; min-width: 0; }
+.opt span { min-width: 0; }
+.opt.on { border-color: var(--gold); box-shadow: 0 0 0 2px #ffd36b44; }
+.opt .sw { width: 36px; height: 36px; border-radius: 10px; flex: none; box-shadow: inset 0 0 0 1px #ffffff22; }
+.opt .ic { width: 36px; height: 36px; border-radius: 10px; flex: none; display: grid; place-items: center; background: #ffffff10; font: 700 15px var(--display); }
+.opt.wide { grid-column: 1 / -1; justify-content: center; }
+.opt.no { color: #ffb0b8; border-style: dashed; }
+.lookvol { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.lookvol input { flex: 1; accent-color: var(--blood); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -273,6 +292,13 @@ body {
 
   <div id="unitSheet" hidden></div>
 
+  <div id="look" hidden>
+    <div class="lookhead"><b>Фон и звуки</b><button class="btn go" id="lookDone">Готово</button></div>
+    <div class="seg" id="lookTabs"><button data-t="bg" class="on">Фон</button><button data-t="amb">Звук фона</button><button data-t="sfx">Эффекты</button></div>
+    <div id="lookBody"></div>
+    <p class="ver" id="lookNote"></p>
+  </div>
+
   <div class="overlay" id="loading">
     <div class="load">
       <div class="loadcell"><i></i><i></i><i></i></div>
@@ -291,8 +317,9 @@ body {
         <button class="btn big" data-go="profile">Профиль</button>
         <button class="btn big" data-go="settings">Настройки</button>
       </div>
+      <button class="btn big" data-look="menu">Фон и звуки</button>
       <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.5 · прототип</p>
+      <p class="ver">Версия 0.6 · прототип</p>
     </div>
   </div>
 
@@ -332,6 +359,7 @@ body {
       <div class="set"><span>Вибрация<small>Работает на Android</small></span><label class="tog"><input type="checkbox" id="sVibro"><i></i></label></div>
       <div class="set"><span>Цифры урона</span><label class="tog"><input type="checkbox" id="sDmg"><i></i></label></div>
       <div class="set"><span>Графика</span><div class="seg" id="sQuality"><button data-q="high">Красивая</button><button data-q="low">Экономная</button></div></div>
+      <button class="btn" data-look="settings">Фон и звуки</button>
       <button class="btn danger" id="resetBtn">Сбросить прогресс</button>
       <button class="btn" data-back>Назад</button>
     </div>
@@ -343,7 +371,7 @@ body {
       <div class="howto">
         <div><b>1.</b> Микробы идут по сосуду к органу. Не дай им дойти.</div>
         <div><b>2.</b> Выбери карту клетки внизу и нажми на свободную шестиугольную площадку у сосуда.</div>
-        <div><b>3.</b> Такую же карту клади на стоящую клетку: <b>3 карты = ★★</b>, <b>9 карт = ★★★</b>.</div>
+        <div><b>3.</b> Нажми на поставленную клетку, чтобы <b>улучшить</b> её прямо на месте. Уровней пять: от ★ до ★★★★★.</div>
         <div><b>4.</b> Клетки одной фракции дают бонус. Эмблемы фракций — над полем, нажми, чтобы узнать подробности.</div>
         <div><b>5.</b> Иммуноглобулины дорогие, но вместе очень сильные. Копи на них монеты.</div>
         <div><b>6.</b> Ненужную клетку можно разрушить и вернуть половину монет.</div>
@@ -356,6 +384,7 @@ body {
     <div class="sheet">
       <h2>Пауза</h2>
       <button class="btn go big" id="resumeBtn">Продолжить</button>
+      <button class="btn big" data-look="pause">Фон и звуки</button>
       <button class="btn big" data-go="settings">Настройки</button>
       <button class="btn big danger" id="quitBtn">Выйти в меню</button>
     </div>
@@ -475,8 +504,9 @@ const FOES = {
   worm:    { name: 'Гельминт', hp: 1800, speed: .4, reward: 120, armor: .3, leak: 6, size: .34, big: true, boss: true }
 };
 
-const STAR_DMG = [1, 1.8, 3.2], STAR_RATE = [1, .9, .8], STAR_RANGE = [0, .25, .5];
-const starsOf = (cards) => cards >= 9 ? 3 : cards >= 3 ? 2 : 1;
+// Улучшение клетки на месте: 5 уровней
+const LV_DMG = [1, 1.45, 2, 2.8, 4], LV_RATE = [1, .93, .86, .8, .74], LV_RANGE = [0, .15, .3, .45, .6], LV_COST = [.8, 1.25, 1.9, 2.8], MAX_LV = 5;
+const upCost = (u) => Math.round(u.def.cost * LV_COST[u.level - 1]);
 const MAX_HP = 20, CAMPAIGN_WAVES = 30;
 
 /* =========================================================
@@ -491,14 +521,22 @@ const AU = {
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5;
     const master = ctx.createGain(); master.gain.value = (typeof SET !== 'undefined' ? SET.vol / 100 : .8) * .9; this.master = master; master.connect(comp); comp.connect(ctx.destination);
     // Короткая «комнатная» реверберация для объёма
-    const len = ctx.sampleRate * .6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    const len = ctx.sampleRate * 1.6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
-    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .1; rev.connect(wet); wet.connect(master);
+    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .25; rev.connect(wet); wet.connect(master);
     this.out = master; this.rev = rev;
     const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     this.noise = nb;
     this.chipInit();
+    const bb = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate), bd = bb.getChannelData(0);
+    let last = 0; for (let i = 0; i < bd.length; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; bd[i] = last * 3.5; }
+    this.brown = bb;
+    const pb = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate), pd = pb.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < pd.length; i++) { const w = Math.random() * 2 - 1; b0 = .99886 * b0 + w * .0555179; b1 = .99332 * b1 + w * .0750759; b2 = .969 * b2 + w * .153852; b3 = .8665 * b3 + w * .3104856; b4 = .55 * b4 + w * .5329522; b5 = -.7616 * b5 - w * .016898; pd[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * .5362) * .11; b6 = w * .115926; }
+    this.pink = pb; this.ambNodes = [];
+    if (typeof SET !== 'undefined' && SET.amb && SET.amb !== 'off') setTimeout(() => this.amb(SET.amb), 300);
   },
   bus(pan, vol) {
     const ctx = this.ctx, g = ctx.createGain(); g.gain.value = vol;
@@ -559,11 +597,170 @@ const AU = {
     g.gain.setValueAtTime(0, t0 + n * F);
     s.connect(g); g.connect(dst); s.start(t0, Math.random() * .5); s.stop(t0 + n * F + .02);
   },
+  shaper(k) {
+    this.shapers ||= {};
+    if (this.shapers[k]) return this.shapers[k];
+    const n = 1024, c = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = i / n * 2 - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); }
+    const w = this.ctx.createWaveShaper(); w.curve = c; w.oversample = '2x'; return this.shapers[k] = w;
+  },
+  // Генератор с фильтром и перегрузом: из этих кирпичиков собраны все звуки
+  osc(dst, type, f0, f1, t0, dur, vol, o = {}) {
+    const ctx = this.ctx, s = ctx.createOscillator(), g = ctx.createGain();
+    s.type = type; s.frequency.setValueAtTime(f0, t0); s.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur * (o.bend || 1));
+    if (o.detune) s.detune.value = o.detune;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + (o.a || .004)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    let node = s;
+    if (o.lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; f.Q.value = o.q || 1; node.connect(f); node = f; }
+    if (o.drive) { const w = ctx.createWaveShaper(); w.curve = this.shaper(o.drive).curve; node.connect(w); node = w; }
+    node.connect(g); g.connect(dst); s.start(t0); s.stop(t0 + dur + .03);
+  },
+  nz(dst, ftype, f0, f1, q, t0, dur, vol, o = {}) {
+    const ctx = this.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = o.brown ? this.brown : this.noise; s.playbackRate.value = o.rate || (.85 + Math.random() * .3);
+    f.type = ftype; f.Q.value = q; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + (o.a || .003)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    let node = f;
+    if (o.drive) { const w = ctx.createWaveShaper(); w.curve = this.shaper(o.drive).curve; f.connect(w); node = w; }
+    s.connect(f); node.connect(g); g.connect(dst); s.start(t0, Math.random() * .6); s.stop(t0 + dur + .03);
+  },
+  bubbles(dst, t, n, vol) { for (let i = 0; i < n; i++) { const f = 380 + Math.random() * 700, tt = t + Math.random() * .12; this.osc(dst, 'sine', f, f * (1.6 + Math.random()), tt, .045, vol); } },
+  crackle(dst, t, n, spread, vol) { for (let i = 0; i < n; i++) this.nz(dst, 'highpass', 2500 + Math.random() * 4000, 1500, 1, t + Math.random() * spread, .02 + Math.random() * .03, vol * (.5 + Math.random() * .5)); },
+  juicy(kind, x, vol, now) {
+    const boost = { spit: 2.2, shot: 1.8, zip: 1.8, coin: 1.6, hit: 1.5, dart: 1.2 }[kind] || 1;
+    const b = this.bus(x / 4, vol * boost), t = now, r = 1 + (Math.random() - .5) * .16, R = () => .85 + Math.random() * .3;
+    switch (kind) {
+      case 'pop':   // нейтрофил: хлёсткий шлепок
+        this.nz(b, 'bandpass', 2200 * r, 500, 2.5, t, .07, .5); this.osc(b, 'sine', 480 * r, 130, t, .08, .4, { drive: 3 }); this.nz(b, 'highpass', 7000, 5000, 1, t, .012, .25); break;
+      case 'thump': // моноцит и IgD: тяжёлый удар с отдачей
+        this.osc(b, 'sine', 190 * r, 40, t, .26, .95, { drive: 4 }); this.nz(b, 'lowpass', 1600, 150, 1, t, .1, .5); this.nz(b, 'bandpass', 900, 300, 3, t + .01, .08, .25); break;
+      case 'spit':  // макрофаг и дендритная: влажный «плевок» с пузырями
+        this.nz(b, 'bandpass', 320 * r, 2200, 7, t, .18, .55); this.nz(b, 'lowpass', 900, 200, 1, t, .1, .3, { brown: true }); this.bubbles(b, t + .03, 3, .12); break;
+      case 'dart':  // киллеры: тонкий свист и щелчок
+        this.nz(b, 'highpass', 5000 * r, 3000, 1, t, .05, .3); this.osc(b, 'triangle', 2000 * r, 280, t, .1, .25); this.osc(b, 'sine', 120, 60, t, .06, .3); break;
+      case 'shot':  // антитела: мягкий «пфф» с эхом
+        this.osc(b, 'square', 1000 * R(), 260, t, .07, .12, { lp: 2400 }); this.nz(b, 'bandpass', 2600, 1100, 3, t, .05, .2);
+        this.osc(b, 'square', 900 * R(), 240, t + .08, .06, .04, { lp: 1800 }); break;
+      case 'lob':   // гранулы: миномётный «тунк»
+        this.osc(b, 'sine', 280 * r, 70, t, .16, .55, { drive: 2 }); this.nz(b, 'lowpass', 1200, 200, 1, t, .12, .35); this.nz(b, 'bandpass', 600, 1800, 2, t + .02, .25, .12); break;
+      case 'boom':  // взрыв: суббас, рокот, треск
+        this.osc(b, 'sine', 95 * r, 26, t, .7, .9, { drive: 5 }); this.nz(b, 'lowpass', 3800 * r, 70, .8, t, .65, .8, { drive: 3 });
+        this.nz(b, 'lowpass', 600, 60, 1, t + .02, .9, .45, { brown: true }); this.crackle(b, t + .03, 7, .35, .18); break;
+      case 'zip':   // пронзатели: рассекающий выстрел
+        this.osc(b, 'sawtooth', 2600 * r, 150, t, .17, .1, { drive: 3, lp: 5000 }); this.nz(b, 'bandpass', 7000, 700, 4, t, .16, .3); this.nz(b, 'lowpass', 1500, 300, 1, t + .05, .2, .15); break;
+      case 'hit': {
+        const f = [1900, 2700, 3500][Math.random() * 3 | 0] * r;
+        this.nz(b, 'bandpass', f, f * .5, 6, t, .035, .28); this.osc(b, 'sine', 750 * r, 260, t, .035, .1); break; }
+      case 'die':   // микроб лопается
+        this.nz(b, 'bandpass', 1100 * r, 140, 1.4, t, .22, .6, { drive: 2 }); this.osc(b, 'sine', 340 * r, 55, t, .18, .35); this.bubbles(b, t + .05, 2, .1); break;
+      case 'leak':  // печень получила урон: глухой удар и треск
+        this.osc(b, 'sine', 120, 38, t, .45, 1, { drive: 4 }); this.nz(b, 'lowpass', 1400, 90, 1, t, .4, .6, { drive: 2 }); this.crackle(b, t + .02, 5, .2, .15); break;
+      case 'place': // клетка встала: мягкое «плюх»
+        this.nz(b, 'bandpass', 500, 2600, 5, t, .12, .35); this.osc(b, 'sine', 240, 80, t, .16, .6, { drive: 2 }); this.nz(b, 'highpass', 6000, 4000, 1, t + .02, .015, .2); this.bubbles(b, t + .04, 2, .08); break;
+      case 'merge': // слияние в звезду: нарастающий вихрь, искры, удар
+        this.nz(b, 'bandpass', 220, 5500, 1.5, t, .5, .5); this.crackle(b, t + .28, 10, .3, .14);
+        this.osc(b, 'sine', 150, 45, t + .48, .3, .9, { drive: 4 }); this.nz(b, 'lowpass', 2500, 100, 1, t + .48, .3, .45); break;
+      case 'coin':  this.osc(b, 'triangle', 2500, 2350, t, .08, .1); this.osc(b, 'triangle', 3300, 3150, t + .055, .1, .08); this.nz(b, 'highpass', 8000, 6000, 1, t, .02, .1); break;
+      case 'ui':    this.nz(b, 'bandpass', 3600, 2600, 8, t, .025, .25); this.osc(b, 'sine', 520, 330, t, .035, .08); break;
+      case 'wave':  // начало волны: нарастающий порыв и удар
+        this.nz(b, 'bandpass', 150, 2400, 1.2, t, .6, .45, { a: .35 }); this.osc(b, 'sine', 140, 45, t + .55, .35, .9, { drive: 4 }); this.nz(b, 'lowpass', 2000, 100, 1, t + .55, .3, .4); break;
+      case 'siren': // босс: тревога и рокот
+        for (let i = 0; i < 3; i++) { this.osc(b, 'triangle', 420, 820, t + i * .55, .27, .2, { drive: 2 }); this.osc(b, 'triangle', 820, 420, t + i * .55 + .27, .27, .2, { drive: 2 }); }
+        this.nz(b, 'lowpass', 120, 400, 1, t, 1.6, .4, { brown: true, a: .3 }); break;
+      case 'ult':   // ульта иммуноглобулина
+        this.nz(b, 'bandpass', 180, 4200, 1.3, t, .38, .55); this.crackle(b, t + .2, 8, .25, .12);
+        this.osc(b, 'sine', 80, 26, t + .35, .7, 1, { drive: 5 }); this.nz(b, 'lowpass', 3500, 70, 1, t + .35, .7, .7, { drive: 3 }); break;
+      case 'organ': this.osc(b, 'sine', 110, 40, t, .3, .8, { drive: 3 }); break;
+      case 'win':   this.nz(b, 'bandpass', 200, 5000, 1.2, t, .8, .5); this.crackle(b, t + .4, 16, .6, .14); for (let i = 0; i < 3; i++) this.osc(b, 'sine', 120 + i * 30, 45, t + .7 + i * .22, .3, .8, { drive: 3 }); break;
+      case 'lose':  this.osc(b, 'sawtooth', 180, 35, t, 1.4, .2, { drive: 4, lp: 900 }); this.osc(b, 'sine', 90, 28, t, 1.5, .9); this.nz(b, 'lowpass', 800, 60, 1, t, 1.5, .5, { brown: true }); break;
+    }
+  },
+  // Мягкий набор: тёплые глухие звуки без резкости
+  soft(kind, x, vol, now) {
+    const b = this.bus(x / 4, vol * 1.7), t = now, r = 1 + (Math.random() - .5) * .12;
+    switch (kind) {
+      case 'pop':   this.osc(b, 'sine', 560 * r, 260, t, .09, .3, { lp: 1800 }); this.nz(b, 'bandpass', 1400, 900, 2, t, .04, .12); break;
+      case 'thump': this.osc(b, 'sine', 150 * r, 55, t, .2, .55); this.nz(b, 'lowpass', 500, 120, 1, t, .1, .2); break;
+      case 'spit':  this.nz(b, 'bandpass', 500 * r, 1300, 3, t, .13, .3); this.bubbles(b, t + .02, 2, .06); break;
+      case 'dart':  this.osc(b, 'triangle', 1300 * r, 650, t, .08, .16, { lp: 3000 }); break;
+      case 'shot':  this.osc(b, 'sine', 950 * r, 480, t, .09, .18, { lp: 2200 }); break;
+      case 'lob':   this.osc(b, 'sine', 320 * r, 150, t, .13, .3); break;
+      case 'boom':  this.nz(b, 'lowpass', 1600 * r, 90, 1, t, .45, .5); this.osc(b, 'sine', 95, 38, t, .45, .55); break;
+      case 'zip':   this.osc(b, 'triangle', 1600 * r, 500, t, .13, .14, { lp: 2600 }); this.nz(b, 'bandpass', 3000, 1400, 2, t, .1, .1); break;
+      case 'hit':   this.nz(b, 'bandpass', 2400 * r, 1600, 4, t, .03, .12); break;
+      case 'die':   this.osc(b, 'sine', 620 * r, 240, t, .13, .22, { lp: 2000 }); this.bubbles(b, t + .03, 1, .05); break;
+      case 'leak':  this.osc(b, 'sine', 210, 90, t, .35, .5); this.osc(b, 'sine', 160, 70, t + .12, .35, .35); break;
+      case 'place': this.osc(b, 'sine', 300, 520, t, .12, .32, { lp: 2400 }); this.nz(b, 'highpass', 5000, 4000, 1, t, .02, .08); break;
+      case 'merge': this.nz(b, 'bandpass', 300, 3200, 1, t, .5, .3); this.osc(b, 'sine', 380, 950, t, .48, .16, { lp: 3000 }); this.osc(b, 'sine', 160, 70, t + .45, .25, .5); break;
+      case 'coin':  this.osc(b, 'triangle', 1800, 1750, t, .07, .1); this.osc(b, 'triangle', 2400, 2350, t + .06, .14, .08); break;
+      case 'ui':    this.osc(b, 'sine', 720, 600, t, .05, .1); break;
+      case 'wave':  this.nz(b, 'lowpass', 200, 1200, 1, t, .6, .25, { a: .3 }); this.osc(b, 'sine', 110, 70, t + .1, .5, .3); break;
+      case 'siren': for (let i = 0; i < 3; i++) { this.osc(b, 'triangle', 500, 700, t + i * .5, .25, .14, { lp: 2000 }); this.osc(b, 'triangle', 700, 500, t + i * .5 + .25, .25, .14, { lp: 2000 }); } break;
+      case 'ult':   this.nz(b, 'bandpass', 200, 3000, 1, t, .4, .35); this.osc(b, 'sine', 90, 38, t + .35, .6, .5); break;
+      case 'organ': this.osc(b, 'sine', 120, 60, t, .25, .45); break;
+      case 'win':   this.nz(b, 'bandpass', 300, 4000, 1, t, .7, .3); this.osc(b, 'sine', 300, 900, t, .7, .15, { lp: 3000 }); break;
+      case 'lose':  this.osc(b, 'sine', 400, 90, t, 1.2, .3, { lp: 1200 }); break;
+    }
+  },
   play(kind, x = 0, vol = 1) {
     if (!this.ctx || !this.on || this.ctx.state !== 'running' || !this.pw) return;
-    const now = this.ctx.currentTime, gap = { boom: .07, die: .045, hit: .04, shot: .05 }[kind] ?? .05;
+    const now = this.ctx.currentTime, gap = { boom: .06, die: .04, hit: .035, shot: .05 }[kind] ?? .05;
     if (now - (this.last[kind] || 0) < gap) return;
     this.last[kind] = now;
+    const st = (typeof SET !== 'undefined' && SET.sfx) || 'juicy';
+    if (st === 'chip') this.chip(kind, x, vol, now); else if (st === 'soft') this.soft(kind, x, vol, now); else this.juicy(kind, x, vol, now);
+  },
+
+  // ---------- Фоновые звуки природы (без музыки) ----------
+  ambBus() {
+    if (!this.ab) { this.ab = this.ctx.createGain(); this.ab.connect(this.out); const s = this.ctx.createGain(); s.gain.value = .5; this.ab.connect(s); s.connect(this.rev); }
+    this.ab.gain.value = (typeof SET !== 'undefined' ? SET.ambVol : 50) / 100 * .7;
+    return this.ab;
+  },
+  loopN(kind, filters, vol) {
+    const ctx = this.ctx, src = ctx.createBufferSource();
+    src.buffer = kind === 'brown' ? this.brown : kind === 'pink' ? this.pink : this.noise; src.loop = true;
+    let node = src;
+    const fl = filters.map(([type, f, q]) => { const b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q || .7; node.connect(b); node = b; return b; });
+    const g = ctx.createGain(); g.gain.value = vol; node.connect(g); g.connect(this.ambBus());
+    src.start(0, Math.random() * 1.5); this.ambNodes.push(src); return { g, fl };
+  },
+  lfo(param, rate, depth) { const o = this.ctx.createOscillator(), g = this.ctx.createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); this.ambNodes.push(o); },
+  abus(pan, vol) { const ctx = this.ctx, g = ctx.createGain(); g.gain.value = vol; let n = g; if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); n = p; } n.connect(this.ambBus()); return g; },
+  amb(id) {
+    if (!this.ctx) return;
+    clearInterval(this.ambT); this.ambT = null;
+    (this.ambNodes || []).forEach(n => { try { n.stop(); } catch (e) {} }); this.ambNodes = [];
+    if (this.ab) { try { this.ab.disconnect(); } catch (e) {} this.ab = null; }
+    if (!id || id === 'off' || !this.on) return;
+    const R = Math.random, P = () => R() * 1.6 - .8;
+    let tick = null;
+    switch (id) {
+      case 'rain': this.loopN('pink', [['highpass', 500], ['lowpass', 7000]], .45);
+        tick = (t) => { for (let i = 0; i < 4; i++) if (R() < .6) this.nz(this.abus(P(), .6), 'highpass', 3000 + R() * 4000, 2500, 1, t + R() * .1, .012 + R() * .02, .08 + R() * .1); }; break;
+      case 'surf': { const a = this.loopN('brown', [['lowpass', 600]], .55); this.lfo(a.g.gain, .11, .45); this.lfo(a.fl[0].frequency, .11, 260);
+        const f = this.loopN('white', [['highpass', 2500], ['lowpass', 8000]], .06); this.lfo(f.g.gain, .11, .05); break; }
+      case 'brook': { const w = this.loopN('white', [['bandpass', 1600, .9]], .16); this.lfo(w.fl[0].frequency, 3.3, 500); this.lfo(w.g.gain, .7, .05);
+        tick = (t) => { if (R() < .35) { const f = 500 + R() * 900; this.osc(this.abus(P(), .7), 'sine', f, f * 1.7, t + R() * .1, .05, .05); } }; break; }
+      case 'wind': { const w = this.loopN('pink', [['bandpass', 500, 2.5]], .5); this.lfo(w.fl[0].frequency, .06, 280); this.lfo(w.g.gain, .045, .3); break; }
+      case 'crickets': { this.loopN('brown', [['lowpass', 300]], .12);
+        const cr = [{ f: 4300, pan: -.6, next: 0 }, { f: 4700, pan: .55, next: .4 }, { f: 3900, pan: .1, next: .9 }];
+        tick = (t) => cr.forEach(c => { if (t > c.next) { const b = this.abus(c.pan, .5); for (let k = 0; k < 3; k++) this.osc(b, 'sine', c.f, c.f * 1.01, t + k * .045, .028, .045); c.next = t + .6 + R() * .7; } }); break; }
+      case 'birds': this.loopN('pink', [['bandpass', 700, 1]], .1);
+        tick = (t) => { if (R() < .035) { const n = 2 + (R() * 4 | 0), base = 2200 + R() * 1800, b = this.abus(P(), .6); let tt = t; for (let k = 0; k < n; k++) { const up = R() < .5; this.osc(b, 'sine', up ? base : base * 1.4, up ? base * 1.4 : base * .9, tt, .07 + R() * .05, .05); tt += .09 + R() * .06; } } }; break;
+      case 'under': { const a = this.loopN('brown', [['lowpass', 260]], .6); this.lfo(a.g.gain, .15, .2);
+        tick = (t) => { if (R() < .3) { const f = 200 + R() * 300; this.osc(this.abus(P(), .8), 'sine', f, f * 2.8, t + R() * .1, .09, .06); } }; break; }
+      case 'fire': this.loopN('brown', [['lowpass', 350]], .35); this.loopN('pink', [['bandpass', 1200, .8]], .04);
+        tick = (t) => { for (let i = 0; i < 3; i++) if (R() < .35) this.nz(this.abus(R() * .8 - .4, .8), 'highpass', 2000 + R() * 5000, 1500, 1, t + R() * .1, .004 + R() * .012, .08 + R() * .18);
+          if (R() < .02) this.nz(this.abus(R() * .6 - .3, .8), 'lowpass', 900, 200, 1, t, .05, .3); }; break;
+      case 'storm': { this.loopN('pink', [['highpass', 700], ['lowpass', 5000]], .25); let next = this.ctx.currentTime + 3;
+        tick = (t) => { if (t > next) { next = t + 10 + R() * 14; this.nz(this.abus(R() - .5, 1), 'lowpass', 160, 50, .8, t, 3 + R() * 2, .7, { brown: true, a: .4 }); this.nz(this.abus(0, .5), 'lowpass', 1200, 200, 1, t + .1, .6, .25, { a: .05 }); } }; break; }
+      case 'cave': this.loopN('pink', [['lowpass', 500]], .07);
+        tick = (t) => { if (R() < .07) { const f = 900 + R() * 900, b = this.abus(R() * 1.2 - .6, 1); this.osc(b, 'sine', f, f * .55, t, .08, .09); this.osc(b, 'sine', f * 1.5, f * .9, t + .002, .05, .03); } }; break;
+    }
+    if (tick) this.ambT = setInterval(() => { if (this.ctx.state === 'running') tick(this.ctx.currentTime + .05); }, 100);
+  },
+  chip(kind, x, vol, now) {
     const b = this.bus(x / 4, vol * .55), t = now, F = 1 / 60, r = 1 + (Math.random() - .5) * .14;
     const dec = (v0, n) => (i) => v0 * (1 - i / n);              // ровное затухание
     const exp = (f0, k) => (i) => f0 * Math.pow(k, i);           // скольжение высоты
@@ -631,7 +828,7 @@ scene.background = new T.Color('#3a1232');
 scene.fog = new T.Fog('#3a1232', 26, 60);
 const camera = new T.PerspectiveCamera(38, 1, .1, 100);
 
-scene.add(new T.HemisphereLight('#ffe6ee', '#4a1840', .6));
+const hemi = new T.HemisphereLight('#ffe6ee', '#4a1840', .6); scene.add(hemi);
 const sun = new T.DirectionalLight('#fff1e6', 1.1);
 sun.position.set(-5, 12, 6); sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
@@ -652,7 +849,7 @@ const glowTex = canvasTex(64, 64, (g, w) => {
 });
 glowTex.encoding = T.LinearEncoding;
 
-/* ---------- Рельефный мир: ткань с холмами, руслом сосуда и светящимися капиллярами ---------- */
+/* ---------- Фоны: 10 разных миров на выбор ---------- */
 const PATH_Y = -.16;        // кровь течёт в углублении
 function hash2(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
 function vnoise(x, z) {
@@ -663,6 +860,57 @@ function vnoise(x, z) {
 }
 function fbm(x, z) { let s = 0, a = .5, f = 1; for (let i = 0; i < 4; i++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= .5; } return s; }
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+// Каждая тема: небо и туман, свет, палитра земли, узор, украшения, искорки, площадки
+const THEMES = [
+  { name: 'Глубокий океан', bg: '#04142a', fog: [20, 58], hemi: ['#9fdcff', '#04101e', .65], sun: ['#cfe8ff', .95], rim: ['#3cf0ff', .7], exp: 1,
+    pal: ['#0d3a52', '#156078', '#2fb6c8', '#06202e', '#061a2e', '#14506e', '#7fe0e8'], amp: 1, freq: .16, pattern: 'caustics', veins: ['60,240,255', '140,200,255'], emi: .7,
+    blob: { geo: 'sphere', colors: ['#ff9ad0', '#9ff0ff', '#c8a6ff'], opacity: .55, size: [.2, .55], n: 16 },
+    stalk: { colors: ['#ff7a5a', '#ffb36b', '#ff5a8a'], tips: ['#ffe08a', '#7ff7ff'], h: [.4, 1.2], tip: 1, flat: 1, n: 18 },
+    motes: ['#7ff7ff', '#ffffff', '#9fdcff'], pad: '#d9f4ff', rim2: '#7ff7ff' },
+  { name: 'Закат в дюнах', bg: '#c86a5a', fog: [24, 64], hemi: ['#ffd9b0', '#7a3a3a', .85], sun: ['#ffb070', 1.25], rim: ['#8a6aff', .5], exp: 1,
+    pal: ['#d39462', '#e8b47e', '#c8603a', '#6a2a1a', '#a8604a', '#e0905a', '#ffd0a0'], amp: 1.3, freq: .1, pattern: 'ripples', veins: [], emi: .35,
+    blob: { geo: 'dodeca', colors: ['#9a5a3a', '#b87a52', '#7a4a32'], opacity: 1, size: [.2, .6], n: 14, flat: .6 },
+    stalk: { colors: ['#4f8a46', '#62a052'], tips: ['#ff9ad0', '#ffd36b'], h: [.5, 1.1], tip: 1.3, flat: 1, n: 12 },
+    motes: ['#ffe0a0', '#ffffff'], pad: '#fff0dc', rim2: '#ffb070' },
+  { name: 'Изумрудный лес', bg: '#0a2014', fog: [20, 52], hemi: ['#d8ffd0', '#0a2010', .65], sun: ['#fff2c8', 1.05], rim: ['#a8ff8a', .45], exp: 1,
+    pal: ['#2a5a2a', '#3e7e3a', '#7acb5a', '#123a18', '#0e2a14', '#2e6a32', '#8acb6a'], amp: 1.1, freq: .2, pattern: 'moss', veins: ['230,255,120'], emi: .4,
+    blob: { geo: 'sphere', colors: ['#2e6a32', '#3a7e3a', '#4a9040'], opacity: 1, size: [.3, .8], n: 16 },
+    stalk: { colors: ['#f2e6d0', '#e8dcc0'], tips: ['#ff5a4a', '#ffb03a', '#e8e0ff'], h: [.25, .6], tip: 2.6, flat: .5, n: 18 },
+    motes: ['#e8ff6a', '#ffe06a'], pad: '#f0ffe8', rim2: '#c8ff6a' },
+  { name: 'Ледяные кристаллы', bg: '#0e1a33', fog: [24, 60], hemi: ['#e8f6ff', '#1a2a4a', .85], sun: ['#ffffff', 1.1], rim: ['#7ad8ff', .8], exp: 1,
+    pal: ['#7aa6d4', '#a8c8ea', '#6ab8ff', '#2a4a7a', '#3a5a8a', '#8ab0d8', '#ffffff'], amp: 1.2, freq: .2, pattern: 'ice', veins: ['200,240,255'], emi: .5,
+    blob: { geo: 'octa', colors: ['#bfefff', '#d8c8ff', '#ffffff'], opacity: .8, size: [.25, .75], n: 20, tall: 1.9 },
+    stalk: null, motes: ['#ffffff', '#bfefff'], pad: '#ffffff', rim2: '#7ad8ff' },
+  { name: 'Звёздная туманность', bg: '#07051a', fog: [26, 70], hemi: ['#c8b4ff', '#05031a', .6], sun: ['#e8d8ff', .85], rim: ['#ff6ad8', .75], exp: 1,
+    pal: ['#1a1440', '#2a1e5a', '#8a5aff', '#0a0620', '#0c0828', '#2a1a5a', '#8a6aff'], amp: .9, freq: .14, pattern: 'stars', veins: ['255,110,220', '140,200,255'], emi: .9,
+    blob: { geo: 'sphere', colors: ['#ff9ad0', '#8fe8ff', '#ffe08a', '#b48aff'], opacity: .9, size: [.15, .5], n: 14, glow: true },
+    stalk: null, motes: ['#ffffff', '#c8a6ff', '#8fe8ff'], pad: '#e8e0ff', rim2: '#ff6ad8' },
+  { name: 'Вулкан', bg: '#140604', fog: [20, 52], hemi: ['#ffb08a', '#1a0604', .55], sun: ['#ffcf9a', .95], rim: ['#ff5a1a', .85], exp: 1,
+    pal: ['#2e1e1a', '#3e2a24', '#ff6a1a', '#1a0a06', '#140806', '#3a2a26', '#6a5a56'], amp: 1.3, freq: .18, pattern: 'lava', veins: ['255,120,30', '255,190,60'], emi: 1,
+    blob: { geo: 'dodeca', colors: ['#2a2220', '#3a302c', '#1e1816'], opacity: 1, size: [.25, .7], n: 16, flat: .7 },
+    stalk: null, motes: ['#ffb03a', '#ff6a1a'], pad: '#e8d8d0', rim2: '#ff8a3a' },
+  { name: 'Весенний луг', bg: '#7ec0ea', fog: [26, 64], hemi: ['#ffffff', '#5a8a3a', .95], sun: ['#fff6e0', 1.25], rim: ['#ffffff', .35], exp: 1,
+    pal: ['#74c056', '#94d468', '#c8f08a', '#3a6a2a', '#5aa04a', '#7ac85a', '#d8f8a8'], amp: .9, freq: .14, pattern: 'flowers', veins: [], emi: .3,
+    blob: { geo: 'sphere', colors: ['#4a9a3a', '#5ab04a', '#3e8a34'], opacity: 1, size: [.3, .7], n: 14 },
+    stalk: { colors: ['#4a9a3a'], tips: ['#ff6a8a', '#ffd34a', '#ffffff', '#b48aff'], h: [.25, .55], tip: 1.9, flat: .7, n: 24 },
+    motes: ['#ffffff', '#ffd34a'], pad: '#fffaf0', rim2: '#ffd34a' },
+  { name: 'Неоновый город', bg: '#05030c', fog: [24, 62], hemi: ['#8a8aff', '#05030c', .5], sun: ['#c8c8ff', .75], rim: ['#ff2ad8', .9], exp: 1,
+    pal: ['#0e0c1c', '#16122c', '#2af0ff', '#05030c', '#08061a', '#141030', '#2a2060'], amp: .6, freq: .12, pattern: 'grid', veins: [], emi: 1,
+    blob: null,
+    stalk: { colors: ['#1a1440', '#221a50'], tips: ['#2af0ff', '#ff2ad8', '#ffe02a'], h: [.7, 2], tip: 1.5, flat: 1, n: 16, thick: 2.2 },
+    motes: ['#2af0ff', '#ff2ad8'], pad: '#e0f8ff', rim2: '#2af0ff' },
+  { name: 'Мрамор и золото', bg: '#d8cfc4', fog: [28, 72], hemi: ['#ffffff', '#a89a8a', .95], sun: ['#fff6e8', 1.1], rim: ['#ffd38a', .4], exp: .95,
+    pal: ['#cdbfa8', '#e2d6c2', '#d8b46a', '#8a6a3a', '#b8aa98', '#d8ccb8', '#fff8ec'], amp: 1, freq: .14, pattern: 'marble', veins: [], emi: .45,
+    blob: { geo: 'sphere', colors: ['#ffffff', '#f0e0ff', '#ffe8d0'], opacity: 1, size: [.15, .45], n: 14 },
+    stalk: { colors: ['#f0ece8'], tips: ['#ffd36b'], h: [.8, 1.6], tip: 1.6, flat: .45, n: 10, thick: 2.4 },
+    motes: ['#ffd36b', '#ffffff'], pad: '#ffffff', rim2: '#ffd36b' },
+  { name: 'Облачное небо', bg: '#7ab0e8', fog: [24, 62], hemi: ['#ffffff', '#7a9ac8', .95], sun: ['#fffaf0', 1.2], rim: ['#ffd8f0', .5], exp: .95,
+    pal: ['#a8c4ea', '#c8dcf6', '#ffc8d8', '#7a94c0', '#a8c0e8', '#e8f0ff', '#ffffff'], amp: 1.4, freq: .12, pattern: 'clouds', veins: [], emi: .35,
+    blob: { geo: 'sphere', colors: ['#ffffff', '#f4f8ff', '#fff0f6'], opacity: .95, size: [.4, .95], n: 18 },
+    stalk: null, motes: ['#ffffff', '#ffe8a0'], pad: '#ffffff', rim2: '#ffc8d8' }
+];
+let TH = THEMES[0];
 
 const TER = { hash: new Map(), box: new T.Box3(), mesh: null };
 function pathDist(x, z) {
@@ -679,14 +927,83 @@ function boxDist(x, z) {
 }
 function heightAt(x, z) {
   const db = boxDist(x, z), dp = pathDist(x, z);
-  let h = (fbm(x * .5 + 3, z * .5) - .5) * .06;                                  // лёгкая неровность поля
-  h += smooth(0, 3.5, db) * (.5 + 2.2 * fbm(x * .16, z * .16)) + db * .09;      // холмы вокруг поля
-  const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.4, .78, dp);        // русло сосуда
+  let h = (fbm(x * .5 + 3, z * .5) - .5) * .05;
+  if (TH.pattern === 'ripples') h += Math.sin(x * 1.1 + z * .5 + fbm(x * .3, z * .3) * 4) * .12 * smooth(0, 2, db);
+  h += smooth(0, 3.5, db) * (.5 + 2.2 * fbm(x * TH.freq, z * TH.freq)) * TH.amp + db * .09 * TH.amp;
+  const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.4, .78, dp);
   return Math.min(h, trench + Math.max(0, h) * smooth(.4, 1.2, dp));
 }
-const terrainMat = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: .5, metalness: 0, clearcoat: .55, clearcoatRoughness: .35, emissive: '#ffffff', emissiveIntensity: .6 });
+const terrainMat = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: .5, metalness: 0, clearcoat: .45, clearcoatRoughness: .35, emissive: '#ffffff', emissiveIntensity: .6 });
+
+// Цвет точки земли по теме и узору
+function groundColor(x, z, h, dp, db, col, tmp, P) {
+  const n = fbm(x * .7, z * .7);
+  switch (TH.pattern) {
+    case 'ripples': col.copy(P[0]).lerp(P[1], .5 + .5 * Math.sin(x * 2.2 + z * .9 + fbm(x * .4, z * .4) * 5)); break;
+    case 'marble': { const w = Math.abs(Math.sin((x + fbm(x * .4, z * .4) * 6) * 1.3)); col.copy(P[1]).lerp(P[0], smooth(.0, .5, w)).lerp(new T.Color('#b8b0a8'), (1 - smooth(0, .06, w)) * .6); break; }
+    case 'moss': col.copy(P[0]).lerp(P[1], smooth(.35, .7, fbm(x * 2.2, z * 2.2))); break;
+    case 'ice': col.copy(P[0]).lerp(P[1], smooth(.3, .8, n)).lerp(new T.Color('#ffffff'), smooth(.65, .9, fbm(x * 1.5, z * 1.5)) * .6); break;
+    case 'clouds': col.copy(P[0]).lerp(P[1], smooth(.3, .7, fbm(x * .9, z * .9))); break;
+    case 'stars': case 'grid': col.copy(P[0]).lerp(P[1], smooth(.4, .8, n) * .6); break;
+    default: col.copy(P[0]).lerp(P[1], smooth(.3, .75, n));
+  }
+  if (db > 0) { tmp.copy(P[4]).lerp(P[5], smooth(0, 1.6, h)).lerp(P[6], smooth(1.4, 2.8, h) * .8); col.lerp(tmp, smooth(0, 1.5, db)); }
+  col.lerp(P[2], (1 - smooth(.45, 1.05, dp)) * .6);
+  col.lerp(P[3], 1 - smooth(.3, .5, dp));
+  return col;
+}
+// Светящийся узор поверх земли (рисуется в мировых координатах)
+function drawPattern(g, S, x0, z0, k) {
+  const R = Math.random, onBoard = (px, py) => boxDist(px / k + x0, py / k + z0) < .5;
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  const branch = (x, y, a, w, depth, tone) => {
+    if (depth <= 0 || w < .5) return;
+    g.beginPath(); g.moveTo(x, y);
+    for (let i = 0; i < 7; i++) { a += (R() - .5) * .55; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); }
+    g.shadowColor = `rgb(${tone})`; g.shadowBlur = 9; g.strokeStyle = `rgba(${tone},${.22 + w * .08})`; g.lineWidth = w * .85; g.stroke();
+    branch(x, y, a + .5 + R() * .3, w * .74, depth - 1, tone);
+    if (R() < .75) branch(x, y, a - .5 - R() * .3, w * .7, depth - 1, tone);
+  };
+  const glowDot = (x, y, r, rgb, a) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); };
+  switch (TH.pattern) {
+    case 'caustics':
+      for (let i = 0; i < 70; i++) { const y0 = R() * S, amp = 6 + R() * 14, ph = R() * 6; g.beginPath(); for (let x = 0; x <= S; x += 8) g.lineTo(x, y0 + Math.sin(x * .02 + ph) * amp + Math.sin(x * .053 + ph * 2) * amp * .5); g.strokeStyle = `rgba(150,240,255,${.06 + R() * .08})`; g.lineWidth = 1.5 + R() * 2; g.shadowBlur = 6; g.shadowColor = '#7ff7ff'; g.stroke(); }
+      break;
+    case 'stars':
+      for (let i = 0; i < 9; i++) glowDot(R() * S, R() * S, 80 + R() * 160, ['160,90,255', '255,90,200', '90,160,255'][i % 3], .18);
+      for (let i = 0; i < 900; i++) { const r = R() < .9 ? .8 + R() : 1.6 + R() * 1.5; g.fillStyle = `rgba(255,255,255,${.4 + R() * .6})`; g.beginPath(); g.arc(R() * S, R() * S, r, 0, 7); g.fill(); }
+      break;
+    case 'grid': {
+      const step = k; g.shadowBlur = 8;
+      for (let x = (-x0 % 1) * k; x < S; x += step) { g.strokeStyle = 'rgba(42,240,255,.28)'; g.shadowColor = '#2af0ff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
+      for (let y = (-z0 % 1) * k; y < S; y += step) { g.strokeStyle = 'rgba(255,42,216,.24)'; g.shadowColor = '#ff2ad8'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, y); g.lineTo(S, y); g.stroke(); }
+      break; }
+    case 'lava':
+      for (let i = 0; i < 40; i++) { let x, y, t = 0; do { x = R() * S; y = R() * S; t++; } while (t < 20 && onBoard(x, y)); branch(x, y, R() * 7, 4.5, 6, i % 3 ? '255,120,30' : '255,200,70'); }
+      for (let i = 0; i < 60; i++) glowDot(R() * S, R() * S, 10 + R() * 25, '255,110,30', .25);
+      break;
+    case 'ice':
+      g.shadowBlur = 6; g.shadowColor = '#bfefff';
+      for (let i = 0; i < 120; i++) { let x = R() * S, y = R() * S, a = R() * 7; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 4; j++) { a += (R() - .5) * 1.2; x += Math.cos(a) * (8 + R() * 18); y += Math.sin(a) * (8 + R() * 18); g.lineTo(x, y); } g.strokeStyle = `rgba(220,248,255,${.15 + R() * .2})`; g.lineWidth = .8 + R(); g.stroke(); }
+      break;
+    case 'marble':
+      g.shadowBlur = 5; g.shadowColor = '#ffd36b';
+      for (let i = 0; i < 26; i++) { let x = R() * S, y = R() * S, a = R() * 7; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 30; j++) { a += (R() - .5) * .35; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); } g.strokeStyle = `rgba(230,180,80,${.25 + R() * .25})`; g.lineWidth = .8 + R() * 1.6; g.stroke(); }
+      break;
+    case 'flowers':
+      for (let i = 0; i < 500; i++) { const x = R() * S, y = R() * S; if (onBoard(x, y) && R() < .7) continue; g.fillStyle = ['rgba(255,110,140,.6)', 'rgba(255,215,80,.6)', 'rgba(255,255,255,.6)', 'rgba(180,140,255,.6)'][i % 4]; g.beginPath(); g.arc(x, y, 1.5 + R() * 2.5, 0, 7); g.fill(); }
+      break;
+    case 'clouds':
+      for (let i = 0; i < 70; i++) glowDot(R() * S, R() * S, 30 + R() * 70, i % 4 ? '255,255,255' : '255,210,230', .18);
+      break;
+    case 'moss':
+      for (let i = 0; i < 160; i++) { const x = R() * S, y = R() * S; if (onBoard(x, y)) continue; glowDot(x, y, 3 + R() * 6, '230,255,120', .35); }
+      break;
+  }
+  TH.veins.forEach((tone, ti) => { for (let i = 0; i < 18; i++) { let x, y, t = 0; do { x = R() * S; y = R() * S; t++; } while (t < 20 && onBoard(x, y)); branch(x, y, R() * 7, 3.2, 6, tone); } });
+}
+
 function buildTerrain() {
-  // точки сосуда в сетку для быстрого расстояния
   TER.hash.clear();
   for (let d = 0; d <= PATH.len; d += .12) { const p = pathAt(d); const k = Math.floor(p.x) + ',' + Math.floor(p.z); if (!TER.hash.has(k)) TER.hash.set(k, []); TER.hash.get(k).push(p.x, p.z); }
   TER.box = new T.Box3(); pads.forEach(p => TER.box.expandByPoint(p.pos)); TER.box.expandByObject(organ); TER.box.expandByPoint(PATH.pts[0]);
@@ -695,66 +1012,40 @@ function buildTerrain() {
   const W = Math.max(sz.x, sz.z) + 26, res = .17, seg = Math.min(300, Math.ceil(W / res));
   const geo = new T.PlaneGeometry(W, W, seg, seg); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), col = new T.Color(), tmp = new T.Color();
-  const P = {
-    floorA: new T.Color('#5e1836'), floorB: new T.Color('#86284c'), bank: new T.Color('#e8506e'), bed: new T.Color('#3a0816'),
-    valley: new T.Color('#5a1e4a'), hill: new T.Color('#c0588a'), crest: new T.Color('#ffc4d6'), vein: new T.Color('#ff5a7c')
-  };
+  const P = TH.pal.map(h => new T.Color(h));
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + c.x, z = pos.getZ(i) + c.z;
-    const h = heightAt(x, z), dp = pathDist(x, z), db = boxDist(x, z), n = fbm(x * .7, z * .7);
+    const h = heightAt(x, z), dp = pathDist(x, z), db = boxDist(x, z);
     pos.setXYZ(i, x, h, z);
-    col.copy(P.floorA).lerp(P.floorB, smooth(.3, .75, n));
-    if (db > 0) { tmp.copy(P.valley).lerp(P.hill, smooth(0, 1.6, h)).lerp(P.crest, smooth(1.4, 2.8, h) * .8); col.lerp(tmp, smooth(0, 1.5, db)); }
-    col.lerp(P.bank, (1 - smooth(.45, 1.05, dp)) * .75);
-    col.lerp(P.bed, 1 - smooth(.3, .5, dp));
-    const vein = 1 - smooth(.0, .035, Math.abs(fbm(x * .33 + 9, z * .33) - .5));
-    col.lerp(P.vein, vein * (db > 0 ? .55 : .25));
+    groundColor(x, z, h, dp, db, col, tmp, P);
     cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
   }
   geo.setAttribute('color', new T.BufferAttribute(cols, 3)); geo.computeVertexNormals();
-  // Свечение: капилляры на холмах и тёплое зарево вдоль сосуда
   const S = 1024, x0 = c.x - W / 2, z0 = c.z - W / 2, k = S / W;
+  const bank = new T.Color(TH.pal[2]), bankRGB = `${bank.r * 255 | 0},${bank.g * 255 | 0},${bank.b * 255 | 0}`;
   const emi = canvasTex(S, S, (g) => {
     g.fillStyle = '#000'; g.fillRect(0, 0, S, S);
     g.lineCap = 'round'; g.lineJoin = 'round';
-    g.shadowColor = '#ff2a4a'; g.shadowBlur = 22; g.strokeStyle = 'rgba(255,40,70,.22)'; g.lineWidth = 1.4 * k;
+    g.shadowColor = TH.pal[2]; g.shadowBlur = 22; g.strokeStyle = `rgba(${bankRGB},.25)`; g.lineWidth = 1.4 * k;
     g.beginPath(); PATH.pts.forEach((p, i) => i ? g.lineTo((p.x - x0) * k, (p.z - z0) * k) : g.moveTo((p.x - x0) * k, (p.z - z0) * k)); g.stroke();
-    // артерии — алые, вены — голубые, лимфа — золотистая
-    const TONES = [['255,70,100', '#ff3a5c'], ['110,175,255', '#4a9cff'], ['255,205,110', '#ffb84a']];
-    const branch = (x, y, a, w, depth, tone) => {
-      if (depth <= 0 || w < .5) return;
-      g.beginPath(); g.moveTo(x, y);
-      for (let i = 0; i < 7; i++) { a += (Math.random() - .5) * .55; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); }
-      g.shadowColor = tone[1]; g.shadowBlur = 9; g.strokeStyle = `rgba(${tone[0]},${.22 + w * .08})`; g.lineWidth = w * .85; g.stroke();
-      branch(x, y, a + .5 + Math.random() * .3, w * .74, depth - 1, tone);
-      if (Math.random() < .75) branch(x, y, a - .5 - Math.random() * .3, w * .7, depth - 1, tone);
-    };
-    for (let i = 0; i < 42; i++) {
-      let x, y, tries = 0;
-      do { x = Math.random() * S; y = Math.random() * S; tries++; } while (tries < 20 && boxDist(x / k + x0, y / k + z0) < .6);
-      branch(x, y, Math.random() * 7, 3.4, 6, TONES[i % 5 === 0 ? 2 : i % 2]);
-    }
-    for (let i = 0; i < 260; i++) {
-      const x = Math.random() * S, y = Math.random() * S; if (boxDist(x / k + x0, y / k + z0) > .5) continue;
-      const r = (.25 + Math.random() * .45) * k, tint = ['190,140,255', '120,230,210', '255,200,120', '120,190,255', '255,150,200'][i % 5];
-      const gr = g.createRadialGradient(x, y, r * .2, x, y, r); gr.addColorStop(0, `rgba(${tint},.16)`); gr.addColorStop(.7, `rgba(${tint},.07)`); gr.addColorStop(1, `rgba(${tint},0)`);
-      g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-    }
-    for (let i = 0; i < 140; i++) { const x = Math.random() * S, y = Math.random() * S; if (boxDist(x / k + x0, y / k + z0) < .5) continue; const r = 2 + Math.random() * 5; const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); const tint = ['255,190,215', '150,235,255', '255,225,150'][i % 3]; gr.addColorStop(0, `rgba(${tint},.55)`); gr.addColorStop(1, `rgba(${tint},0)`); g.fillStyle = gr; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6); }
+    g.shadowBlur = 0;
+    drawPattern(g, S, x0, z0, k);
   });
-  terrainMat.emissiveMap = emi; terrainMat.needsUpdate = true;
+  if (terrainMat.emissiveMap) terrainMat.emissiveMap.dispose();
+  terrainMat.emissiveMap = emi; terrainMat.emissiveIntensity = TH.emi; terrainMat.needsUpdate = true;
   if (TER.mesh) { scene.remove(TER.mesh); TER.mesh.geometry.dispose(); }
   TER.mesh = new T.Mesh(geo, terrainMat); TER.mesh.receiveShadow = true; scene.add(TER.mesh);
   warm.position.set(c.x, 3.5, c.z);
   buildDecor();
 }
 
-// Украшения на холмах: гроздья клеток-пузырей и колышущиеся ворсинки со светящимися кончиками
+// Украшения темы: «капли» (пузыри, камни, кристаллы, кусты) и «стебли» (кораллы, грибы, цветы, колонны, неоновые столбы)
 const DECOR = { bub: null, vil: null, tip: null, data: [], bdata: [] };
-const bubGeo = new T.SphereGeometry(1, 24, 16), vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = new T.SphereGeometry(1, 14, 10);
+const BLOB_GEO = { sphere: new T.SphereGeometry(1, 24, 16), octa: new T.OctahedronGeometry(1, 0), dodeca: new T.DodecahedronGeometry(1, 0) };
+const vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = new T.SphereGeometry(1, 14, 10);
 vilGeo.translate(0, .57, 0);
-const bubMat = new T.MeshPhysicalMaterial({ roughness: .12, metalness: 0, clearcoat: 1, transparent: true, opacity: .78, emissive: '#3a1030', emissiveIntensity: .35 });
-const vilMat = new T.MeshPhysicalMaterial({ roughness: .35, clearcoat: .7, emissive: '#3a0a1a', emissiveIntensity: .25 });
+const bubMat = new T.MeshPhysicalMaterial({ roughness: .12, metalness: 0, clearcoat: 1, transparent: true, opacity: .78, emissive: '#000000', emissiveIntensity: 1 });
+const vilMat = new T.MeshPhysicalMaterial({ roughness: .35, clearcoat: .7 });
 const tipMat = new T.MeshBasicMaterial({ toneMapped: false });
 function decorSpots(n, dmin, dmax) {
   const out = [], b = TER.box; let tries = 0;
@@ -766,60 +1057,79 @@ function decorSpots(n, dmin, dmax) {
   return out;
 }
 function buildDecor() {
-  for (const k of ['bub', 'vil', 'tip']) if (DECOR[k]) { scene.remove(DECOR[k]); DECOR[k].dispose(); }
-  const BUB = ['#d8b4ff', '#9ff0d8', '#ffc4a8', '#a8d8ff', '#ffb0d0'].map(c => new T.Color(c));
-  const bl = [];
-  decorSpots(18, 1.1, 8).forEach(([cx, cz]) => {
-    const n = 3 + (Math.random() * 4 | 0);
-    for (let i = 0; i < n; i++) { const r = .14 + Math.random() * .36, x = cx + (Math.random() - .5) * 1.1, z = cz + (Math.random() - .5) * 1.1; bl.push({ x, z, r, y: heightAt(x, z) + r * .7, ph: Math.random() * 6, c: BUB[Math.random() * BUB.length | 0] }); }
-  });
-  const VIL = ['#ff8aa0', '#ffb08a', '#ff9ac8', '#ffc2a0'].map(c => new T.Color(c)), TIP = ['#7ff7ff', '#ffd36b', '#ff9ad0', '#b8ff8a'].map(c => new T.Color(c));
-  const vl = [];
-  decorSpots(20, 1.3, 9).forEach(([cx, cz]) => {
-    const tc = TIP[Math.random() * TIP.length | 0];
-    for (let i = 0; i < 7; i++) { const x = cx + (Math.random() - .5) * 1.1, z = cz + (Math.random() - .5) * 1.1; vl.push({ x, z, h: .45 + Math.random() * 1.05, y: heightAt(x, z) - .05, ph: Math.random() * 6, c: VIL[Math.random() * VIL.length | 0], tc }); }
-  });
-  DECOR.bub = new T.InstancedMesh(bubGeo, bubMat, Math.max(1, bl.length)); bl.forEach((b, i) => DECOR.bub.setColorAt(i, b.c));
-  DECOR.vil = new T.InstancedMesh(vilGeo, vilMat, Math.max(1, vl.length)); DECOR.tip = new T.InstancedMesh(tipGeo, tipMat, Math.max(1, vl.length));
-  vl.forEach((v, i) => { DECOR.vil.setColorAt(i, v.c); DECOR.tip.setColorAt(i, v.tc); });
-  DECOR.bdata = bl; DECOR.data = vl;
-  DECOR.bub.castShadow = DECOR.vil.castShadow = true;
-  for (const k of ['bub', 'vil', 'tip']) scene.add(DECOR[k]);
+  for (const k of ['bub', 'vil', 'tip']) if (DECOR[k]) { scene.remove(DECOR[k]); DECOR[k].dispose(); DECOR[k] = null; }
+  DECOR.data = []; DECOR.bdata = [];
+  const pick = (a) => a[Math.random() * a.length | 0];
+  if (TH.blob) {
+    const B = TH.blob, cols = B.colors.map(c => new T.Color(c));
+    decorSpots(B.n, 1.1, 8).forEach(([cx, cz]) => {
+      const n = 3 + (Math.random() * 4 | 0);
+      for (let i = 0; i < n; i++) { const r = B.size[0] + Math.random() * (B.size[1] - B.size[0]), x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : .65), ph: Math.random() * 6, c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .4 }); }
+    });
+    bubMat.opacity = B.opacity; bubMat.transparent = B.opacity < 1; bubMat.roughness = B.geo === 'sphere' ? .12 : .45;
+    bubMat.flatShading = B.geo !== 'sphere'; bubMat.emissive.set(B.glow ? '#ffffff' : '#000000'); bubMat.emissiveIntensity = B.glow ? .35 : 1; bubMat.needsUpdate = true;
+    DECOR.bub = new T.InstancedMesh(BLOB_GEO[B.geo], bubMat, Math.max(1, DECOR.bdata.length));
+    DECOR.bdata.forEach((b, i) => DECOR.bub.setColorAt(i, b.c));
+    DECOR.bub.castShadow = true; scene.add(DECOR.bub);
+  }
+  if (TH.stalk) {
+    const S = TH.stalk, cols = S.colors.map(c => new T.Color(c)), tips = S.tips.map(c => new T.Color(c));
+    decorSpots(S.n, 1.3, 9).forEach(([cx, cz]) => {
+      const tc = pick(tips);
+      for (let i = 0; i < 6; i++) { const x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; DECOR.data.push({ x, z, h: S.h[0] + Math.random() * (S.h[1] - S.h[0]), y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc }); }
+    });
+    vilMat.emissive.set(TH.pattern === 'grid' ? '#1a1060' : '#000000'); vilMat.needsUpdate = true;
+    DECOR.vil = new T.InstancedMesh(vilGeo, vilMat, Math.max(1, DECOR.data.length)); DECOR.tip = new T.InstancedMesh(tipGeo, tipMat, Math.max(1, DECOR.data.length));
+    DECOR.data.forEach((v, i) => { DECOR.vil.setColorAt(i, v.c); DECOR.tip.setColorAt(i, v.tc); });
+    DECOR.vil.castShadow = true; scene.add(DECOR.vil, DECOR.tip);
+  }
   animateDecor(0);
 }
 const dmy = new T.Object3D(), upV = new T.Vector3();
 function animateDecor(now) {
-  if (!DECOR.vil) return;
-  DECOR.data.forEach((v, i) => {
-    dmy.position.set(v.x, v.y, v.z); dmy.rotation.set(Math.sin(now * 1.3 + v.ph) * .16, 0, Math.cos(now * 1.1 + v.ph * 1.7) * .16); dmy.scale.set(1, v.h, 1); dmy.updateMatrix();
-    DECOR.vil.setMatrixAt(i, dmy.matrix);
-    upV.set(0, v.h * 1.14 + .02, 0).applyEuler(dmy.rotation);
-    dmy.position.set(v.x + upV.x, v.y + upV.y, v.z + upV.z); const ts = .09 + .025 * Math.sin(now * 3 + v.ph); dmy.scale.set(ts, ts, ts); dmy.updateMatrix();
-    DECOR.tip.setMatrixAt(i, dmy.matrix);
-  });
-  DECOR.bdata.forEach((b, i) => {
-    const s = b.r * (1 + .05 * Math.sin(now * 2 + b.ph));
-    dmy.position.set(b.x, b.y + Math.sin(now * .8 + b.ph) * .04, b.z); dmy.rotation.set(0, 0, 0); dmy.scale.set(s, s * .92, s); dmy.updateMatrix();
-    DECOR.bub.setMatrixAt(i, dmy.matrix);
-  });
-  DECOR.vil.instanceMatrix.needsUpdate = DECOR.tip.instanceMatrix.needsUpdate = DECOR.bub.instanceMatrix.needsUpdate = true;
+  if (DECOR.vil) {
+    const S = TH.stalk, thick = S.thick || 1, sway = TH.pattern === 'grid' || TH.pattern === 'marble' ? .02 : .16;
+    DECOR.data.forEach((v, i) => {
+      dmy.position.set(v.x, v.y, v.z); dmy.rotation.set(Math.sin(now * 1.3 + v.ph) * sway, 0, Math.cos(now * 1.1 + v.ph * 1.7) * sway); dmy.scale.set(thick, v.h, thick); dmy.updateMatrix();
+      DECOR.vil.setMatrixAt(i, dmy.matrix);
+      upV.set(0, v.h * 1.14 + .02, 0).applyEuler(dmy.rotation);
+      const ts = (.09 + .02 * Math.sin(now * 3 + v.ph)) * S.tip;
+      dmy.position.set(v.x + upV.x, v.y + upV.y, v.z + upV.z); dmy.scale.set(ts, ts * S.flat, ts); dmy.updateMatrix();
+      DECOR.tip.setMatrixAt(i, dmy.matrix);
+    });
+    DECOR.vil.instanceMatrix.needsUpdate = DECOR.tip.instanceMatrix.needsUpdate = true;
+  }
+  if (DECOR.bub) {
+    const B = TH.blob;
+    DECOR.bdata.forEach((b, i) => {
+      const pulse = B.geo === 'sphere' ? 1 + .05 * Math.sin(now * 2 + b.ph) : 1;
+      dmy.position.set(b.x, b.y + (B.geo === 'sphere' ? Math.sin(now * .8 + b.ph) * .04 : 0), b.z);
+      dmy.rotation.set(b.rx, b.rot + (B.glow ? now * .3 : 0), 0);
+      dmy.scale.set(b.r * pulse, b.r * pulse * (B.tall || B.flat || .92), b.r * pulse); dmy.updateMatrix();
+      DECOR.bub.setMatrixAt(i, dmy.matrix);
+    });
+    DECOR.bub.instanceMatrix.needsUpdate = true;
+  }
 }
 
-// Плавающие эритроциты, тромбоциты и блики — фон живёт, но не мешает игре
+// Искорки темы: светлячки, снег, пузырьки, звёзды, угольки
 const drift = [];
-{
-  const rbcGeo = new T.TorusGeometry(.2, .11, 12, 28);
-  const rbcMat = new T.MeshPhysicalMaterial({ color: '#d4283f', roughness: .3, clearcoat: .8, emissive: '#4a0410', emissiveIntensity: .6 });
-  for (let i = 0; i < 30; i++) {
-    const m = new T.Mesh(rbcGeo, rbcMat); m.rotation.set(Math.random() * 3, Math.random() * 3, 0);
-    m.userData = { v: new T.Vector3((Math.random() - .3) * .5, 0, (Math.random() - .5) * .35), spin: (Math.random() - .5) * .8, y: .35 + Math.random() * .5 };
-    m.castShadow = true; scene.add(m); drift.push(m);
-  }
-  for (let i = 0; i < 40; i++) {
-    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: ['#ff9ab8', '#8fe8ff', '#ffe08a', '#c8a6ff'][i % 4], blending: T.AdditiveBlending, depthWrite: false, opacity: .5 }));
-    const sc = .12 + Math.random() * .22; s.scale.set(sc, sc, 1);
-    s.userData = { mote: true, ph: Math.random() * 6, sp: .2 + Math.random() * .4, y: .6 + Math.random() * 2 }; scene.add(s); drift.push(s);
-  }
+for (let i = 0; i < 44; i++) {
+  const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffffff', blending: T.AdditiveBlending, depthWrite: false, opacity: .5 }));
+  const sc = .12 + Math.random() * .22; s.scale.set(sc, sc, 1);
+  s.userData = { mote: true, ph: Math.random() * 6, sp: .2 + Math.random() * .4, y: .6 + Math.random() * 2 }; scene.add(s); drift.push(s);
+}
+
+function applyTheme(i) {
+  TH = THEMES[(i + THEMES.length) % THEMES.length];
+  scene.background = new T.Color(TH.bg); scene.fog.color.set(TH.bg); scene.fog.near = TH.fog[0]; scene.fog.far = TH.fog[1];
+  hemi.color.set(TH.hemi[0]); hemi.groundColor.set(TH.hemi[1]); hemi.intensity = TH.hemi[2];
+  sun.color.set(TH.sun[0]); sun.intensity = TH.sun[1]; rim.color.set(TH.rim[0]); rim.intensity = TH.rim[1];
+  warm.color.set(TH.rim[0]); renderer.toneMappingExposure = TH.exp;
+  padMat.color.set(TH.pad); padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
+  drift.forEach((m, k) => m.material.color.set(TH.motes[k % TH.motes.length]));
+  document.documentElement.style.setProperty('--stagebg', TH.bg);
+  if (PATH) { buildTerrain(); updateBackdrop(); }
 }
 
 /* ---------- Поле: строится под размер экрана ---------- */
@@ -933,22 +1243,19 @@ function updateBackdrop() {
   drift.forEach(m => {
     let x, z, k = 0;
     do { x = outer.min.x + Math.random() * (outer.max.x - outer.min.x); z = outer.min.z + Math.random() * (outer.max.z - outer.min.z); k++; }
-    while (k < 40 && boxDist(x, z) < (m.userData.mote ? .2 : 1.2));
+    while (k < 40 && boxDist(x, z) < .2);
     m.position.set(x, heightAt(x, z) + m.userData.y, z);
   });
 }
 function animateBackdrop(dt, now) {
   animateDecor(now);
-  const o = TER.box.clone().expandByScalar(7);
   for (const m of drift) {
     const u = m.userData;
-    if (u.mote) { m.position.y += dt * u.sp * .3; m.material.opacity = .25 + .25 * Math.sin(now * u.sp * 3 + u.ph); if (m.position.y > heightAt(m.position.x, m.position.z) + 3) m.position.y = heightAt(m.position.x, m.position.z) + .3; continue; }
-    m.position.addScaledVector(u.v, dt); m.rotation.x += u.spin * dt; m.rotation.z += u.spin * dt * .6;
-    if (m.position.x > o.max.x) m.position.x = o.min.x; if (m.position.x < o.min.x) m.position.x = o.max.x;
-    if (m.position.z > o.max.z) m.position.z = o.min.z; if (m.position.z < o.min.z) m.position.z = o.max.z;
-    const gh = heightAt(m.position.x, m.position.z), inside = boxDist(m.position.x, m.position.z) < 1;
-    const ty = inside ? gh + 1.6 : gh + u.y;
-    m.position.y += (ty - m.position.y) * Math.min(1, dt * 2) + Math.sin(now + m.rotation.x) * .002;
+    const fall = TH.pattern === 'ice' || TH.pattern === 'clouds' ? -1 : 1;
+    m.position.y += dt * u.sp * .3 * fall; m.position.x += Math.sin(now * u.sp + u.ph) * dt * .15;
+    m.material.opacity = .25 + .25 * Math.sin(now * u.sp * 3 + u.ph);
+    const gh = heightAt(m.position.x, m.position.z);
+    if (m.position.y > gh + 3.2) m.position.y = gh + .3; if (m.position.y < gh + .1) m.position.y = gh + 3;
   }
 }
 const bloodMat = new T.MeshStandardMaterial({ map: bloodTex, roughness: .18, metalness: .05, emissive: '#5a0612', emissiveIntensity: .5, side: T.DoubleSide });
@@ -1276,10 +1583,10 @@ function computeBonus() {
 const tier = (k) => G.bonus[k]?.t || 0;
 
 function unitStats(u) {
-  const d = u.def, s = u.stars - 1;
-  let range = d.range + STAR_RANGE[s] + (d.fac === 'snipe' ? [0, .6, 1.2][tier('snipe')] : 0);
-  let rate = d.rate * STAR_RATE[s] * (d.org === 'innate' ? [1, .87, .72][tier('innate')] : 1);
-  let dmg = d.dmg * STAR_DMG[s] * (d.fac === 'ig' ? [1, 1.3, 1.7, 2.5][tier('ig')] : 1);
+  const d = u.def, s = u.level - 1;
+  let range = d.range + LV_RANGE[s] + (d.fac === 'snipe' ? [0, .6, 1.2][tier('snipe')] : 0);
+  let rate = d.rate * LV_RATE[s] * (d.org === 'innate' ? [1, .87, .72][tier('innate')] : 1);
+  let dmg = d.dmg * LV_DMG[s] * (d.fac === 'ig' ? [1, 1.3, 1.7, 2.5][tier('ig')] : 1);
   return { range, rate, dmg };
 }
 
@@ -1372,7 +1679,7 @@ function applyHit(e, u, s, opt = {}) {
     e.slow = Math.max(e.slowT > 0 ? e.slow : 0, amt); e.slowT = Math.max(e.slowT, dur);
   }
   if (d.stun) e.stunT = Math.max(e.stunT, d.stun * [1, 1.5, 2][tier('guard')]);
-  if (d.burn) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.burn = Math.max(e.burn, d.burn[0] * STAR_DMG[u.stars - 1] * m); e.burnT = d.burn[1]; }
+  if (d.burn) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.burn = Math.max(e.burn, d.burn[0] * LV_DMG[u.level - 1] * m); e.burnT = d.burn[1]; }
   if (d.shred) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.shredT = d.shred * m; e.shredAmp = Math.max(e.shredAmp, .2 * m); }
   if (d.weaken) { e.weak = Math.max(e.weak, d.weaken[0]); e.weakT = d.weaken[1]; }
 }
@@ -1676,15 +1983,15 @@ function cellIcon(def) {
 }
 function starTex(n) {
   return canvasTex(256, 80, (g) => {
-    g.font = '900 64px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `900 ${n <= 3 ? 64 : 48}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
     const txt = '★'.repeat(n); g.lineJoin = 'round';
-    g.shadowColor = n === 3 ? '#ffb000' : '#ffd36b'; g.shadowBlur = 14;
+    g.shadowColor = n >= 4 ? '#ff8a00' : '#ffd36b'; g.shadowBlur = 14;
     g.lineWidth = 10; g.strokeStyle = '#3a1e00'; g.strokeText(txt, 128, 44);
     const gr = g.createLinearGradient(0, 14, 0, 70); gr.addColorStop(0, '#fff6c8'); gr.addColorStop(.5, '#ffd23f'); gr.addColorStop(1, '#ff9d00');
     g.fillStyle = gr; g.fillText(txt, 128, 44);
   });
 }
-const STAR_TEX = [null, starTex(1), starTex(2), starTex(3)];
+const STAR_TEX = [null, starTex(1), starTex(2), starTex(3), starTex(4), starTex(5)];
 
 function updateHUD() {
   $('coins').textContent = G.coins;
@@ -1747,7 +2054,7 @@ function renderCards() {
 function setInfo(html) {
   $('info').innerHTML = html || (G.legTab
     ? 'Иммуноглобулины всегда в продаже, но дорогие. Чем больше их на поле, тем сильнее каждый: 2, 3 и 5 штук дают большой бонус.'
-    : 'Выбери карту и нажми на площадку у сосуда. Такая же карта на стоящую клетку усиливает её.');
+    : 'Выбери карту и нажми на свободную площадку. Чтобы улучшить клетку (до 5 уровней), нажми на неё.');
 }
 
 function selectCard(card, idx) {
@@ -1765,7 +2072,6 @@ function highlight() {
     if (G.sel) {
       const d = G.sel.card.def;
       if (!p.unit && G.units.length < maxUnits()) op = .85;
-      else if (p.unit && p.unit.def.id === d.id && p.unit.cards < 9) { op = 1; col = '#ffd36b'; }
     }
     p.hl.material.opacity = op; p.hl.material.color.set(col);
   }
@@ -1774,27 +2080,14 @@ function highlight() {
 function placeOn(pad) {
   const card = G.sel.card, d = card.def;
   if (G.coins < d.cost) { toast(`Не хватает монет: нужно ${d.cost}`); return; }
-  if (pad.unit) {
-    if (pad.unit.def.id !== d.id) { toast('Здесь стоит другая клетка. Усилить можно только такой же.'); return; }
-    if (pad.unit.cards >= 9) { toast('Клетка уже на максимуме ★★★'); return; }
-    const u = pad.unit, before = u.stars;
-    G.coins -= d.cost; u.spent += d.cost; u.cards++;
-    u.stars = starsOf(u.cards);
-    if (u.stars > before) {
-      u.starSprite.material.map = STAR_TEX[u.stars]; u.starSprite.material.needsUpdate = true;
-      u.mergeFx = 1.2; ring(u.pos, '#ffd36b', 1.4, .7); spark(u.pos.clone().setY(.5), '#ffd36b', 24, 2.2, .3, .7, 2);
-      AU.play('merge', u.pos.x, 1); buzz(50); toast(`${d.name} теперь ${'★'.repeat(u.stars)}`);
-    } else {
-      spark(u.pos.clone().setY(.5), d.col, 10, 1.5, .25, .5, 1.5); AU.play('place', u.pos.x, .8);
-      toast(`${d.name}: ещё ${(u.stars === 1 ? 3 : 9) - u.cards} до ${'★'.repeat(u.stars + 1)}`);
-    }
-  } else {
+  if (pad.unit) { toast('Площадка занята. Чтобы улучшить клетку, нажми на неё.'); return; }
+  {
     if (G.units.length >= maxUnits()) { toast(`Лимит клеток ${maxUnits()}. Он растёт каждые 4 волны.`); return; }
     G.coins -= d.cost;
     const mesh = d.leg ? buildIg(d) : buildCell(d);
     const star = new T.Sprite(new T.SpriteMaterial({ map: STAR_TEX[1], depthWrite: false, transparent: true }));
     star.scale.set(1.25, .39, 1);
-    const u = { def: d, pad, pos: pad.pos.clone(), mesh, cards: 1, stars: 1, spent: d.cost, cd: 0, ultT: d.ultCd ? d.ultCd * .5 : 0, phase: Math.random() * 6, starSprite: star };
+    const u = { def: d, pad, pos: pad.pos.clone(), mesh, level: 1, spent: d.cost, cd: 0, ultT: d.ultCd ? d.ultCd * .5 : 0, phase: Math.random() * 6, starSprite: star };
     scene.add(mesh, star); pad.unit = u; G.units.push(u);
     ring(u.pos, d.col, 1, .5); spark(u.pos.clone().setY(.3), d.col, 14, 1.8, .25, .5, 1.8);
     AU.play('place', u.pos.x, 1);
@@ -1806,16 +2099,27 @@ function placeOn(pad) {
 
 function openUnit(u) {
   const s = unitStats(u), d = u.def, refund = Math.floor(u.spent / 2), el = $('unitSheet');
-  const nextTxt = u.cards >= 9 ? 'Максимум ★★★' : `Ещё ${(u.stars === 1 ? 3 : 9) - u.cards} карт до ${'★'.repeat(u.stars + 1)}`;
+  const max = u.level >= MAX_LV, cost = max ? 0 : upCost(u);
+  let next = null;
+  if (!max) { u.level++; next = unitStats(u); u.level--; }
+  const arrow = (a, b, f = (v) => Math.round(v)) => next ? `${f(a)} <i class="up">→ ${f(b)}</i>` : f(a);
   el.innerHTML = `
-    <div class="head"><img alt="" src="${cellIcon(d)}"><div><div class="t">${d.name} <span style="color:var(--gold)">${'★'.repeat(u.stars)}</span></div>
-    <div class="s">${FAC[d.fac].name}${d.org ? ' · ' + FAC[d.org].name : ''} · ${nextTxt}</div></div></div>
+    <div class="head"><img alt="" src="${cellIcon(d)}"><div><div class="t">${d.name} <span class="lv">Ур. ${u.level}</span></div>
+    <div class="s">${FAC[d.fac].name}${d.org ? ' · ' + FAC[d.org].name : ''} · <span style="color:var(--gold)">${'★'.repeat(u.level)}</span><span style="opacity:.3">${'★'.repeat(MAX_LV - u.level)}</span></div></div></div>
     <div class="s">${d.role}${d.ult ? '. Ульта — ' + d.ult : ''}</div>
-    <div class="stats"><div>Урон<b>${Math.round(s.dmg)}</b></div><div>Атак в сек.<b>${(1 / s.rate).toFixed(1)}</b></div><div>Дальность<b>${s.range.toFixed(1)}</b></div></div>
+    <div class="stats"><div>Урон<b>${arrow(s.dmg, next?.dmg)}</b></div><div>Атак в сек.<b>${arrow(1 / s.rate, next && 1 / next.rate, (v) => v.toFixed(1))}</b></div><div>Дальность<b>${arrow(s.range, next?.range, (v) => v.toFixed(1))}</b></div></div>
+    <button class="btn go" id="upBtn" ${max || G.coins < cost ? 'disabled' : ''}>${max ? 'Максимальный уровень' : G.coins < cost ? `Улучшить: не хватает ${cost - G.coins}` : `Улучшить до ур. ${u.level + 1} · ${cost}`}</button>
     <div class="row"><button class="btn danger" id="destroyBtn">Разрушить +${refund}</button><button class="btn" id="closeSheet">Закрыть</button></div>`;
   el.hidden = false;
   showRange(u, s.range);
   $('closeSheet').onclick = closeUnit;
+  $('upBtn').onclick = () => {
+    if (max || G.coins < cost) return;
+    G.coins -= cost; u.spent += cost; u.level++;
+    u.starSprite.material.map = STAR_TEX[u.level]; u.starSprite.material.needsUpdate = true;
+    u.mergeFx = 1.2; ring(u.pos, '#ffd36b', 1.4, .7); spark(u.pos.clone().setY(.5), '#ffd36b', 24, 2.2, .3, .7, 2);
+    AU.play('merge', u.pos.x, 1); buzz(50); updateHUD(); openUnit(u);
+  };
   $('destroyBtn').onclick = () => {
     G.coins += refund; scene.remove(u.mesh, u.starSprite); u.pad.unit = null;
     G.units.splice(G.units.indexOf(u), 1); spark(u.pos.clone().setY(.4), d.col, 16, 2, .3, .5);
@@ -1907,7 +2211,7 @@ const store = {
   get(k, d) { try { return Object.assign({}, d, JSON.parse(localStorage.getItem(k)) || {}); } catch (e) { return Object.assign({}, d); } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
-const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high' });
+const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high', theme: 0, amb: 'off', ambVol: 50, sfx: 'juicy' });
 const PROF = store.get('immuneProfile', { name: 'Игрок', avatar: 'neu', games: 0, kills: 0, wins: 0, liverStars: 0 });
 const saveSet = () => store.set('immuneSettings', SET), saveProf = () => store.set('immuneProfile', PROF);
 function buzz(ms) { if (SET.vibro && navigator.vibrate && navigator.userActivation?.hasBeenActive !== false) try { navigator.vibrate(ms); } catch (e) {} }
@@ -1951,7 +2255,7 @@ function renderScreen(id) {
 }
 $('avatars').onclick = (e) => { const b = e.target.closest('[data-ava]'); if (!b) return; PROF.avatar = b.dataset.ava; saveProf(); renderScreen('profile'); AU.play('place'); };
 $('pName').oninput = () => { PROF.name = $('pName').value.trim() || 'Игрок'; saveProf(); };
-$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui');};
+$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui'); AU.amb(SET.sound ? SET.amb : 'off'); };
 $('sVol').oninput = () => { SET.vol = +$('sVol').value; $('sVolText').textContent = SET.vol + '%'; saveSet(); applySettings(); };
 $('sVol').onchange = () => { AU.init(); AU.play('boom', 0, .6); };
 $('sVibro').onchange = () => { SET.vibro = $('sVibro').checked; saveSet(); buzz(40); };
@@ -1974,10 +2278,60 @@ function goMenu() {
   closeUnit(); screenStack = []; show('menu'); renderScreen('menu'); updateHUD();
 }
 
+
+/* ---------- Панель «Фон и звуки» ---------- */
+const AMBS = [
+  { id: 'rain', name: 'Дождь' }, { id: 'surf', name: 'Морской прибой' }, { id: 'brook', name: 'Лесной ручей' }, { id: 'wind', name: 'Ветер в поле' },
+  { id: 'crickets', name: 'Ночные сверчки' }, { id: 'birds', name: 'Утренние птицы' }, { id: 'under', name: 'Под водой' }, { id: 'fire', name: 'Костёр' },
+  { id: 'storm', name: 'Далёкая гроза' }, { id: 'cave', name: 'Капли в пещере' }
+];
+const SFXS = [{ id: 'juicy', name: 'Сочные', sub: 'объёмные, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
+let lookTab = 'bg', lookFrom = null;
+function openLook(from) {
+  lookFrom = from; AU.init();
+  if (from !== 'pause' && (G.phase === 'build' || G.phase === 'wave')) G.paused = true;
+  show(null); $('look').hidden = false; $('lookNote').textContent = ''; renderLook();
+}
+function closeLook() {
+  $('look').hidden = true;
+  if (lookFrom && lookFrom !== 'game') { show(lookFrom); renderScreen(lookFrom); } else G.paused = false;
+}
+function renderLook() {
+  $('lookTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === lookTab));
+  let h = '';
+  if (lookTab === 'bg') {
+    h = THEMES.map((t, i) => `<button class="opt${(SET.theme || 0) === i ? ' on' : ''}" data-th="${i}"><i class="sw" style="background:linear-gradient(135deg, ${t.pal[1]} 0%, ${t.pal[2]} 45%, ${t.bg} 100%)"></i><span>${t.name}</span></button>`).join('');
+    h += `<button class="opt wide no" data-no="Фон">Ничего не нравится</button>`;
+  } else if (lookTab === 'amb') {
+    h = `<button class="opt wide${SET.amb === 'off' ? ' on' : ''}" data-amb="off">Без фонового звука</button>`;
+    h += AMBS.map((a, i) => `<button class="opt${SET.amb === a.id ? ' on' : ''}" data-amb="${a.id}"><i class="ic">${i + 1}</i><span>${a.name}</span></button>`).join('');
+    h += `<label class="lookvol">Громкость фона<input type="range" id="ambVol" min="0" max="100" step="5" value="${SET.ambVol}"></label>`;
+    h += `<button class="opt wide no" data-no="Звук фона">Ничего не нравится</button>`;
+  } else {
+    h = SFXS.map(x => `<button class="opt wide${(SET.sfx || 'juicy') === x.id ? ' on' : ''}" data-sfx="${x.id}"><span><b>${x.name}</b> · <small>${x.sub}</small></span></button>`).join('');
+    h += `<button class="opt wide" data-demo="1">▶ Послушать набор</button>`;
+    h += `<button class="opt wide no" data-no="Эффекты">Ничего не нравится</button>`;
+  }
+  $('lookBody').innerHTML = h;
+  const v = $('ambVol'); if (v) v.oninput = () => { SET.ambVol = +v.value; saveSet(); if (AU.ab) AU.ab.gain.value = SET.ambVol / 100 * .7; };
+}
+function sfxDemo() { ['place', 'pop', 'shot', 'dart', 'spit', 'zip', 'thump', 'boom', 'die', 'merge', 'coin'].forEach((k, i) => setTimeout(() => { AU.last = {}; AU.play(k, (i % 3 - 1) * 2, 1); }, i * 320)); }
+$('lookTabs').onclick = (e) => { const b = e.target.closest('[data-t]'); if (!b) return; lookTab = b.dataset.t; $('lookNote').textContent = ''; renderLook(); AU.play('ui'); };
+$('lookBody').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.th) { SET.theme = +b.dataset.th; saveSet(); applyTheme(SET.theme); renderLook(); AU.play('ui'); }
+  else if (b.dataset.amb) { SET.amb = b.dataset.amb; saveSet(); AU.init(); if (!SET.sound) { $('lookNote').textContent = 'Звук выключен в настройках — включи его, чтобы услышать.'; } AU.amb(SET.amb); renderLook(); }
+  else if (b.dataset.sfx) { SET.sfx = b.dataset.sfx; saveSet(); renderLook(); sfxDemo(); }
+  else if (b.dataset.demo) sfxDemo();
+  else if (b.dataset.no) { $('lookNote').textContent = `Понял! Напиши мне в чат: «${b.dataset.no}: ничего не нравится» — и я придумаю 10 новых вариантов.`; }
+};
+$('lookDone').onclick = () => { AU.play('ui'); closeLook(); };
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-look]'); if (b) openLook(b.dataset.look); });
+
 const TIPS = [
   'Совет: Стражи замедляют микробов, а Бомбардиры бьют по скоплению.',
   'Совет: IgA тормозит шипами, IgD добивает замедленных вдвое сильнее.',
-  'Совет: 3 одинаковые карты превращают клетку в ★★.',
+  'Совет: нажми на клетку, чтобы улучшить её до 5 уровня.',
   'Совет: ненужную клетку можно разрушить и вернуть половину монет.',
   'Совет: Приобретённые клетки запоминают микробов и бьют их всё сильнее.'
 ];
@@ -1986,6 +2340,7 @@ function boot() {
   const steps = [
     () => document.fonts ? document.fonts.ready : null,
     () => { applySettings(); },
+    () => { applyTheme(SET.theme || 0); },
     () => { UNITS.forEach(cellIcon); IGS.forEach(cellIcon); },
     () => { renderer.compile(scene, camera); }
   ];

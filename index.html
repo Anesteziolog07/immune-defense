@@ -1,0 +1,1848 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#13060a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Иммунитет">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>Иммунная защита</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Вертикальный экран: HUD сверху, 3D-поле печени по центру, магазин клеток снизу под большим пальцем */
+:root {
+  --bg: #13060a;
+  --panel: #1f0c12;
+  --panel-2: #2b131a;
+  --line: #4a2530;
+  --ink: #f8eaec;
+  --muted: #b99aa1;
+  --blood: #e2384f;
+  --membrane: #ff8ea0;
+  --coin: #ffc65c;
+  --good: #7be0b0;
+  --gold: #ffd36b;
+  --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --body: "Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; overscroll-behavior: none; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body);
+  overflow: hidden; -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app { height: 100%; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); display: flex; flex-direction: column; max-width: 1000px; margin: 0 auto; position: relative; }
+
+/* ---------- HUD ---------- */
+#hud {
+  display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center;
+  padding: 8px 12px 6px; background: linear-gradient(var(--panel), transparent);
+  position: relative; z-index: 3;
+}
+.organ { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.organ-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.organ-top b { font-family: var(--display); font-weight: 700; color: var(--ink); font-size: 13px; letter-spacing: .02em; }
+.hpbar { height: 8px; border-radius: 6px; background: #3a1820; overflow: hidden; box-shadow: inset 0 1px 2px #0008; }
+.hpbar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #c8233b, #ff6b7d); transition: width .25s; }
+.pill {
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--line); font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 14px; white-space: nowrap;
+}
+.pill .coin { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3c4, var(--coin) 55%, #b77a12); box-shadow: 0 0 6px #ffc65c88; }
+.iconbtn {
+  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2);
+  color: var(--ink); font: 700 12px var(--display); display: grid; place-items: center; cursor: pointer;
+}
+.iconbtn:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+#subhud { display: flex; gap: 8px; padding: 0 12px; font-size: 12px; color: var(--muted); position: relative; z-index: 3; }
+#subhud b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ---------- Поле ---------- */
+#stage { flex: 1; position: relative; min-height: 0; overflow: hidden; touch-action: none; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+#stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, #0c0306cc 100%); }
+#fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.dmg {
+  position: absolute; left: 0; top: 0; font: 800 13px var(--display); color: #fff;
+  text-shadow: 0 1px 0 #000, 0 0 6px #000a; white-space: nowrap; will-change: transform, opacity;
+}
+.dmg.crit { color: #ffd36b; font-size: 17px; }
+.dmg.ult { color: #ffe9a8; font-size: 20px; }
+#combo {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(.8); opacity: 0;
+  font: 900 26px var(--display); letter-spacing: .02em; color: #fff; white-space: nowrap;
+  text-shadow: 0 2px 0 #7a0f1f, 0 0 18px #ff4d5e; transition: opacity .2s, transform .2s;
+}
+#combo.on { opacity: 1; transform: translateX(-50%) scale(1); }
+#combo span { color: var(--gold); }
+#banner {
+  position: absolute; top: 38%; left: 0; right: 0; text-align: center; pointer-events: none;
+  font: 900 30px var(--display); color: #fff; text-shadow: 0 3px 0 #5c0b18, 0 0 24px #ff4d5e;
+  opacity: 0; transform: scale(.9); transition: opacity .3s, transform .3s;
+}
+#banner small { display: block; font: 600 14px var(--body); color: var(--muted); text-shadow: none; margin-top: 6px; }
+#banner.on { opacity: 1; transform: scale(1); }
+#traits { display: flex; gap: 10px; padding: 6px 12px 2px; min-height: 62px; overflow-x: auto; scrollbar-width: none; position: relative; z-index: 3; align-items: flex-start; }
+#traits::-webkit-scrollbar { display: none; }
+#traits:empty::before { content: 'Здесь появятся фракции твоих клеток'; font-size: 11.5px; color: var(--muted); align-self: center; }
+.trait { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--muted); font: inherit; }
+.trait small { font: 700 10px var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.trait.on small { color: var(--tc); text-shadow: 0 0 8px var(--tc); }
+.crest { display: block; filter: grayscale(.75) brightness(.6); transition: filter .3s, transform .3s; }
+.crest.on { filter: drop-shadow(0 0 6px var(--tc)); animation: crestPulse 2.4s ease-in-out infinite; }
+@keyframes crestPulse { 50% { transform: scale(1.06); filter: drop-shadow(0 0 12px var(--tc)); } }
+.facbig { width: 56px; height: 56px; }
+.facbig svg { width: 30px; height: 30px; }
+.tiers { display: grid; gap: 6px; }
+.tiers div { display: flex; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 10px; background: var(--panel-2); font-size: 12.5px; color: var(--muted); border: 1px solid transparent; }
+.tiers div b { font: 700 13px var(--display); color: var(--ink); min-width: 18px; }
+.tiers div.on { border-color: var(--tc); color: var(--ink); box-shadow: inset 0 0 18px color-mix(in srgb, var(--tc) 22%, transparent); }
+.members { display: flex; gap: 8px; flex-wrap: wrap; }
+.members span { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.members img { width: 26px; height: 26px; }
+.members span.have { color: var(--ink); }
+#toast {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); max-width: 92%;
+  background: #000c; color: var(--ink); padding: 8px 12px; border-radius: 10px; font-size: 13px; text-align: center;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+#toast.on { opacity: 1; }
+
+/* ---------- Магазин ---------- */
+#panel {
+  background: var(--panel); border-top: 1px solid var(--line); padding: 6px 8px 8px;
+  display: flex; flex-direction: column; gap: 6px; position: relative; z-index: 3;
+  box-shadow: 0 -10px 30px #0008;
+}
+#info { min-height: 32px; font-size: 12px; line-height: 1.33; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#info b { color: var(--ink); }
+#info .tag { display: inline-block; padding: 0 6px; border-radius: 6px; background: var(--panel-2); color: var(--ink); font-size: 11px; margin-right: 4px; }
+#cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.card {
+  position: relative; border-radius: 12px; padding: 6px 4px 5px; background: linear-gradient(180deg, var(--panel-2), #170a0e);
+  border: 1.5px solid var(--line); color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 90px; font-family: var(--body);
+}
+.card img { width: 46px; height: 46px; }
+.card .nm { font-size: 10.5px; font-weight: 600; line-height: 1.1; text-align: center; min-height: 23px; display: flex; align-items: center; }
+.card .cost { display: flex; align-items: center; gap: 3px; font: 700 12px var(--display); color: var(--coin); }
+.card .cost i { width: 9px; height: 9px; border-radius: 50%; background: var(--coin); }
+.card .fac { position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; color: var(--tc); }
+.card .fac svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.card.sel { border-color: var(--gold); box-shadow: 0 0 0 2px #ffd36b55, 0 0 18px #ffd36b44; transform: translateY(-3px); }
+.card.poor { opacity: .5; }
+.card.sold { visibility: hidden; }
+.card.leg { background: linear-gradient(180deg, #3a2a10, #1a1008); border-color: #7a5a1c; }
+.card .have { position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--gold); font-weight: 700; }
+#actions { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); border-radius: 12px;
+  padding: 10px 12px; font: 600 13px var(--body); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+}
+.btn.on { border-color: var(--gold); color: var(--gold); }
+.btn.go {
+  font: 800 15px var(--display); letter-spacing: .02em; border: none;
+  background: linear-gradient(180deg, #ff5b6e, #c41d36); box-shadow: 0 4px 0 #6d0c1b, 0 0 20px #ff4d5e55;
+}
+.btn.go:disabled { background: #3a1820; box-shadow: none; color: var(--muted); }
+.btn .coin { width: 10px; height: 10px; border-radius: 50%; background: var(--coin); }
+
+/* ---------- Окна ---------- */
+.overlay {
+  position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 30%, #3a0e18c8, #0c0306ee); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+#loading { background: radial-gradient(ellipse at 50% 40%, #4a0f1c, #0c0306); z-index: 20; transition: opacity .5s; }
+#loading.out { opacity: 0; pointer-events: none; }
+.load { display: flex; flex-direction: column; align-items: center; gap: 18px; width: min(320px, 100%); text-align: center; }
+.load h1 { font: 900 32px/1.05 var(--display); margin: 0; }
+.load h1 span { color: var(--blood); }
+.load p { color: var(--muted); font-size: 13px; min-height: 36px; margin: 0; }
+.bar { width: 100%; height: 8px; border-radius: 6px; background: #2b0f16; overflow: hidden; box-shadow: inset 0 1px 3px #000a; }
+.bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #c8233b, #ff8ea0); transition: width .35s; box-shadow: 0 0 12px #ff4d5e; }
+.loadcell { position: relative; width: 120px; height: 120px; border-radius: 50%; animation: breathe 2.4s ease-in-out infinite;
+  background: radial-gradient(circle at 35% 30%, #ffffffaa, transparent 30%), radial-gradient(circle, #d8b4ff66 40%, #d8b4ffcc 72%, #ffffffdd 76%, transparent 78%); }
+.loadcell i { position: absolute; width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #8a5ad8, #3b1477); top: 45px; left: 45px; animation: lobes 3s linear infinite; }
+.loadcell i:nth-child(1) { --a: 0deg; } .loadcell i:nth-child(2) { --a: 120deg; } .loadcell i:nth-child(3) { --a: 240deg; }
+@keyframes lobes { from { transform: rotate(var(--a)) translateX(17px); } to { transform: rotate(calc(var(--a) + 360deg)) translateX(17px); } }
+@keyframes breathe { 50% { transform: scale(1.06); } }
+.who { display: flex; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 8px 10px; color: var(--ink); cursor: pointer; text-align: left; font: inherit; }
+.who img { width: 40px; height: 40px; }
+.who b { display: block; font: 700 14px var(--display); }
+.who small { color: var(--muted); font-size: 12px; }
+.logo { font-size: 38px !important; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ver { text-align: center; font-size: 11.5px !important; }
+.organcard { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: linear-gradient(160deg, #4a1a14, #2a0c0f); border: 1px solid #7a2a1e; }
+.oc-top { display: flex; justify-content: space-between; align-items: center; }
+.oc-top b { font: 700 18px var(--display); }
+.ocstars { color: var(--gold); letter-spacing: 3px; font-size: 18px; }
+.ocstars .off { color: #5a2a30; }
+.locked { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.locked span { text-align: center; padding: 10px 2px; border-radius: 10px; background: var(--panel-2); color: #8a6a70; font-size: 12px; border: 1px dashed var(--line); }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+.field input { background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px 12px; font: 600 15px var(--body); }
+.lbl { font-size: 12px; color: var(--muted); }
+.avatars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.avatars button { background: var(--panel-2); border: 1.5px solid var(--line); border-radius: 12px; padding: 4px; cursor: pointer; }
+.avatars button.on { border-color: var(--gold); box-shadow: 0 0 10px #ffd36b55; }
+.avatars img { width: 100%; display: block; }
+.stats2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stats2 div { background: var(--panel-2); border-radius: 10px; padding: 8px 10px; font-size: 12px; color: var(--muted); }
+.stats2 b { display: block; font: 700 18px var(--display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.set { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.set > span { display: flex; flex-direction: column; }
+.set small { font-size: 11px; color: var(--muted); }
+.set input[type=range] { width: 50%; accent-color: var(--blood); }
+.seg { display: flex; background: var(--panel-2); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; color: var(--muted); padding: 6px 9px; border-radius: 8px; font: 600 12px var(--body); cursor: pointer; }
+.seg button.on { background: var(--blood); color: #fff; }
+.seg button:disabled { opacity: .5; cursor: default; }
+.tog { position: relative; width: 46px; height: 26px; flex: none; }
+.tog input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.tog i { position: absolute; inset: 0; border-radius: 13px; background: #3a1820; transition: background .2s; pointer-events: none; }
+.tog i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.tog input:checked + i { background: var(--blood); }
+.tog input:checked + i::after { transform: translateX(20px); }
+.tog input:focus-visible + i { outline: 2px solid var(--gold); outline-offset: 2px; }
+.sheet {
+  width: 100%; max-width: 380px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+  padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 20px 60px #000c;
+}
+.overlay h1 { font: 900 30px/1.05 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.overlay h1 span { color: var(--blood); }
+.overlay h2 { font: 700 20px var(--display); margin: 0; }
+.overlay p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.howto { display: grid; gap: 8px; font-size: 13px; color: var(--muted); padding: 12px; background: var(--panel-2); border-radius: 12px; }
+.howto b { color: var(--ink); }
+.big { font: 800 15px var(--display); padding: 14px; }
+.stars { font-size: 38px; letter-spacing: 6px; text-align: center; color: var(--gold); text-shadow: 0 0 16px #ffd36b88; }
+.stars .off { color: #4a2530; text-shadow: none; }
+#unitSheet { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 6; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 10px 40px #000c; }
+#unitSheet .head { display: flex; gap: 10px; align-items: center; }
+#unitSheet img { width: 52px; height: 52px; }
+#unitSheet .t { font: 700 16px var(--display); }
+#unitSheet .s { font-size: 12px; color: var(--muted); }
+#unitSheet .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 12px; color: var(--muted); }
+#unitSheet .stats div { background: var(--panel-2); border-radius: 8px; padding: 6px; }
+#unitSheet .stats b { display: block; color: var(--ink); font: 700 14px var(--display); font-variant-numeric: tabular-nums; }
+#unitSheet .row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.danger { color: #ffb0b8; border-color: #6d1a28; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="app">
+  <header id="hud">
+    <div class="organ">
+      <div class="organ-top"><b id="organName">Печень</b><span id="hpText">20 / 20</span></div>
+      <div class="hpbar"><i id="hpFill"></i></div>
+    </div>
+    <div class="pill" title="Монеты"><span class="coin"></span><span id="coins">0</span></div>
+    <button class="iconbtn" id="speedBtn" aria-label="Скорость игры">×1</button>
+    <button class="iconbtn" id="pauseBtn" aria-label="Пауза">II</button>
+  </header>
+  <div id="subhud">
+    <span>Волна <b id="waveText">0 / 30</b></span>
+    <span>·</span>
+    <span>Клетки <b id="unitText">0 / 5</b></span>
+  </div>
+  <div id="traits"></div>
+  <div id="stage">
+    <div id="fx">
+      <div id="combo">Комбо <span>×0</span></div>
+      <div id="banner"></div>
+      <div id="toast"></div>
+    </div>
+  </div>
+  <footer id="panel">
+    <div id="info"></div>
+    <div id="cards"></div>
+    <div id="actions">
+      <button class="btn" id="rerollBtn">↻ Обновить <span class="coin"></span><span id="rerollCost">5</span></button>
+      <button class="btn" id="legBtn">Легендарные</button>
+      <button class="btn go" id="goBtn">В бой ▶</button>
+    </div>
+  </footer>
+
+  <div id="unitSheet" hidden></div>
+
+  <div class="overlay" id="loading">
+    <div class="load">
+      <div class="loadcell"><i></i><i></i><i></i></div>
+      <h1>Иммунная <span>защита</span></h1>
+      <div class="bar"><i id="loadBar"></i></div>
+      <p id="loadTip"></p>
+    </div>
+  </div>
+
+  <div class="overlay" id="menu" hidden>
+    <div class="sheet">
+      <button class="who" data-go="profile"><img id="menuAva" alt=""><span><b id="menuName">Игрок</b><small id="menuStats"></small></span></button>
+      <h1 class="logo">Иммунная <span>защита</span></h1>
+      <button class="btn go big" data-go="modes">Играть</button>
+      <div class="grid2">
+        <button class="btn big" data-go="profile">Профиль</button>
+        <button class="btn big" data-go="settings">Настройки</button>
+      </div>
+      <button class="btn" data-go="howto">Как играть</button>
+      <p class="ver">Версия 0.3 · прототип</p>
+    </div>
+  </div>
+
+  <div class="overlay" id="modes" hidden>
+    <div class="sheet">
+      <h2>Выбор органа</h2>
+      <div class="organcard">
+        <div class="oc-top"><b>Печень</b><span class="ocstars" id="liverStars"></span></div>
+        <p>30 волн, босс-гельминт на 10, 20 и 30-й волне.</p>
+        <button class="btn go big" id="playCampaign">Кампания · 30 волн</button>
+        <button class="btn big" id="playEndless">Бесконечные волны</button>
+        <p class="ver" id="recordText"></p>
+      </div>
+      <div class="locked"><span>Лёгкие</span><span>Сердце</span><span>Почки</span><span>Мозг</span></div>
+      <p class="ver">Новые органы откроются в следующих версиях.</p>
+      <button class="btn" data-back>Назад</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="profile" hidden>
+    <div class="sheet">
+      <h2>Профиль</h2>
+      <label class="field">Имя<input id="pName" maxlength="16" autocomplete="off"></label>
+      <div class="lbl">Аватар</div>
+      <div class="avatars" id="avatars"></div>
+      <div class="stats2" id="pStats"></div>
+      <button class="btn" data-back>Назад</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="settings" hidden>
+    <div class="sheet">
+      <h2>Настройки</h2>
+      <div class="set"><span>Язык</span><div class="seg"><button class="on">Русский</button><button disabled title="Перевод появится позже">English · скоро</button></div></div>
+      <div class="set"><span>Звук</span><label class="tog"><input type="checkbox" id="sSound"><i></i></label></div>
+      <div class="set"><span>Громкость <b id="sVolText"></b></span><input type="range" id="sVol" min="0" max="100" step="5"></div>
+      <div class="set"><span>Вибрация<small>Работает на Android</small></span><label class="tog"><input type="checkbox" id="sVibro"><i></i></label></div>
+      <div class="set"><span>Цифры урона</span><label class="tog"><input type="checkbox" id="sDmg"><i></i></label></div>
+      <div class="set"><span>Графика</span><div class="seg" id="sQuality"><button data-q="high">Красивая</button><button data-q="low">Экономная</button></div></div>
+      <button class="btn danger" id="resetBtn">Сбросить прогресс</button>
+      <button class="btn" data-back>Назад</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="howto" hidden>
+    <div class="sheet">
+      <h2>Как играть</h2>
+      <div class="howto">
+        <div><b>1.</b> Микробы идут по сосуду к органу. Не дай им дойти.</div>
+        <div><b>2.</b> Выбери карту клетки внизу и нажми на свободную шестиугольную площадку у сосуда.</div>
+        <div><b>3.</b> Такую же карту клади на стоящую клетку: <b>3 карты = ★★</b>, <b>9 карт = ★★★</b>.</div>
+        <div><b>4.</b> Клетки одной фракции дают бонус. Эмблемы фракций — над полем, нажми, чтобы узнать подробности.</div>
+        <div><b>5.</b> Иммуноглобулины дорогие, но вместе очень сильные. Копи на них монеты.</div>
+        <div><b>6.</b> Ненужную клетку можно разрушить и вернуть половину монет.</div>
+      </div>
+      <button class="btn" data-back>Назад</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="pause" hidden>
+    <div class="sheet">
+      <h2>Пауза</h2>
+      <button class="btn go big" id="resumeBtn">Продолжить</button>
+      <button class="btn big" data-go="settings">Настройки</button>
+      <button class="btn big danger" id="quitBtn">Выйти в меню</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="result" hidden>
+    <div class="sheet" style="text-align:center">
+      <h2 id="resTitle"></h2>
+      <div class="stars" id="resStars"></div>
+      <p id="resText"></p>
+      <button class="btn go big" id="resAgain">Ещё раз</button>
+      <button class="btn big" id="resMenu">В меню</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script>
+"use strict";
+const T = THREE;
+T.ColorManagement.legacyMode = false;
+
+/* =========================================================
+   ДАННЫЕ ИГРЫ
+   ========================================================= */
+const ICONS = {
+  shield: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>',
+  drop: '<path d="M12 3c3 4.5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6.5 6-11z"/>',
+  blade: '<path d="M5 19L19 5M19 5l-2 6M19 5l-6 2M7 13l4 4"/>',
+  scope: '<circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
+  burst: '<circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>',
+  arrow: '<path d="M3 12h15M13 6l6 6-6 6"/>',
+  y: '<path d="M6 4l6 7 6-7M12 11v9"/>',
+  innate: '<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+  adaptive: '<path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/>'
+};
+const svg = (k) => `<svg viewBox="0 0 24 24">${ICONS[k]}</svg>`;
+
+// Яркие эмблемы-гербы фракций: объёмный круг, кольцо прогресса, белый символ
+const CREST_ICON = {
+  shield: '<path d="M12 2.5l7.5 3v5.8c0 4.7-3.2 8.5-7.5 10.2-4.3-1.7-7.5-5.5-7.5-10.2V5.5z" fill="#fff"/><path d="M12 5.4l5 2v4c0 3.2-2.1 5.9-5 7.1z" fill="#000" opacity=".22"/>',
+  drop: '<path d="M12 2.5c3.6 5 6.6 8.7 6.6 12a6.6 6.6 0 0 1-13.2 0c0-3.3 3-7 6.6-12z" fill="#fff"/><ellipse cx="9.6" cy="14.6" rx="1.6" ry="2.6" fill="#000" opacity=".2"/>',
+  blade: '<path d="M20.5 3.5l-1.2 5.3-9.4 9.4-3.1-3.1 9.4-9.4z" fill="#fff"/><path d="M5.2 15.7l3.1 3.1-1.9 1.9-1.2-.2-1.7-1.7-.2-1.2z" fill="#fff"/><path d="M4 13.9l6.1 6.1" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>',
+  scope: '<circle cx="12" cy="12" r="7" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="12" cy="12" r="2.4" fill="#fff"/><path d="M12 1.8v5M12 17.2v5M1.8 12h5M17.2 12h5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>',
+  burst: '<path d="M12 1.8l2.2 5.1 5.3-2.1-2.4 5.1 5.1 2.3-5.2 2 1.9 5.3-5-2.4-1.9 5.1-2.1-5.2-5.2 2.1 2.3-5.1L2 12.2l5.2-2.1L5 4.9l5.1 2.2z" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="#000" opacity=".2"/>',
+  arrow: '<path d="M2.5 10.3h12.2V6l7 6-7 6v-4.3H2.5z" fill="#fff"/>',
+  y: '<path d="M5.5 3.5L12 11l6.5-7.5M12 11v9.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5.5" cy="3.5" r="1.8" fill="#fff"/><circle cx="18.5" cy="3.5" r="1.8" fill="#fff"/>',
+  innate: '<path d="M13.5 2L5 13.5h6L9.5 22 19 9.5h-6.2z" fill="#fff"/>',
+  adaptive: '<path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M2.8 4.5l2.2 5 4.9-2.3z" fill="#fff"/><circle cx="12" cy="12" r="2.3" fill="#fff"/>'
+};
+let crestId = 0;
+function crest(k, n, size = 48) {
+  const f = FAC[k], max = f.tiers[f.tiers.length - 1], id = 'cr' + (crestId++), R = 21, C = 24;
+  const on = n >= f.tiers[0];
+  let ring = '';
+  for (let i = 0; i < max; i++) {
+    const a0 = (-90 + i * 360 / max + 7) * Math.PI / 180, a1 = (-90 + (i + 1) * 360 / max - 7) * Math.PI / 180;
+    const p = (a) => `${(C + R * Math.cos(a)).toFixed(2)} ${(C + R * Math.sin(a)).toFixed(2)}`;
+    ring += `<path d="M${p(a0)} A${R} ${R} 0 0 1 ${p(a1)}" stroke="${i < n ? f.color : '#ffffff26'}" stroke-width="3.2" fill="none" stroke-linecap="round"${i < n ? ` filter="url(#${id}g)"` : ''}/>`;
+  }
+  return `<svg class="crest${on ? ' on' : ''}" width="${size}" height="${size}" viewBox="0 0 48 48" style="--tc:${f.color}">
+    <defs>
+      <radialGradient id="${id}a" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="${f.color}"/><stop offset="1" stop-color="${f.color}" stop-opacity=".35"/></radialGradient>
+      <linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="${f.color}" stop-opacity=".6"/></linearGradient>
+      <filter id="${id}g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    ${ring}
+    <circle cx="24" cy="24" r="16.5" fill="#12050a"/>
+    <circle cx="24" cy="24" r="15" fill="url(#${id}a)" stroke="url(#${id}b)" stroke-width="1.4"/>
+    <ellipse cx="20" cy="15.5" rx="8" ry="4" fill="#fff" opacity=".22"/>
+    <g transform="translate(13.2 13.2) scale(.9)" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))">${CREST_ICON[f.icon]}</g>
+  </svg>`;
+}
+
+// Фракции: бонус за 2/4 клетки (иммуноглобулины — 2/3/5)
+const FAC = {
+  guard:    { name: 'Стражи', icon: 'shield', color: '#8fb8ff', tiers: [2, 4], text: ['Замедление сильнее и дольше', 'Замедление намного сильнее, вдвое дольше'] },
+  dissolve: { name: 'Растворители', icon: 'drop', color: '#8ff0b4', tiers: [2, 4], text: ['Яд и разъедание брони ×1,5', 'Яд и разъедание брони ×2,2'] },
+  hunt:     { name: 'Охотники', icon: 'blade', color: '#ff8a8a', tiers: [2, 4], text: ['+15% шанс критического удара', '+30% шанс критического удара'] },
+  snipe:    { name: 'Снайперы', icon: 'scope', color: '#7fe7ff', tiers: [2, 4], text: ['+0,6 к дальности', '+1,2 к дальности'] },
+  bomb:     { name: 'Бомбардиры', icon: 'burst', color: '#ffb070', tiers: [2, 4], text: ['Радиус взрыва +25%', 'Радиус взрыва +50%'] },
+  pierce:   { name: 'Пронзатели', icon: 'arrow', color: '#5ee0c8', tiers: [2, 4], text: ['+20% урона каждому следующему пробитому', '+40% урона каждому следующему пробитому'] },
+  ig:       { name: 'Иммуноглобулины', icon: 'y', color: '#ffd36b', tiers: [2, 3, 5], text: ['Урон иммуноглобулинов +30%', 'Урон иммуноглобулинов +70%', 'Урон иммуноглобулинов +150%'] },
+  innate:   { name: 'Врождённые', icon: 'innate', color: '#ffa3d1', tiers: [3, 6], text: ['Скорость атаки +15%', 'Скорость атаки +40%'] },
+  adaptive: { name: 'Приобретённые', icon: 'adaptive', color: '#a0b4ff', tiers: [2, 4], text: ['Память: до +30% урона по знакомым микробам', 'Память: до +60% урона по знакомым микробам'] }
+};
+
+const UNITS = [
+  { id: 'neu', name: 'Нейтрофил', fac: 'guard', org: 'innate', cost: 20, role: 'Быстрые удары, сеть замедляет', col: '#d8b4ff', nuc: 'lobed', r: .31, kind: 'melee', range: 1.55, rate: .5, dmg: 7, slow: [.3, 1.4], snd: 'pop' },
+  { id: 'mon', name: 'Моноцит', fac: 'guard', org: 'innate', cost: 30, role: 'Тяжёлый удар оглушает', col: '#8fb8ff', nuc: 'kidney', r: .34, kind: 'melee', range: 1.5, rate: 1.4, dmg: 24, stun: .55, snd: 'thump' },
+  { id: 'mac', name: 'Макрофаг', fac: 'dissolve', org: 'innate', cost: 30, role: 'Окислительный взрыв: враг горит', col: '#ff9440', nuc: 'round', pods: true, r: .27, kind: 'shot', proj: 'drop', range: 1.9, rate: 1.0, dmg: 8, burn: [11, 3], snd: 'spit' },
+  { id: 'den', name: 'Дендритная клетка', fac: 'dissolve', org: 'innate', cost: 25, role: 'Разъедает броню, по врагу бьют сильнее', col: '#b8f04a', nuc: 'round', spikes: true, r: .24, kind: 'shot', proj: 'drop', range: 2.2, rate: .9, dmg: 7, shred: 4, snd: 'spit' },
+  { id: 'tk', name: 'Т-киллер', fac: 'hunt', org: 'adaptive', cost: 40, role: 'Очень сильный удар в одного', col: '#4f7dff', nuc: 'round', gran: '#ff6b8a', r: .29, kind: 'shot', proj: 'needle', range: 1.8, rate: 1.3, dmg: 58, snd: 'dart' },
+  { id: 'nk', name: 'NK-клетка', fac: 'hunt', org: 'innate', cost: 35, role: 'Издалека бьёт самых сильных', col: '#ffd23f', nuc: 'round', gran: '#ff7b54', r: .3, kind: 'shot', proj: 'needle', range: 3.6, rate: 1.5, dmg: 40, crit: .25, target: 'strong', snd: 'dart' },
+  { id: 'b', name: 'B-клетка', fac: 'snipe', org: 'adaptive', cost: 30, role: 'Стреляет антителами, склеивает', col: '#3fe0ff', nuc: 'round', r: .28, kind: 'shot', proj: 'y', range: 3.4, rate: 1.1, dmg: 18, slow: [.2, 1.2], snd: 'shot' },
+  { id: 'pl', name: 'Плазмоцит', fac: 'snipe', org: 'adaptive', cost: 35, role: 'Шквал мелких выстрелов', col: '#9d8cff', nuc: 'eccentric', r: .29, kind: 'shot', proj: 'y', range: 3.0, rate: .24, dmg: 5, snd: 'shot' },
+  { id: 'eos', name: 'Эозинофил', fac: 'bomb', org: 'innate', cost: 30, role: 'Гранулы рвутся по площади', col: '#ff7272', nuc: 'bilobed', gran: '#ff5a3c', r: .31, kind: 'lob', range: 2.5, rate: 1.4, dmg: 20, aoe: 1.0, snd: 'lob' },
+  { id: 'bas', name: 'Базофил', fac: 'bomb', org: 'innate', cost: 35, role: 'Взрыв ослабляет врагов', col: '#8f6bff', nuc: 'bilobed', gran: '#5b2bd6', r: .31, kind: 'lob', range: 2.3, rate: 1.6, dmg: 16, aoe: 1.2, weaken: [.15, 3], snd: 'lob' },
+  { id: 'th', name: 'Т-хелпер', fac: 'pierce', org: 'adaptive', cost: 35, role: 'Длинный прошивающий выстрел', col: '#2fd6b0', nuc: 'round', r: .28, kind: 'pierce', range: 3.2, rate: 1.5, dmg: 24, plen: 4.2, snd: 'zip' },
+  { id: 'mast', name: 'Тучная клетка', fac: 'pierce', org: 'innate', cost: 30, role: 'Частые прошивающие выстрелы', col: '#ff7ac8', nuc: 'round', gran: '#c2185b', r: .33, kind: 'pierce', range: 2.4, rate: .75, dmg: 11, plen: 2.6, snd: 'zip' }
+];
+const IGS = [
+  { id: 'igg', name: 'IgG', fac: 'ig', leg: true, cost: 200, role: 'Залп по площади и замедление', ult: 'Опсонизация: враги вокруг получают +50% урона', col: '#ffd36b', form: 'y', kind: 'lob', range: 3.2, rate: 1.3, dmg: 60, aoe: 1.3, slow: [.3, 1.5], ultCd: 9, snd: 'lob' },
+  { id: 'igm', name: 'IgM', fac: 'ig', leg: true, cost: 250, role: 'Веер из 5 антител', ult: 'Агглютинация: склеивает врагов на 1,5 с', col: '#ff8fb1', form: 'penta', kind: 'fan', range: 3.0, rate: 1.2, dmg: 30, ultCd: 10, snd: 'shot' },
+  { id: 'iga', name: 'IgA', fac: 'ig', leg: true, cost: 250, role: 'Средний урон', ult: 'Шипы: участок сосуда сильно тормозит микробов', col: '#7cf0d0', form: 'dimer', kind: 'shot', proj: 'y', range: 3.0, rate: .8, dmg: 34, ultCd: 8, snd: 'shot' },
+  { id: 'ige', name: 'IgE', fac: 'ig', leg: true, cost: 300, role: 'Огромный урон по боссам и крупным', ult: 'Против паразитов: сокрушительный выстрел', col: '#ff7a45', form: 'y', kind: 'shot', proj: 'needle', range: 3.6, rate: 1.6, dmg: 120, bigMul: 3, target: 'strong', ultCd: 9, snd: 'dart' },
+  { id: 'igd', name: 'IgD', fac: 'ig', leg: true, cost: 300, role: 'Импульс по кругу', ult: 'Ударная волна: по замедленным урон ×2', col: '#7fb2ff', form: 'y', kind: 'pulse', range: 2.2, rate: 1.5, dmg: 38, ultCd: 8, snd: 'thump' }
+];
+const ALL = Object.fromEntries([...UNITS, ...IGS].map(u => [u.id, u]));
+
+const FOES = {
+  coccus:  { name: 'Кокк', hp: 30, speed: 1.2, reward: 4, armor: 0, leak: 1, size: .2 },
+  rod:     { name: 'Палочка', hp: 55, speed: .95, reward: 5, armor: 0, leak: 1, size: .22 },
+  virus:   { name: 'Вирус', hp: 15, speed: 1.55, reward: 2, armor: 0, leak: 1, size: .15 },
+  capsule: { name: 'Капсульная бактерия', hp: 95, speed: .8, reward: 8, armor: .4, leak: 2, size: .27, big: true },
+  fungus:  { name: 'Грибок', hp: 250, speed: .55, reward: 14, armor: .2, leak: 3, size: .36, big: true },
+  worm:    { name: 'Гельминт', hp: 1800, speed: .4, reward: 120, armor: .3, leak: 6, size: .34, big: true, boss: true }
+};
+
+const STAR_DMG = [1, 1.8, 3.2], STAR_RATE = [1, .9, .8], STAR_RANGE = [0, .25, .5];
+const starsOf = (cards) => cards >= 9 ? 3 : cards >= 3 ? 2 : 1;
+const MAX_HP = 20, CAMPAIGN_WAVES = 30;
+
+/* =========================================================
+   ЗВУК (синтез, без музыки)
+   ========================================================= */
+const AU = {
+  ctx: null, out: null, on: true, last: {}, voices: 0, noise: null,
+  init() {
+    if (this.ctx) { this.ctx.resume(); return; }
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+    const ctx = this.ctx = new C();
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5;
+    const master = ctx.createGain(); master.gain.value = (typeof SET !== 'undefined' ? SET.vol / 100 : .8) * .9; this.master = master; master.connect(comp); comp.connect(ctx.destination);
+    // Короткая «комнатная» реверберация для объёма
+    const len = ctx.sampleRate * 1.3, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .22; rev.connect(wet); wet.connect(master);
+    this.out = master; this.rev = rev;
+    const nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    this.noise = nb;
+  },
+  bus(pan, vol) {
+    const ctx = this.ctx, g = ctx.createGain(); g.gain.value = vol;
+    let node = g;
+    if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); g.connect(p); node = p; }
+    node.connect(this.out); node.connect(this.rev);
+    return g;
+  },
+  tone(dst, type, f0, f1, t0, dur, vol) {
+    const ctx = this.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(dst); o.start(t0); o.stop(t0 + dur + .02);
+  },
+  hiss(dst, ftype, f0, f1, q, t0, dur, vol) {
+    const ctx = this.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = this.noise; s.playbackRate.value = .8 + Math.random() * .4;
+    f.type = ftype; f.Q.value = q; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    s.connect(f); f.connect(g); g.connect(dst); s.start(t0, Math.random() * .5); s.stop(t0 + dur + .02);
+  },
+  play(kind, x = 0, vol = 1) {
+    if (!this.ctx || !this.on || this.ctx.state !== 'running') return;
+    const now = this.ctx.currentTime, gap = { boom: .05, die: .035, hit: .03 }[kind] ?? .045;
+    if (now - (this.last[kind] || 0) < gap) return;
+    this.last[kind] = now;
+    const b = this.bus(x / 4, vol), t = now, r = 1 + (Math.random() - .5) * .12;
+    switch (kind) {
+      case 'pop':   this.hiss(b, 'bandpass', 2200 * r, 900, 3, t, .07, .35); this.tone(b, 'sine', 320 * r, 120, t, .08, .25); break;
+      case 'thump': this.tone(b, 'sine', 150 * r, 45, t, .2, .7); this.hiss(b, 'lowpass', 900, 120, 1, t, .14, .35); break;
+      case 'spit':  this.hiss(b, 'bandpass', 500 * r, 2400, 4, t, .14, .4); this.tone(b, 'triangle', 240 * r, 520, t, .09, .1); break;
+      case 'dart':  this.hiss(b, 'highpass', 3000, 6000, 1, t, .06, .22); this.tone(b, 'triangle', 1100 * r, 260, t, .09, .18); break;
+      case 'shot':  this.tone(b, 'triangle', 720 * r, 210, t, .07, .14); this.hiss(b, 'bandpass', 1800, 700, 2, t, .05, .12); break;
+      case 'lob':   this.tone(b, 'sine', 210 * r, 90, t, .12, .35); this.hiss(b, 'lowpass', 700, 200, 1, t, .1, .2); break;
+      case 'boom':  this.hiss(b, 'lowpass', 2400 * r, 90, 1, t, .5, .75); this.tone(b, 'sine', 95 * r, 32, t, .45, .8); break;
+      case 'zip':   this.tone(b, 'sawtooth', 1500 * r, 180, t, .14, .07); this.hiss(b, 'bandpass', 4000, 900, 2, t, .12, .2); break;
+      case 'hit':   this.hiss(b, 'bandpass', 3200 * r, 1500, 5, t, .03, .18); break;
+      case 'die':   this.hiss(b, 'bandpass', 700 * r, 180, 2, t, .16, .45); this.tone(b, 'sine', 260 * r, 70, t, .14, .22); break;
+      case 'leak':  this.tone(b, 'sawtooth', 90, 55, t, .35, .25); this.tone(b, 'sine', 70, 35, t, .4, .6); break;
+      case 'place': this.tone(b, 'sine', 180, 70, t, .16, .55); this.hiss(b, 'bandpass', 2600, 1200, 4, t + .03, .05, .25); break;
+      case 'merge': this.hiss(b, 'bandpass', 300, 4200, 2, t, .45, .4); this.tone(b, 'sine', 120, 60, t + .4, .2, .6); this.hiss(b, 'highpass', 5000, 8000, 1, t + .42, .08, .3); break;
+      case 'coin':  this.hiss(b, 'bandpass', 5200, 4200, 8, t, .05, .2); break;
+      case 'ui':    this.hiss(b, 'bandpass', 3000, 2400, 6, t, .03, .15); this.tone(b, 'sine', 600, 400, t, .04, .08); break;
+      case 'wave':  this.tone(b, 'sine', 110, 50, t, .3, .8); this.tone(b, 'sine', 110, 50, t + .32, .3, .8); this.hiss(b, 'lowpass', 600, 100, 1, t, .5, .25); break;
+      case 'siren': for (let i = 0; i < 3; i++) { this.tone(b, 'triangle', 380, 760, t + i * .5, .25, .18); this.tone(b, 'triangle', 760, 380, t + i * .5 + .25, .25, .18); } break;
+      case 'ult':   this.hiss(b, 'bandpass', 200, 3000, 1.5, t, .35, .5); this.tone(b, 'sine', 70, 30, t + .3, .5, .9); this.hiss(b, 'lowpass', 3000, 80, 1, t + .3, .6, .6); break;
+      case 'organ': this.tone(b, 'sine', 60, 40, t, .25, .9); break;
+      case 'win':   this.hiss(b, 'bandpass', 200, 5000, 1.2, t, .8, .5); this.tone(b, 'sine', 90, 40, t + .7, .6, .9); break;
+      case 'lose':  this.tone(b, 'sawtooth', 160, 40, t, 1.2, .25); this.tone(b, 'sine', 80, 30, t, 1.2, .8); break;
+    }
+  }
+};
+
+/* =========================================================
+   3D-СЦЕНА
+   ========================================================= */
+const stage = document.getElementById('stage');
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.outputEncoding = T.sRGBEncoding;
+renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+stage.prepend(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color('#13060a');
+scene.fog = new T.Fog('#13060a', 26, 52);
+const camera = new T.PerspectiveCamera(38, 1, .1, 100);
+
+scene.add(new T.HemisphereLight('#ffd9de', '#3a0d16', .35));
+const sun = new T.DirectionalLight('#fff1e6', .95);
+sun.position.set(-5, 12, 6); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 10, bottom: -10, near: 1, far: 40 });
+sun.shadow.bias = -.0015; sun.shadow.radius = 4;
+scene.add(sun);
+const rim = new T.DirectionalLight('#ff6f86', .45); rim.position.set(6, 4, -8); scene.add(rim);
+
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4; return t;
+}
+const glowTex = canvasTex(64, 64, (g, w) => {
+  const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.25, 'rgba(255,255,255,.75)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, w);
+});
+glowTex.encoding = T.LinearEncoding;
+
+// Ткань печени: мягкие дольки, сеть светящихся капилляров, тёплые пятна света
+const liverTex = canvasTex(1024, 1024, (g, W, H) => {
+  const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#3a0c16'); bg.addColorStop(1, '#2a0812');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const R = 92, hw = Math.sqrt(3) * R;
+  for (let row = -1; row < H / (1.5 * R) + 1; row++) for (let col = -1; col < W / hw + 1; col++) {
+    const cx = col * hw + (row % 2 ? hw / 2 : 0), cy = row * 1.5 * R;
+    const gr = g.createRadialGradient(cx, cy, 6, cx, cy, R * 1.05);
+    gr.addColorStop(0, 'rgba(110,30,48,.9)'); gr.addColorStop(.75, 'rgba(70,16,30,.6)'); gr.addColorStop(1, 'rgba(25,4,10,.9)');
+    g.fillStyle = gr; g.beginPath();
+    for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; g.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a)); }
+    g.closePath(); g.fill();
+    for (let k = 0; k < 18; k++) { const a = k / 18 * Math.PI * 2 + row, rr = R * (.25 + Math.random() * .55); g.fillStyle = 'rgba(255,150,170,.05)'; g.beginPath(); g.ellipse(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 9, 6, a, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(20,2,8,.85)'; g.beginPath(); g.arc(cx, cy, 6, 0, 7); g.fill();
+  }
+  // капилляры: ветвящиеся светящиеся линии
+  g.lineCap = 'round';
+  const branch = (x, y, a, w, depth) => {
+    if (depth <= 0 || w < .6) return;
+    g.beginPath(); g.moveTo(x, y);
+    const len = 40 + Math.random() * 70;
+    for (let i = 0; i < 6; i++) { a += (Math.random() - .5) * .5; x += Math.cos(a) * len / 6; y += Math.sin(a) * len / 6; g.lineTo(x, y); }
+    g.shadowColor = '#ff3355'; g.shadowBlur = 8; g.strokeStyle = `rgba(255,80,105,${.18 + w * .06})`; g.lineWidth = w; g.stroke();
+    branch(x, y, a + .45 + Math.random() * .3, w * .72, depth - 1);
+    if (Math.random() < .7) branch(x, y, a - .45 - Math.random() * .3, w * .68, depth - 1);
+  };
+  for (let i = 0; i < 9; i++) branch(Math.random() * W, Math.random() * H, Math.random() * 7, 3.2, 5);
+  g.shadowBlur = 0;
+});
+liverTex.wrapS = liverTex.wrapT = T.RepeatWrapping; liverTex.repeat.set(9, 9);
+const ground = new T.Mesh(new T.PlaneGeometry(70, 70), new T.MeshStandardMaterial({ map: liverTex, roughness: .55, metalness: 0, color: '#ffffff' }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+// Подложка под игровое поле: чуть светлее и тёплее, мягко гаснет к краям
+const plateTex = canvasTex(256, 256, (g, W) => {
+  const gr = g.createRadialGradient(W / 2, W / 2, W * .18, W / 2, W / 2, W / 2);
+  gr.addColorStop(0, 'rgba(255,140,150,.16)'); gr.addColorStop(.7, 'rgba(255,90,110,.08)'); gr.addColorStop(1, 'rgba(255,90,110,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, W);
+});
+const plate = new T.Mesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: plateTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending }));
+plate.rotation.x = -Math.PI / 2; plate.position.y = .012; scene.add(plate);
+
+// Плавающие эритроциты и блики света — фон живёт, но не мешает игре
+const drift = [];
+{
+  const rbcGeo = new T.TorusGeometry(.2, .11, 12, 28);
+  const rbcMat = new T.MeshPhysicalMaterial({ color: '#d4283f', roughness: .3, clearcoat: .8, emissive: '#4a0410', emissiveIntensity: .6, transparent: true, opacity: .85 });
+  for (let i = 0; i < 26; i++) {
+    const m = new T.Mesh(rbcGeo, rbcMat); m.rotation.set(Math.random() * 3, Math.random() * 3, 0);
+    m.userData = { v: new T.Vector3((Math.random() - .3) * .4, 0, (Math.random() - .5) * .3), spin: (Math.random() - .5) * .8, y: .15 + Math.random() * .25 };
+    m.castShadow = true; scene.add(m); drift.push(m);
+  }
+  for (let i = 0; i < 7; i++) {
+    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: i % 2 ? '#ff6b80' : '#ffb38a', blending: T.AdditiveBlending, depthWrite: false, opacity: .12 }));
+    s.scale.set(6, 6, 1); s.userData = { light: true, ph: Math.random() * 6, sp: .05 + Math.random() * .08 }; scene.add(s); drift.push(s);
+  }
+}
+let backBox = new T.Box3(new T.Vector3(-6, 0, -6), new T.Vector3(6, 0, 6));
+function updateBackdrop() {
+  backBox = new T.Box3();
+  pads.forEach(p => backBox.expandByPoint(p.pos)); backBox.expandByObject(organ); backBox.expandByPoint(portal.position);
+  const c = backBox.getCenter(new T.Vector3()), sz = backBox.getSize(new T.Vector3());
+  plate.position.set(c.x, .012, c.z); plate.scale.set(sz.x + 4, sz.z + 4, 1);
+  const outer = backBox.clone().expandByScalar(6);
+  drift.forEach((m, i) => {
+    if (m.userData.light) { m.position.set(c.x + (Math.random() - .5) * sz.x, 1.5, c.z + (Math.random() - .5) * sz.z); return; }
+    // эритроциты только по краям, вне игрового поля
+    let x, z, k = 0;
+    do { x = outer.min.x + Math.random() * (outer.max.x - outer.min.x); z = outer.min.z + Math.random() * (outer.max.z - outer.min.z); k++; }
+    while (k < 30 && x > backBox.min.x - .9 && x < backBox.max.x + .9 && z > backBox.min.z - .9 && z < backBox.max.z + .9);
+    m.position.set(x, m.userData.y, z);
+  });
+}
+function animateBackdrop(dt, now) {
+  for (const m of drift) {
+    if (m.userData.light) { m.material.opacity = .08 + .06 * Math.sin(now * m.userData.sp * 6 + m.userData.ph); m.position.x += Math.sin(now * m.userData.sp + m.userData.ph) * dt * .3; continue; }
+    m.position.addScaledVector(m.userData.v, dt); m.rotation.x += m.userData.spin * dt; m.rotation.z += m.userData.spin * dt * .6;
+    m.position.y = m.userData.y + Math.sin(now + m.rotation.x) * .05;
+    const o = backBox.clone().expandByScalar(7);
+    if (m.position.x > o.max.x) m.position.x = o.min.x; if (m.position.x < o.min.x) m.position.x = o.max.x;
+    if (m.position.z > o.max.z) m.position.z = o.min.z; if (m.position.z < o.min.z) m.position.z = o.max.z;
+  }
+}
+
+/* ---------- Поле: строится под размер экрана ---------- */
+let COLS = 8, ROWS = 13, OX = 4, OZ = 6, PATH = null, SPEEDK = 1;
+const pathCells = new Set(), pads = new Map();
+const board = new T.Group(); scene.add(board);
+const cellPos = (c, r) => new T.Vector3(c - OX, 0, r - OZ);
+
+// Змейка слева направо: вход слева посередине, вертикальные участки по очереди вверх и вниз, печень справа
+function makeLayout(aspect) {
+  const portrait = aspect < 1.4;
+  const rows = aspect < .9 ? 13 : aspect < 1.4 ? 11 : 9, gap = portrait ? 2 : 3;
+  const width = Math.round(rows * aspect * .92 - 2.6);
+  const runs = Math.max(2, Math.floor((width - 2) / gap) + 1);
+  const mid = Math.floor(rows / 2), wp = [[-0.45, mid]];
+  let y = mid;
+  for (let k = 0; k < runs; k++) {
+    const c = 1 + k * gap, to = k === runs - 1 ? mid : (k % 2 === 0 ? 1 : rows - 2);
+    wp.push([c, y], [c, to]); y = to;
+  }
+  const last = 1 + (runs - 1) * gap;
+  wp.push([last + 1.6, mid]);
+  return { rows, cols: last + 2, wp, portrait };
+}
+
+function pathAt(d, v = new T.Vector3()) {
+  const { pts, cum, len } = PATH;
+  d = Math.max(0, Math.min(len, d));
+  let lo = 0, hi = cum.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= d) lo = m; else hi = m; }
+  const t = (d - cum[lo]) / Math.max(1e-6, cum[hi] - cum[lo]);
+  return v.copy(pts[lo]).lerp(pts[hi], t);
+}
+
+const bloodTex = canvasTex(128, 512, (g, W, H) => {
+  const gr = g.createLinearGradient(0, 0, W, 0);
+  gr.addColorStop(0, '#5c0a16'); gr.addColorStop(.5, '#b5192f'); gr.addColorStop(1, '#5c0a16');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 46; i++) {
+    const x = 18 + Math.random() * (W - 36), y = Math.random() * H, r = 6 + Math.random() * 5;
+    const rg = g.createRadialGradient(x, y, r * .2, x, y, r);
+    rg.addColorStop(0, '#b3132a'); rg.addColorStop(.6, '#ff4d63'); rg.addColorStop(1, 'rgba(255,77,99,0)');
+    g.fillStyle = rg; g.beginPath(); g.ellipse(x, y, r, r * .8, 0, 0, 7); g.fill();
+  }
+  g.strokeStyle = 'rgba(255,170,180,.18)'; g.lineWidth = 2;
+  for (let i = 0; i < 20; i++) { const x = Math.random() * W, y = Math.random() * H; g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 30 + Math.random() * 40); g.stroke(); }
+});
+bloodTex.wrapS = bloodTex.wrapT = T.RepeatWrapping;
+const portal = new T.Group();
+{
+  const hole = new T.Mesh(new T.CircleGeometry(.62, 40), new T.MeshBasicMaterial({ color: '#050102' }));
+  hole.rotation.x = -Math.PI / 2; hole.position.y = .03; portal.add(hole);
+  const ring = new T.Mesh(new T.TorusGeometry(.62, .11, 12, 40), new T.MeshStandardMaterial({ color: '#ff8ea0', roughness: .3, emissive: '#7a1426', emissiveIntensity: .7 }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = .06; portal.add(ring);
+  const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ff3d55', blending: T.AdditiveBlending, depthWrite: false, opacity: .55 }));
+  glow.scale.set(2.2, 2.2, 1); glow.position.y = .2; portal.add(glow); portal.userData.glow = glow;
+  scene.add(portal);
+}
+const organ = new T.Group();
+{
+  // Печень: клиновидная форма, толстая правая доля, тонкая левая, серповидная борозда, острый нижний край
+  const geo = new T.SphereGeometry(1, 96, 64), p = geo.attributes.position, v = new T.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    // t: 0 — кончик левой доли, 1 — правая доля
+    const t = (v.x + 1) / 2;
+    const back = .28 + .8 * Math.sin(Math.PI * Math.min(1, t * .62 + .1));   // выпуклый диафрагмальный край
+    const front = .2 + .55 * t;                                                // ровный нижний край
+    const z = v.z * (v.z < 0 ? back : front);
+    let y = v.y;
+    if (y > 0) y *= .16 + .62 * Math.pow(t, .7); else y *= .12 + .14 * t;
+    if (v.z > 0) y *= 1 - .6 * v.z * v.z;
+    if (y > 0) y -= .07 * Math.exp(-Math.pow((v.x + .25) / .07, 2)) * Math.min(1, y * 8);
+    p.setXYZ(i, v.x * 1.5, y, z);
+  }
+  geo.computeVertexNormals();
+  const tex = canvasTex(512, 512, (g, W, H) => {
+    g.fillStyle = '#7a2a1e'; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 900; i++) {
+      const x = Math.random() * W, y = Math.random() * H, r = 3 + Math.random() * 14;
+      g.fillStyle = Math.random() < .5 ? 'rgba(150,60,45,.18)' : 'rgba(60,15,10,.18)';
+      g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    }
+    g.strokeStyle = 'rgba(40,8,5,.18)'; g.lineWidth = 1;
+    for (let y = 0; y < H; y += 22) for (let x = (y / 22 % 2) * 13; x < W; x += 26) {
+      g.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; g.lineTo(x + 13 * Math.cos(a), y + 13 * Math.sin(a)); } g.closePath(); g.stroke();
+    }
+  });
+  const mat = new T.MeshPhysicalMaterial({ map: tex, color: '#ffffff', roughness: .32, metalness: 0, clearcoat: 1, clearcoatRoughness: .18, sheen: .4, sheenColor: new T.Color('#ff9a8a'), emissive: '#3a0804', emissiveIntensity: 1 });
+  const liver = new T.Mesh(geo, mat); liver.castShadow = true; liver.receiveShadow = true; liver.position.y = .2; organ.add(liver);
+  const gall = new T.Mesh(new T.SphereGeometry(1, 32, 20), new T.MeshPhysicalMaterial({ color: '#4f8f2f', roughness: .25, clearcoat: 1, transmission: 0, emissive: '#0f2a05', emissiveIntensity: .6 }));
+  gall.scale.set(.32, .14, .17); gall.position.set(.35, .14, .55); gall.rotation.y = -.5; organ.add(gall);
+  const veinMat = new T.MeshPhysicalMaterial({ color: '#8a1020', roughness: .25, clearcoat: 1, emissive: '#3a0008', emissiveIntensity: .8 });
+  const vein = new T.Mesh(CYL_HI(), veinMat); vein.scale.set(.14, .8, .14); vein.rotation.x = Math.PI / 2; vein.position.set(-.1, .1, -.7); organ.add(vein);
+  const label = new T.Sprite(new T.SpriteMaterial({ map: canvasTex(256, 64, (g) => { g.font = '700 30px Unbounded, Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 6; g.strokeStyle = '#2a0508'; g.strokeText('ПЕЧЕНЬ', 128, 34); g.fillStyle = '#ffd9de'; g.fillText('ПЕЧЕНЬ', 128, 34); }), depthWrite: false, transparent: true }));
+  label.scale.set(1.3, .33, 1); label.position.set(0, 1.0, 0); organ.add(label);
+  organ.userData.mat = mat;
+  organ.rotation.y = Math.PI / 2; scene.add(organ);
+}
+function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
+
+const padGeo = new T.CylinderGeometry(.44, .48, .16, 6);
+const padMat = new T.MeshStandardMaterial({ color: '#a8646c', roughness: .4, metalness: .05, emissive: '#1a0509', emissiveIntensity: .3 });
+const ringGeo = new T.RingGeometry(.36, .44, 6);
+const bloodMat = new T.MeshStandardMaterial({ map: bloodTex, roughness: .18, metalness: .05, emissive: '#5a0612', emissiveIntensity: .5, side: T.DoubleSide });
+const wallMat = new T.MeshStandardMaterial({ color: '#d0566a', roughness: .22, metalness: 0, emissive: '#3a0812', emissiveIntensity: .4 });
+
+function buildBoard(L) {
+  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo) o.geometry.dispose(); if (o.material && o.material !== padMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
+  pads.clear(); pathCells.clear();
+  COLS = L.cols; ROWS = L.rows; OX = (COLS + 2) / 2; OZ = (ROWS - 1) / 2;
+  const WP = L.wp.filter((q, i, a) => i === 0 || q[0] !== a[i - 1][0] || q[1] !== a[i - 1][1]);
+  for (let i = 0; i < WP.length - 1; i++) {
+    const [c0, r0] = WP[i], [c1, r1] = WP[i + 1];
+    const steps = Math.ceil(Math.max(Math.abs(c1 - c0), Math.abs(r1 - r0)));
+    for (let k = 0; k <= steps; k++) {
+      const c = Math.round(c0 + (c1 - c0) * k / steps), r = Math.round(r0 + (r1 - r0) * k / steps);
+      if (c >= 0 && c < COLS && r >= 0 && r < ROWS) pathCells.add(c + ',' + r);
+    }
+  }
+  // Сглаженные повороты
+  const P = WP.map(([c, r]) => cellPos(c, r)), out = [P[0].clone()], rad = .55;
+  for (let i = 1; i < P.length - 1; i++) {
+    const a = P[i - 1], b = P[i], n = P[i + 1];
+    const d1 = b.clone().sub(a).normalize(), d2 = n.clone().sub(b).normalize();
+    const p1 = b.clone().addScaledVector(d1, -rad), p2 = b.clone().addScaledVector(d2, rad);
+    for (let k = 0; k <= 10; k++) { const t = k / 10; out.push(new T.Vector3().addScaledVector(p1, (1 - t) * (1 - t)).addScaledVector(b, 2 * t * (1 - t)).addScaledVector(p2, t * t)); }
+  }
+  out.push(P[P.length - 1].clone());
+  const cum = [0];
+  for (let i = 1; i < out.length; i++) cum.push(cum[i - 1] + out[i].distanceTo(out[i - 1]));
+  PATH = { pts: out, cum, len: cum[cum.length - 1] };
+  SPEEDK = PATH.len / 30;   // на длинном сосуде микробы быстрее — сложность одинаковая на любом экране
+
+  const W = .38, step = .06, pos = [], uv = [], idx = [];
+  const p = new T.Vector3(), q = new T.Vector3(), dir = new T.Vector3(), side = new T.Vector3();
+  let n = 0;
+  for (let d = 0; d <= PATH.len + 1e-6; d += step) {
+    pathAt(d, p); pathAt(d + .05, q); dir.subVectors(q, p).normalize();
+    if (d + .05 > PATH.len) { pathAt(d - .05, q); dir.subVectors(p, q).normalize(); }
+    side.set(-dir.z, 0, dir.x);
+    pos.push(p.x + side.x * W, .025, p.z + side.z * W, p.x - side.x * W, .025, p.z - side.z * W);
+    uv.push(0, d / 1.6, 1, d / 1.6);
+    if (n > 0) { const a = (n - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    n++;
+  }
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  const blood = new T.Mesh(geo, bloodMat); blood.receiveShadow = true; board.add(blood);
+  for (const sgn of [1, -1]) {
+    const pts = [];
+    for (let d = 0; d <= PATH.len; d += .25) {
+      pathAt(d, p); pathAt(Math.min(PATH.len, d + .05), q); dir.subVectors(q, p);
+      if (dir.lengthSq() < 1e-8) { pathAt(d - .05, q); dir.subVectors(p, q); }
+      dir.normalize(); side.set(-dir.z, 0, dir.x);
+      pts.push(new T.Vector3(p.x + side.x * (W + .05) * sgn, .06, p.z + side.z * (W + .05) * sgn));
+    }
+    const wall = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), pts.length * 3, .085, 8), wallMat);
+    wall.castShadow = true; wall.receiveShadow = true; board.add(wall);
+  }
+
+  portal.position.copy(PATH.pts[0]);
+  const sc = L.portrait ? 1.15 : 1.5, end = PATH.pts[PATH.pts.length - 1];
+  organ.scale.setScalar(sc); organ.position.set(end.x + 1.05 * sc, 0, end.z);
+  organ.updateMatrixWorld(true);
+  const ob = new T.Box3().setFromObject(organ).expandByScalar(.2);
+
+  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+    const k = c + ',' + r; if (pathCells.has(k)) continue;
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dc, dr]) => pathCells.has((c + dc) + ',' + (r + dr)));
+    if (!near || (c + r) % 2) continue;   // площадка через одну — меньше мест, важнее выбор
+    const cp = cellPos(c, r);
+    if (cp.x + .45 > ob.min.x && cp.z > ob.min.z && cp.z < ob.max.z) continue;
+    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, .08, cp.z); m.rotation.y = Math.PI / 6;
+    m.receiveShadow = true; m.castShadow = true; board.add(m);
+    const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
+    hl.rotation.x = -Math.PI / 2; hl.rotation.z = Math.PI / 6; hl.position.set(cp.x, .17, cp.z); board.add(hl);
+    pads.set(k, { c, r, pos: cp, mesh: m, hl, unit: null });
+  }
+}
+const stageAspect = () => Math.max(.3, stage.clientWidth / Math.max(1, stage.clientHeight));
+buildBoard(makeLayout(stageAspect()));
+
+/* ---------- Модели клеток ---------- */
+function shellMat(color, power = 2.4) {
+  return new T.ShaderMaterial({
+    uniforms: { c: { value: new T.Color(color) }, p: { value: power }, flash: { value: 0 } },
+    vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix * vec4(position,1.); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
+    fragmentShader: 'uniform vec3 c; uniform float p; uniform float flash; varying vec3 vN; varying vec3 vV; void main(){ float f = pow(1. - max(dot(normalize(vN), normalize(vV)), 0.), p); vec3 col = c*(.35 + 1.5*f) + flash; gl_FragColor = vec4(col, clamp(.1 + f*.95 + flash*.5, 0., 1.)); }',
+    transparent: true, depthWrite: false
+  });
+}
+const SPH = new T.SphereGeometry(1, 32, 24), SPH_LO = new T.SphereGeometry(1, 14, 10);
+const CONE = new T.ConeGeometry(1, 1, 8);
+const CYL = new T.CylinderGeometry(1, 1, 1, 10);
+
+const geoCache = {};
+function shapedSphere(key, fn) {
+  if (geoCache[key]) return geoCache[key];
+  const g = new T.SphereGeometry(1, 48, 32), p = g.attributes.position, v = new T.Vector3();
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).normalize(); p.setXYZ(i, ...v.multiplyScalar(fn(v)).toArray()); }
+  g.computeVertexNormals(); return geoCache[key] = g;
+}
+const AMOEBA_DIRS = [[1, .1, .2], [-.6, .2, .9], [-.7, 0, -.8], [.3, .15, -1], [.2, -.2, 1]].map(a => new T.Vector3(...a).normalize());
+const SHAPES = {
+  round: () => 1,
+  ruffled: (v) => 1 + .05 * Math.sin(v.x * 9 + 1) * Math.sin(v.y * 9 + 2) * Math.sin(v.z * 9 + 3),
+  amoeba: (v) => 1 + AMOEBA_DIRS.reduce((a, d) => a + .3 * Math.pow(Math.max(0, v.dot(d)), 5), 0) + .04 * Math.sin(v.x * 7) * Math.sin(v.z * 7)
+};
+
+// Каждая клетка — своя форма, цвет и хорошо видное ядро
+function buildCell(def) {
+  const g = new T.Group(), R = def.r, col = new T.Color(def.col), id = def.id;
+  const shape = id === 'neu' ? 'ruffled' : id === 'mac' ? 'amoeba' : 'round';
+  const bodyMat = new T.MeshPhysicalMaterial({ color: col, roughness: .22, metalness: 0, clearcoat: 1, clearcoatRoughness: .12, transparent: true, opacity: .4, emissive: col, emissiveIntensity: .22, depthWrite: false });
+  const body = new T.Mesh(shapedSphere(shape, SHAPES[shape]), bodyMat);
+  body.scale.setScalar(R); body.renderOrder = 2; body.castShadow = true; g.add(body);
+  if (id === 'mon') body.scale.set(R * 1.12, R * .92, R);
+  if (id === 'pl') body.scale.set(R * 1.4, R * .95, R * .95);
+  if (id === 'mast') body.scale.set(R * 1.15, R, R * .95);
+  if (id === 'den') body.scale.setScalar(R * 1.1);
+  const mk = (geo, color, emi = .6) => new T.Mesh(geo, new T.MeshStandardMaterial({ color, roughness: .35, emissive: color, emissiveIntensity: emi }));
+  const put = (m, x, y, z, s) => { m.position.set(x * R, y * R, z * R); if (s) (typeof s === 'number' ? m.scale.setScalar(s * R) : m.scale.set(s[0] * R, s[1] * R, s[2] * R)); m.renderOrder = 1; g.add(m); return m; };
+  const nuc = (x, y, z, s, c = '#3b1477') => put(mk(SPH_LO, c), x, y, z, s);
+  const granules = (n, c, rmin, rmax, size, upper = false) => {
+    const m = new T.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .55, roughness: .3 });
+    for (let i = 0; i < n; i++) {
+      const v = new T.Vector3().randomDirection(); if (upper) v.y = Math.abs(v.y) * .8 + .1;
+      v.multiplyScalar(rmin + Math.random() * (rmax - rmin));
+      put(new T.Mesh(SPH_LO, m), v.x, v.y, v.z, size * (.8 + Math.random() * .4));
+    }
+  };
+  const spikes = (n, len, w, c, branch = false) => {
+    const m = new T.MeshPhysicalMaterial({ color: c, roughness: .25, clearcoat: 1, emissive: c, emissiveIntensity: .25 });
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2, el = (i % 2 ? .35 : -.05) + Math.random() * .15;
+      const dir = new T.Vector3(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el)).normalize();
+      const sp = new T.Mesh(CONE, m); sp.scale.set(w * R, len * R, w * R);
+      sp.position.copy(dir.clone().multiplyScalar(R * (.85 + len / 2))); sp.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir); g.add(sp);
+      if (branch) {
+        const d2 = dir.clone().add(new T.Vector3(-dir.z, .3, dir.x).multiplyScalar(.6)).normalize();
+        const b = new T.Mesh(CONE, m); b.scale.set(w * .6 * R, len * .5 * R, w * .6 * R);
+        b.position.copy(dir.clone().multiplyScalar(R * (.85 + len * .55)).add(d2.clone().multiplyScalar(len * .22 * R))); b.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d2); g.add(b);
+      }
+    }
+  };
+  switch (id) {
+    case 'neu': // три дольки ядра цепочкой
+      nuc(-.36, .2, .12, .3); nuc(0, .3, -.14, .32); nuc(.36, .2, .12, .3);
+      put(mk(CYL, '#3b1477'), -.18, .25, -.01, [.1, .38, .1]).rotation.set(Math.PI / 2, 0, .9);
+      put(mk(CYL, '#3b1477'), .18, .25, -.01, [.1, .38, .1]).rotation.set(Math.PI / 2, 0, -.9);
+      granules(10, '#f3e6ff', .3, .8, .06); break;
+    case 'mon': { // ядро-подкова
+      const m = mk(new T.TorusGeometry(.42, .2, 12, 28, Math.PI * 1.35), '#1f3c8f');
+      put(m, 0, .25, 0, 1).rotation.set(Math.PI / 2, 0, .8); break; }
+    case 'mac': // крупный амебоид с вакуолями
+      nuc(.25, .25, .15, .32, '#6a2300');
+      for (const [x, z] of [[-.35, -.2], [-.15, .35], [.1, -.45], [-.5, .25]]) put(new T.Mesh(SPH_LO, new T.MeshPhysicalMaterial({ color: '#fff2c8', transparent: true, opacity: .55, roughness: .1, clearcoat: 1 })), x, .2, z, .14);
+      break;
+    case 'den': // «солнышко» с ветвистыми отростками
+      nuc(0, .2, 0, .5, '#3d5c00'); spikes(11, 1.0, .17, def.col, true); break;
+    case 'tk': // большое ядро, красные гранулы смещены к «жалу», короткие ворсинки
+      nuc(-.12, .15, 0, .58, '#101d5a'); granules(9, '#ff2e55', .4, .7, .11, true);
+      for (const gr of g.children.slice(-9)) gr.position.x = Math.abs(gr.position.x) + .2 * R;
+      spikes(16, .28, .07, '#a8c4ff'); break;
+    case 'nk': // золотая с крупными оранжевыми гранулами
+      nuc(0, .15, 0, .5, '#5a3a00'); granules(8, '#ff5a1f', .55, .75, .16, true); break;
+    case 'b': // ядро и антитела-рецепторы по всей поверхности
+      nuc(0, .15, 0, .58, '#0a3f60');
+      for (let i = 0; i < 14; i++) {
+        const dir = new T.Vector3().randomDirection(); if (dir.y < -.3) dir.y = -dir.y;
+        const y = buildY('#e9fdff', R * .55); y.position.copy(dir.clone().multiplyScalar(R * 1.08)); y.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir); g.add(y);
+      }
+      break;
+    case 'pl': { // овальная, ядро с «колесом» у края
+      const n = nuc(.6, .25, 0, [.42, .3, .42], '#241a7a');
+      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; put(mk(SPH_LO, '#c8c0ff', .6), .6 + Math.cos(a) * .24, .52, Math.sin(a) * .24, .07); }
+      put(mk(SPH_LO, '#d8d0ff', .6), .6, .55, 0, .08);
+      put(new T.Mesh(SPH_LO, new T.MeshPhysicalMaterial({ color: '#f4f0ff', transparent: true, opacity: .5 })), .05, .2, 0, .25); break; }
+    case 'eos': // ядро-«очки» и крупные оранжевые гранулы
+      nuc(-.3, .25, 0, .3, '#5a0f2e'); nuc(.3, .25, 0, .3, '#5a0f2e');
+      put(mk(CYL, '#5a0f2e'), 0, .25, 0, [.07, .3, .07]).rotation.z = Math.PI / 2;
+      granules(22, '#ff8a1f', .35, .85, .12); break;
+    case 'bas': // тёмные гранулы почти закрывают ядро
+      nuc(0, .1, 0, .4, '#1a0a4a'); granules(28, '#2c0b78', .3, .85, .14); break;
+    case 'th': { // «планета» с кольцом и бусинами
+      nuc(0, .15, 0, .55, '#0a4a3e');
+      const ringM = new T.Mesh(new T.TorusGeometry(1.45, .07, 10, 48), new T.MeshPhysicalMaterial({ color: '#9ffff0', emissive: '#2fd6b0', emissiveIntensity: .7, roughness: .2, clearcoat: 1 }));
+      put(ringM, 0, 0, 0, 1).rotation.set(Math.PI / 2 - .35, 0, 0);
+      g.userData.ring = ringM;
+      break; }
+    case 'mast': { // набита гранулами, часть гранул кружит снаружи
+      nuc(0, .1, 0, .32, '#3a0a4a'); granules(40, '#8a1aa0', .2, .85, .09);
+      const orbit = new T.Group(); const om = new T.MeshStandardMaterial({ color: '#c23ad8', emissive: '#c23ad8', emissiveIntensity: .8 });
+      for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, m = new T.Mesh(SPH_LO, om); m.position.set(Math.cos(a) * R * 1.3, (k % 2 ? .25 : -.1) * R, Math.sin(a) * R * 1.3); m.scale.setScalar(R * .1); orbit.add(m); }
+      g.add(orbit); g.userData.orbit = orbit; break; }
+  }
+  const shell = new T.Mesh(shapedSphere(shape, SHAPES[shape]), shellMat(def.col, 3)); shell.scale.copy(body.scale).multiplyScalar(1.03); shell.renderOrder = 3; g.add(shell);
+  g.userData.shell = shell; g.userData.body = body;
+  return g;
+}
+function buildY(color, scale = 1) {
+  const g = new T.Group(), mat = new T.MeshPhysicalMaterial({ color, roughness: .18, metalness: .25, clearcoat: 1, emissive: color, emissiveIntensity: .35 });
+  const seg = (len, rad, ang) => { const m = new T.Mesh(CYL, mat); m.scale.set(rad, len, rad); m.rotation.z = ang; return m; };
+  const stem = seg(.34, .05, 0); stem.position.y = -.12; g.add(stem);
+  for (const s of [1, -1]) {
+    const arm = seg(.34, .05, s * .62); arm.position.set(s * .1, .17, 0); g.add(arm);
+    const tip = new T.Mesh(SPH_LO, mat); tip.scale.setScalar(.065); tip.position.set(s * .2, .32, 0); g.add(tip);
+  }
+  g.children.forEach(m => m.castShadow = true);
+  g.scale.setScalar(scale); return g;
+}
+function buildIg(def) {
+  const g = new T.Group(), col = new T.Color(def.col);
+  const ped = new T.Mesh(new T.CylinderGeometry(.38, .42, .1, 6), new T.MeshStandardMaterial({ color: '#2a1a08', roughness: .3, metalness: .6, emissive: col, emissiveIntensity: .25 }));
+  ped.rotation.y = Math.PI / 6; ped.position.y = -.28; g.add(ped);
+  const halo = new T.Mesh(new T.TorusGeometry(.4, .025, 8, 40), new T.MeshBasicMaterial({ color: def.col }));
+  halo.rotation.x = Math.PI / 2; halo.position.y = -.2; g.add(halo);
+  const core = new T.Group(); g.add(core);
+  if (def.form === 'penta') {
+    for (let i = 0; i < 5; i++) { const y = buildY(def.col, .7); y.rotation.z = i / 5 * Math.PI * 2; y.position.set(Math.sin(i / 5 * Math.PI * 2) * .2, -Math.cos(i / 5 * Math.PI * 2) * .2 + .05, 0); y.rotation.z = Math.PI + i / 5 * Math.PI * 2; core.add(y); }
+    core.rotation.x = -.6;
+  } else if (def.form === 'dimer') {
+    const a = buildY(def.col, .95), b = buildY(def.col, .95); a.position.y = .2; b.rotation.z = Math.PI; b.position.y = -.12; core.add(a, b); core.scale.setScalar(.85);
+  } else core.add(buildY(def.col, 1.35));
+  const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: def.col, blending: T.AdditiveBlending, depthWrite: false, opacity: .45 }));
+  glow.scale.set(1.3, 1.3, 1); g.add(glow);
+  g.userData = { core, shell: null };
+  return g;
+}
+
+/* ---------- Микробы ---------- */
+const FOE_MAT = {
+  coccus: new T.MeshPhysicalMaterial({ color: '#b8d94a', roughness: .35, clearcoat: .6, emissive: '#2a3a00', emissiveIntensity: .5 }),
+  rod: new T.MeshPhysicalMaterial({ color: '#8bc34a', roughness: .4, clearcoat: .5, emissive: '#1a2a00', emissiveIntensity: .5 }),
+  virus: new T.MeshPhysicalMaterial({ color: '#c06cff', roughness: .3, metalness: .2, clearcoat: .8, emissive: '#3a0a5a', emissiveIntensity: .7 }),
+  capsule: new T.MeshPhysicalMaterial({ color: '#3fbfa0', roughness: .35, clearcoat: .7, emissive: '#06302a', emissiveIntensity: .6 }),
+  fungus: new T.MeshPhysicalMaterial({ color: '#efe3b0', roughness: .6, clearcoat: .3, emissive: '#3a3010', emissiveIntensity: .4 }),
+  worm: new T.MeshPhysicalMaterial({ color: '#e8c2a8', roughness: .35, clearcoat: .9, emissive: '#3a1a10', emissiveIntensity: .4 })
+};
+const ICO = new T.IcosahedronGeometry(1, 1);
+const CAPS = new T.CapsuleGeometry(.11, .3, 6, 12);
+function buildFoe(type) {
+  const g = new T.Group(), m = FOE_MAT[type], add = (geo, s, x = 0, y = 0, z = 0, mat = m) => { const o = new T.Mesh(geo, mat); o.scale.setScalar(s); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  switch (type) {
+    case 'coccus': { const n = 2 + (Math.random() * 3 | 0); for (let i = 0; i < n; i++) add(SPH_LO, .11, (i - (n - 1) / 2) * .19, 0, (Math.random() - .5) * .08); break; }
+    case 'rod': { const o = new T.Mesh(CAPS, m); o.rotation.x = Math.PI / 2; o.castShadow = true; g.add(o); break; }
+    case 'virus': { add(ICO, .12); for (let i = 0; i < 10; i++) { const d = new T.Vector3().randomDirection(); const s = add(CONE, 1, d.x * .14, d.y * .14, d.z * .14); s.scale.set(.025, .08, .025); s.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d); } break; }
+    case 'capsule': { add(SPH_LO, .17); const sh = new T.Mesh(SPH, new T.MeshPhysicalMaterial({ color: '#9ff5e0', roughness: .1, transparent: true, opacity: .32, clearcoat: 1, depthWrite: false })); sh.scale.setScalar(.27); g.add(sh); break; }
+    case 'fungus': { add(SPH, .26); add(SPH_LO, .14, .22, .1, .1); add(SPH_LO, .1, -.18, .15, -.12); add(SPH_LO, .08, .05, .26, -.05); break; }
+    case 'worm': { add(SPH, .34); break; }
+  }
+  return g;
+}
+
+/* ---------- Эффекты ---------- */
+const FX = { parts: [], rings: [] };
+const partPool = [];
+function spark(pos, color, n = 6, speed = 2, size = .22, life = .45, up = 1.2) {
+  for (let i = 0; i < n; i++) {
+    let s = partPool.pop();
+    if (!s) { s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, blending: T.AdditiveBlending, depthWrite: false, transparent: true })); }
+    s.material.color.set(color); s.material.opacity = 1; s.position.copy(pos);
+    const v = new T.Vector3((Math.random() - .5) * 2, Math.random() * up, (Math.random() - .5) * 2).multiplyScalar(speed);
+    s.userData = { v, life, max: life, size: size * (.6 + Math.random() * .8) };
+    s.scale.setScalar(s.userData.size); scene.add(s); FX.parts.push(s);
+  }
+}
+const ringGeoFx = new T.RingGeometry(.85, 1, 48);
+function ring(pos, color, radius, life = .45, y = .12) {
+  const m = new T.Mesh(ringGeoFx, new T.MeshBasicMaterial({ color, transparent: true, opacity: .9, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide }));
+  m.rotation.x = -Math.PI / 2; m.position.set(pos.x, y, pos.z); m.scale.setScalar(.1); scene.add(m);
+  FX.rings.push({ m, life, max: life, radius });
+}
+
+// Плавающие цифры урона (DOM)
+const fxEl = document.getElementById('fx'), nums = [];
+for (let i = 0; i < 36; i++) { const d = document.createElement('div'); d.className = 'dmg'; d.style.opacity = 0; fxEl.appendChild(d); nums.push({ el: d, life: 0, pos: new T.Vector3() }); }
+let numIdx = 0;
+function popNum(pos, text, cls = '') {
+  if (!SET.dmg && cls !== 'ult') return;
+  const n = nums[numIdx++ % nums.length];
+  n.el.className = 'dmg ' + cls; n.el.textContent = text; n.life = .8; n.pos.copy(pos); n.pos.y += .5;
+  n.pos.x += (Math.random() - .5) * .3;
+}
+
+/* =========================================================
+   СОСТОЯНИЕ И ЛОГИКА
+   ========================================================= */
+const G = {
+  mode: 'campaign', phase: 'menu', paused: false, coins: 0, hp: MAX_HP, wave: 0, speed: 1,
+  units: [], foes: [], shots: [], spikes: [], queue: [], spawnT: 0,
+  shop: [], legTab: false, sel: null, kills: {}, combo: 0, comboT: 0, bonus: {}, best: 0
+};
+try { G.best = +localStorage.getItem('immuneBest') || 0; } catch (e) {}
+
+const maxUnits = () => Math.min(12, 5 + Math.floor(G.wave / 4));
+
+function computeBonus() {
+  const cnt = {};
+  for (const u of G.units) { cnt[u.def.fac] = (cnt[u.def.fac] || 0) + 1; if (u.def.org) cnt[u.def.org] = (cnt[u.def.org] || 0) + 1; }
+  const b = {};
+  for (const k in FAC) { let t = 0; FAC[k].tiers.forEach((v, i) => { if ((cnt[k] || 0) >= v) t = i + 1; }); b[k] = { n: cnt[k] || 0, t }; }
+  G.bonus = b; renderTraits();
+}
+const tier = (k) => G.bonus[k]?.t || 0;
+
+function unitStats(u) {
+  const d = u.def, s = u.stars - 1;
+  let range = d.range + STAR_RANGE[s] + (d.fac === 'snipe' ? [0, .6, 1.2][tier('snipe')] : 0);
+  let rate = d.rate * STAR_RATE[s] * (d.org === 'innate' ? [1, .87, .72][tier('innate')] : 1);
+  let dmg = d.dmg * STAR_DMG[s] * (d.fac === 'ig' ? [1, 1.3, 1.7, 2.5][tier('ig')] : 1);
+  return { range, rate, dmg };
+}
+
+/* ---------- Волны ---------- */
+function makeWave(n) {
+  const q = [], boss = n % 10 === 0;
+  const pool = ['coccus', 'rod'];
+  if (n >= 4) pool.push('virus');
+  if (n >= 6) pool.push('capsule');
+  if (n >= 9) pool.push('fungus');
+  let count = Math.round(7 + n * 1.15), t = 0;
+  if (boss) { q.push({ type: 'worm', t: 1.5 }); count = Math.round(count * .5); t = 4; }
+  for (let i = 0; i < count; i++) {
+    const type = pool[Math.floor(Math.random() * pool.length)];
+    if (type === 'virus') { for (let k = 0; k < 4; k++) q.push({ type, t: t + k * .22 }); t += 1.4; }
+    else if (type === 'coccus' && Math.random() < .4) { for (let k = 0; k < 3; k++) q.push({ type, t: t + k * .35 }); t += 1.3; }
+    else { q.push({ type, t }); t += type === 'fungus' ? 1.4 : .8; }
+  }
+  return q.sort((a, b) => a.t - b.t);
+}
+const hpScale = (n) => Math.pow(1.13, n - 1) * (1 + n * .03);
+
+function spawn(type) {
+  const f = FOES[type], mesh = buildFoe(type), n = G.wave;
+  let hp = f.hp * hpScale(n);
+  if (type === 'worm' && G.mode === 'campaign' && n === CAMPAIGN_WAVES) hp *= 1.6;
+  const bg = new T.Sprite(new T.SpriteMaterial({ color: '#1a0508', depthWrite: false, transparent: true, opacity: .85 }));
+  const fill = new T.Sprite(new T.SpriteMaterial({ color: '#7be0b0', depthWrite: false, transparent: true }));
+  bg.center.set(0, .5); fill.center.set(0, .5);
+  const w = f.boss ? 1.2 : .6; bg.scale.set(w, .09, 1); fill.scale.set(w, .065, 1);
+  mesh.scale.setScalar(1.4); mesh.userData.bs = 1.4;
+  scene.add(mesh, bg, fill);
+  const e = {
+    type, f, mesh, bg, fill, barW: w, hp, maxHp: hp, d: 0, pos: new T.Vector3(), armor: f.armor,
+    slow: 0, slowT: 0, stunT: 0, burn: 0, burnT: 0, shredT: 0, shredAmp: 0, weak: 0, weakT: 0, opsT: 0,
+    squash: 0, dead: false, segs: null, wob: Math.random() * 6
+  };
+  if (type === 'worm') {
+    e.segs = [];
+    for (let i = 1; i <= 9; i++) { const s = new T.Mesh(SPH, FOE_MAT.worm); s.scale.setScalar(.3 - i * .018); s.castShadow = true; scene.add(s); e.segs.push(s); }
+    showBanner(G.mode === 'campaign' && n === CAMPAIGN_WAVES ? 'Финальный босс' : 'Босс: гельминт', 'Береги печень');
+    AU.play('siren', 0, .9);
+  }
+  G.foes.push(e);
+}
+
+function removeFoe(e) {
+  scene.remove(e.mesh, e.bg, e.fill); e.fill.material.dispose(); e.bg.material.dispose();
+  if (e.segs) e.segs.forEach(s => scene.remove(s));
+}
+
+function hurt(e, dmg, u, opt = {}) {
+  if (e.dead) return;
+  const d = u?.def || {};
+  let mult = 1 + (e.weakT > 0 ? e.weak : 0) + (e.shredT > 0 ? e.shredAmp : 0) + (e.opsT > 0 ? .5 : 0);
+  if (opt.vsSlow && (e.slowT > 0 || e.stunT > 0)) mult *= 2;
+  if (d.bigMul && e.f.big) mult *= d.bigMul;
+  if (d.org === 'adaptive') { const cap = [0, .3, .6][tier('adaptive')]; mult *= 1 + Math.min(cap, (G.kills[e.type] || 0) * .012); }
+  let crit = false;
+  const cc = (d.crit || 0) + (d.fac === 'hunt' ? [0, .15, .3][tier('hunt')] : 0);
+  if (cc && Math.random() < cc) { mult *= 2.2; crit = true; }
+  const armor = e.shredT > 0 ? 0 : e.armor;
+  const val = dmg * mult * (1 - armor);
+  e.hp -= val; e.squash = 1;
+  if (val >= 12 || crit || opt.ult) popNum(e.pos, Math.round(val), opt.ult ? 'ult' : crit ? 'crit' : '');
+  if (e.hp <= 0) kill(e);
+}
+
+function kill(e) {
+  e.dead = true;
+  const reward = Math.round(e.f.reward * (1 + G.wave * .04));
+  G.coins += reward; updateHUD();
+  G.kills[e.type] = (G.kills[e.type] || 0) + 1; PROF.kills++;
+  const col = '#' + FOE_MAT[e.type].color.getHexString();
+  spark(e.pos, col, e.f.boss ? 40 : 10, e.f.boss ? 3 : 1.8, e.f.boss ? .5 : .25, .55);
+  spark(e.pos, '#ffffff', 3, 1, .3, .25);
+  AU.play(e.f.boss ? 'boom' : 'die', e.pos.x, e.f.boss ? 1 : .8);
+  if (e.f.boss) ring(e.pos, '#ffd36b', 3, .8);
+  G.combo = G.comboT > 0 ? G.combo + 1 : 1; G.comboT = 1.4;
+  if (G.combo >= 5) { comboEl.innerHTML = 'Комбо <span>×' + G.combo + '</span>'; comboEl.classList.add('on'); }
+}
+
+function applyHit(e, u, s, opt = {}) {
+  const d = u.def;
+  hurt(e, s.dmg * (opt.mul || 1), u, opt);
+  if (e.dead) return;
+  if (d.slow) {
+    const tg = d.fac === 'guard' ? tier('guard') : 0;
+    const amt = Math.min(.75, d.slow[0] + [0, .15, .3][tg]), dur = d.slow[1] * [1, 1.5, 2][tg];
+    e.slow = Math.max(e.slowT > 0 ? e.slow : 0, amt); e.slowT = Math.max(e.slowT, dur);
+  }
+  if (d.stun) e.stunT = Math.max(e.stunT, d.stun * [1, 1.5, 2][tier('guard')]);
+  if (d.burn) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.burn = Math.max(e.burn, d.burn[0] * STAR_DMG[u.stars - 1] * m); e.burnT = d.burn[1]; }
+  if (d.shred) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.shredT = d.shred * m; e.shredAmp = Math.max(e.shredAmp, .2 * m); }
+  if (d.weaken) { e.weak = Math.max(e.weak, d.weaken[0]); e.weakT = d.weaken[1]; }
+}
+
+function inRange(u, range) {
+  const out = [];
+  for (const e of G.foes) if (!e.dead && e.pos.distanceTo(u.pos) <= range) out.push(e);
+  return out;
+}
+function pickTarget(u, range) {
+  const list = inRange(u, range); if (!list.length) return null;
+  if (u.def.target === 'strong') return list.reduce((a, b) => b.hp > a.hp ? b : a);
+  return list.reduce((a, b) => b.d > a.d ? b : a);
+}
+
+/* ---------- Снаряды ---------- */
+const projMats = {};
+function projMesh(kind, color) {
+  if (kind === 'y') { const y = buildY(color, .45); return y; }
+  if (kind === 'needle') { const m = new T.Mesh(CYL, projMats['n' + color] ||= new T.MeshBasicMaterial({ color })); m.scale.set(.025, .34, .025); const g = new T.Group(); m.rotation.x = Math.PI / 2; g.add(m); return g; }
+  if (kind === 'streak') { const m = new T.Mesh(CYL, projMats['s' + color] ||= new T.MeshBasicMaterial({ color, transparent: true, opacity: .9, blending: T.AdditiveBlending })); m.scale.set(.04, .7, .04); const g = new T.Group(); m.rotation.x = Math.PI / 2; g.add(m); return g; }
+  const s = new T.Mesh(SPH_LO, projMats['b' + color] ||= new T.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: .9, roughness: .2 }));
+  s.scale.setScalar(kind === 'granule' ? .1 : .08); return s;
+}
+function fire(u, e, s) {
+  const d = u.def, from = u.pos.clone().setY(.45), col = d.col;
+  u.kick = 1;
+  if (d.kind === 'melee') {
+    applyHit(e, u, s); spark(e.pos, col, 5, 1.4, .2, .3);
+    if (d.slow) ring(e.pos, '#d9c8ff', .45, .3);
+    u.lunge = e.pos.clone().sub(u.pos).setY(0).normalize();
+    AU.play(d.snd, u.pos.x, .8); return;
+  }
+  if (d.kind === 'pulse') {
+    for (const t of inRange(u, s.range)) applyHit(t, u, s);
+    ring(u.pos, col, s.range, .45); spark(u.pos.clone().setY(.4), col, 10, 2.5, .22, .35, .3);
+    AU.play(d.snd, u.pos.x, .8); return;
+  }
+  if (d.kind === 'fan') {
+    const ts = inRange(u, s.range).sort((a, b) => b.d - a.d).slice(0, 5);
+    ts.forEach(t => G.shots.push({ kind: 'homing', mesh: addMesh(projMesh('y', col), from), target: t, u, s, speed: 7 }));
+    AU.play(d.snd, u.pos.x, .7); return;
+  }
+  if (d.kind === 'lob') {
+    const lead = e.pos.clone(); const tgt = pathAt(Math.min(PATH.len, e.d + e.f.speed * SPEEDK * .55 * (1 - (e.slowT > 0 ? e.slow : 0))));
+    G.shots.push({ kind: 'lob', mesh: addMesh(projMesh('granule', d.gran || col), from), from, to: tgt.clone(), t: 0, dur: .55, u, s, trail: d.gran || col });
+    AU.play('lob', u.pos.x, .6); return;
+  }
+  if (d.kind === 'pierce') {
+    const dir = e.pos.clone().sub(u.pos).setY(0).normalize();
+    G.shots.push({ kind: 'pierce', mesh: addMesh(projMesh('streak', col), from), dir, dist: 0, max: d.plen + 1, hit: new Set(), u, s, speed: 11 });
+    AU.play('zip', u.pos.x, .7); return;
+  }
+  G.shots.push({ kind: 'homing', mesh: addMesh(projMesh(d.proj, d.proj === 'drop' ? (d.id === 'mac' ? '#ffb347' : '#7dff9e') : col), from), target: e, u, s, speed: d.proj === 'needle' ? 13 : 8 });
+  AU.play(d.snd, u.pos.x, d.id === 'pl' ? .45 : .75);
+}
+function addMesh(m, p) { m.position.copy(p); scene.add(m); return m; }
+
+function explode(pos, u, s, radius, opt = {}) {
+  const r = radius * (u.def.fac === 'bomb' ? [1, 1.25, 1.5][tier('bomb')] : 1);
+  for (const e of G.foes) if (!e.dead && e.pos.distanceTo(pos) <= r) applyHit(e, u, s, opt);
+  ring(pos, u.def.gran || u.def.col, r, .4);
+  spark(pos.clone().setY(.2), u.def.gran || u.def.col, 14, 2.6, .3, .45, 1.6);
+  spark(pos.clone().setY(.2), '#fff2d0', 5, 1.4, .45, .25, .6);
+  AU.play('boom', pos.x, .55);
+}
+
+/* ---------- Ультимативные способности иммуноглобулинов ---------- */
+function ult(u, s) {
+  const d = u.def, near = inRange(u, s.range * 1.25);
+  if (!near.length) return false;
+  AU.play('ult', u.pos.x, .9);
+  ring(u.pos, d.col, s.range * 1.25, .7); ring(u.pos, '#ffffff', s.range * .8, .5);
+  popNum(u.pos.clone().setY(.6), d.ult.split(':')[0], 'ult');
+  if (d.id === 'igg') near.forEach(e => { e.opsT = 4; spark(e.pos, '#ffd36b', 3, 1, .25, .4); });
+  if (d.id === 'igm') near.forEach(e => { e.stunT = Math.max(e.stunT, 1.5); spark(e.pos, '#ff8fb1', 4, 1, .25, .5); });
+  if (d.id === 'iga') {
+    const tgt = near.reduce((a, b) => b.d > a.d ? b : a), from = Math.max(0, tgt.d - 1.4), to = Math.min(PATH.len, tgt.d + 1.4);
+    const meshes = [], mat = new T.MeshPhysicalMaterial({ color: '#7cf0d0', roughness: .2, clearcoat: 1, emissive: '#1a6a5a', emissiveIntensity: .6 });
+    for (let x = from; x <= to; x += .22) {
+      const p = pathAt(x);
+      for (const off of [-.2, .05, .25]) {
+        const m = new T.Mesh(CONE, mat); m.position.set(p.x + (Math.random() - .5) * .15 + off * .4, .02, p.z + (Math.random() - .5) * .15 + off * .4);
+        m.scale.set(.05, .001, .05); m.userData.h = .14 + Math.random() * .1; scene.add(m); meshes.push(m);
+      }
+    }
+    G.spikes.push({ from, to, t: 5, meshes, mat });
+  }
+  if (d.id === 'ige') {
+    const t = near.reduce((a, b) => (b.f.big ? b.hp * 3 : b.hp) > (a.f.big ? a.hp * 3 : a.hp) ? b : a);
+    hurt(t, s.dmg * 6, u, { ult: true }); ring(t.pos, '#ff7a45', 1.2, .5); spark(t.pos, '#ff7a45', 20, 3, .35, .5);
+  }
+  if (d.id === 'igd') near.forEach(e => hurt(e, s.dmg * 3, u, { vsSlow: true, ult: true }));
+  return true;
+}
+
+/* ---------- Главный цикл ---------- */
+const tmpV = new T.Vector3(), tmpQ = new T.Vector3();
+function update(dt) {
+  const now = performance.now() / 1000;
+  bloodTex.offset.y -= dt * .45;
+  animateBackdrop(dt, now);
+  portal.userData.glow.material.opacity = .45 + Math.sin(now * 3) * .15;
+  organ.scale.setScalar(1 + Math.sin(now * 2.2) * .015);
+  organ.userData.mat.emissiveIntensity = Math.max(1, organ.userData.mat.emissiveIntensity - dt * 6);
+
+  if (G.phase === 'wave') {
+    G.spawnT += dt;
+    while (G.queue.length && G.queue[0].t <= G.spawnT) spawn(G.queue.shift().type);
+  }
+
+  // Шипы IgA
+  for (let i = G.spikes.length - 1; i >= 0; i--) {
+    const z = G.spikes[i]; z.t -= dt;
+    for (const m of z.meshes) { const target = z.t > .4 ? m.userData.h : 0.001; m.scale.y += (target - m.scale.y) * Math.min(1, dt * 12); m.position.y = m.scale.y / 2; }
+    if (z.t <= 0) { z.meshes.forEach(m => scene.remove(m)); z.mat.dispose(); G.spikes.splice(i, 1); }
+  }
+
+  // Микробы
+  for (const e of G.foes) {
+    if (e.dead) continue;
+    e.slowT -= dt; e.stunT -= dt; e.burnT -= dt; e.shredT -= dt; e.weakT -= dt; e.opsT -= dt;
+    if (e.slowT <= 0) e.slow = 0;
+    if (e.shredT <= 0) e.shredAmp = 0;
+    if (e.weakT <= 0) e.weak = 0;
+    let sp = e.f.speed * (1 - (e.slowT > 0 ? e.slow : 0));
+    for (const z of G.spikes) if (e.d >= z.from && e.d <= z.to) sp *= .45;
+    if (e.stunT > 0) sp = 0;
+    e.d += sp * dt * SPEEDK;
+    pathAt(e.d, e.pos);
+    pathAt(e.d + .1, tmpQ);
+    e.wob += dt * (3 + sp * 3);
+    const lift = e.f.size * 1.4 + .05 + Math.sin(e.wob) * .025;
+    e.mesh.position.set(e.pos.x, lift, e.pos.z);
+    e.mesh.lookAt(tmpQ.x, lift, tmpQ.z);
+    if (e.type === 'virus' || e.type === 'coccus') e.mesh.rotateY(now * 3);
+    e.squash = Math.max(0, e.squash - dt * 6);
+    const sq = 1 + e.squash * .25, bs = e.mesh.userData.bs; e.mesh.scale.set(sq * bs, bs / sq, sq * bs);
+    if (e.segs) e.segs.forEach((s, i) => { pathAt(Math.max(0, e.d - (i + 1) * .27), tmpV); s.position.set(tmpV.x, .28 - i * .012 + Math.sin(e.wob - i * .7) * .04, tmpV.z); });
+    const barY = e.f.boss ? 1.1 : e.f.size * 2.8 + .25;
+    e.bg.position.set(e.pos.x - e.barW / 2, barY, e.pos.z); e.fill.position.copy(e.bg.position);
+    const pct = Math.max(0, e.hp / e.maxHp);
+    e.fill.scale.x = e.barW * pct;
+    e.fill.material.color.set(e.shredT > 0 ? '#8ff0b4' : e.opsT > 0 ? '#ffd36b' : pct > .5 ? '#7be0b0' : pct > .25 ? '#ffc65c' : '#ff5a6a');
+    if (e.burnT > 0) { hurt(e, e.burn * dt, null); if (Math.random() < dt * 8) spark(e.pos.clone().setY(lift + .1), '#ff9a3c', 1, .4, .18, .5, 1.5); }
+    if (e.slowT > 0 && Math.random() < dt * 4) spark(e.pos.clone().setY(lift), '#c9a6ff', 1, .2, .15, .4, .3);
+    if (!e.dead && e.d >= PATH.len) {
+      e.dead = true; e.leaked = true;
+      G.hp = Math.max(0, G.hp - e.f.leak); updateHUD();
+      organ.userData.mat.emissiveIntensity = 6;
+      spark(organ.position.clone().setY(.6), '#ff3d55', 16, 2.5, .35, .5);
+      AU.play('leak', organ.position.x, 1); buzz(120);
+      toast(e.f.name + ' дошёл до печени: −' + e.f.leak);
+    }
+  }
+  for (let i = G.foes.length - 1; i >= 0; i--) if (G.foes[i].dead) { removeFoe(G.foes[i]); G.foes.splice(i, 1); }
+
+  // Клетки
+  for (const u of G.units) {
+    const s = unitStats(u);
+    u.cd -= dt;
+    if (u.def.ultCd) { u.ultT -= dt; if (u.ultT <= 0 && G.phase === 'wave') { if (ult(u, s)) u.ultT = u.def.ultCd; else u.ultT = .5; } }
+    if (u.cd <= 0) {
+      const e = pickTarget(u, s.range);
+      if (e) { fire(u, e, s); u.cd = s.rate; }
+    }
+    u.kick = Math.max(0, (u.kick || 0) - dt * 5);
+    const bob = Math.sin(now * 2 + u.phase) * .04;
+    const m = u.mesh;
+    const bs = u.def.leg ? 1.3 : 1.5;
+    m.position.set(u.pos.x, (u.def.leg ? .45 : .18 + u.def.r * bs) + bob, u.pos.z);
+    if (u.lunge && u.kick > 0) m.position.addScaledVector(u.lunge, u.kick * .22);
+    const pulse = 1 + u.kick * .12 + Math.sin(now * 3 + u.phase) * .02;
+    m.scale.set(pulse * bs, bs / pulse * (1 + Math.sin(now * 3 + u.phase) * .02), pulse * bs);
+    if (m.userData.orbit) m.userData.orbit.rotation.y += dt * 1.6;
+    if (m.userData.ring) m.userData.ring.rotation.z += dt * .8;
+    if (m.userData.core) { m.userData.core.rotation.y += dt * .8; }
+    else m.rotation.y += dt * .25;
+    if (m.userData.shell) m.userData.shell.material.uniforms.flash.value = u.kick * .25 + (u.mergeFx || 0);
+    if (u.mergeFx) u.mergeFx = Math.max(0, u.mergeFx - dt * 1.5);
+    u.starSprite.position.set(u.pos.x, m.position.y + (u.def.leg ? .9 : u.def.r * bs + .42), u.pos.z);
+  }
+
+  // Снаряды
+  for (let i = G.shots.length - 1; i >= 0; i--) {
+    const p = G.shots[i]; let done = false;
+    if (p.kind === 'homing') {
+      if (p.target.dead) { done = true; }
+      else {
+        tmpV.copy(p.target.pos).setY(p.target.f.size + .05);
+        const dir = tmpV.clone().sub(p.mesh.position), dist = dir.length(), stepLen = p.speed * dt;
+        p.mesh.lookAt(tmpV); if (p.u.def.proj === 'y' || p.u.def.kind === 'fan') p.mesh.rotateZ(now * 10);
+        if (dist <= stepLen + .05) {
+          applyHit(p.target, p.u, p.s);
+          spark(tmpV, p.u.def.proj === 'drop' ? (p.u.def.id === 'mac' ? '#ffb347' : '#7dff9e') : p.u.def.col, 4, 1.2, .2, .3);
+          if (p.u.def.slow && p.u.def.proj === 'y') ring(tmpV, '#7fe7ff', .35, .3);
+          AU.play('hit', tmpV.x, .4); done = true;
+        } else p.mesh.position.addScaledVector(dir.normalize(), stepLen);
+        if (Math.random() < dt * 30) spark(p.mesh.position, p.u.def.col, 1, .1, .12, .18, 0);
+      }
+    } else if (p.kind === 'lob') {
+      p.t += dt / p.dur; const t = Math.min(1, p.t);
+      p.mesh.position.lerpVectors(p.from, p.to, t); p.mesh.position.y = .45 + Math.sin(t * Math.PI) * 1.3 - t * .4;
+      if (Math.random() < dt * 40) spark(p.mesh.position, p.trail, 1, .1, .14, .25, 0);
+      if (t >= 1) { explode(p.to, p.u, p.s, p.u.def.aoe); done = true; }
+    } else if (p.kind === 'pierce') {
+      const stepLen = p.speed * dt; p.dist += stepLen;
+      p.mesh.position.addScaledVector(p.dir, stepLen); p.mesh.lookAt(p.mesh.position.clone().add(p.dir));
+      for (const e of G.foes) {
+        if (e.dead || p.hit.has(e)) continue;
+        if (Math.hypot(e.pos.x - p.mesh.position.x, e.pos.z - p.mesh.position.z) < .32) {
+          const bonus = 1 + p.hit.size * [0, .2, .4][tier('pierce')];
+          p.hit.add(e); applyHit(e, p.u, p.s, { mul: bonus }); spark(e.pos, p.u.def.col, 4, 1.4, .2, .3);
+        }
+      }
+      if (Math.random() < dt * 50) spark(p.mesh.position, p.u.def.col, 1, .05, .2, .2, 0);
+      if (p.dist >= p.max) done = true;
+    }
+    if (done) { scene.remove(p.mesh); G.shots.splice(i, 1); }
+  }
+
+  // Частицы и кольца
+  for (let i = FX.parts.length - 1; i >= 0; i--) {
+    const s = FX.parts[i], u = s.userData; u.life -= dt;
+    if (u.life <= 0) { scene.remove(s); FX.parts.splice(i, 1); if (partPool.length < 400) partPool.push(s); continue; }
+    u.v.y -= dt * 3; s.position.addScaledVector(u.v, dt); s.position.y = Math.max(.05, s.position.y);
+    const k = u.life / u.max; s.material.opacity = k; s.scale.setScalar(u.size * (.5 + k * .5));
+  }
+  for (let i = FX.rings.length - 1; i >= 0; i--) {
+    const r = FX.rings[i]; r.life -= dt; const k = 1 - r.life / r.max;
+    r.m.scale.setScalar(.1 + k * r.radius); r.m.material.opacity = (1 - k) * .9;
+    if (r.life <= 0) { scene.remove(r.m); r.m.material.dispose(); FX.rings.splice(i, 1); }
+  }
+
+  // Комбо
+  if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) { G.combo = 0; comboEl.classList.remove('on'); } }
+
+  // Конец волны / поражение
+  if (G.phase === 'wave') {
+    if (G.hp <= 0) return finish(false);
+    if (!G.queue.length && !G.foes.length) waveCleared();
+  }
+}
+
+function renderNums(dt) {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  for (const n of nums) {
+    if (n.life <= 0) continue;
+    n.life -= dt; n.pos.y += dt * .8;
+    tmpV.copy(n.pos).project(camera);
+    const x = (tmpV.x * .5 + .5) * w, y = (-tmpV.y * .5 + .5) * h;
+    n.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${.8 + Math.min(1, (0.8 - n.life) * 8) * .2})`;
+    n.el.style.opacity = Math.min(1, n.life * 2.5);
+  }
+}
+
+/* =========================================================
+   ИНТЕРФЕЙС
+   ========================================================= */
+const $ = (id) => document.getElementById(id);
+const comboEl = $('combo');
+const iconCache = {};
+function cellIcon(def) {
+  if (iconCache[def.id]) return iconCache[def.id];
+  const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d');
+  if (def.leg) {
+    const gr = g.createRadialGradient(48, 48, 4, 48, 48, 46); gr.addColorStop(0, def.col + 'aa'); gr.addColorStop(1, def.col + '00');
+    g.fillStyle = gr; g.fillRect(0, 0, 96, 96);
+    g.strokeStyle = def.col; g.lineWidth = 9; g.lineCap = 'round'; g.lineJoin = 'round';
+    const drawY = (x, y, s, a) => { g.save(); g.translate(x, y); g.rotate(a); g.scale(s, s); g.beginPath(); g.moveTo(-16, -18); g.lineTo(0, 0); g.lineTo(16, -18); g.moveTo(0, 0); g.lineTo(0, 22); g.stroke(); g.restore(); };
+    if (def.form === 'penta') for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; drawY(48 + Math.sin(a) * 22, 48 - Math.cos(a) * 22, .55, a); }
+    else if (def.form === 'dimer') { drawY(48, 34, .75, 0); drawY(48, 64, .75, Math.PI); }
+    else drawY(48, 48, 1.1, 0);
+  } else {
+    const id = def.id, C = def.col;
+    const dot = (x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
+    const rnd = (n, rmax, r, c) => { for (let i = 0; i < n; i++) { const a = Math.random() * 7, rr = Math.sqrt(Math.random()) * rmax; dot(48 + Math.cos(a) * rr, 48 + Math.sin(a) * rr, r, c); } };
+    const body = (rx, ry) => {
+      const gr = g.createRadialGradient(40, 38, 3, 48, 48, Math.max(rx, ry));
+      gr.addColorStop(0, '#ffffffdd'); gr.addColorStop(.3, C); gr.addColorStop(1, C + '88');
+      g.fillStyle = gr; g.beginPath(); g.ellipse(48, 48, rx, ry, 0, 0, 7); g.fill(); g.strokeStyle = '#ffffffbb'; g.lineWidth = 2; g.stroke();
+    };
+    g.lineCap = 'round';
+    if (id === 'den') { g.strokeStyle = C; g.lineWidth = 5; for (let i = 0; i < 11; i++) { const a = i / 11 * 7; g.beginPath(); g.moveTo(48 + Math.cos(a) * 18, 48 + Math.sin(a) * 18); g.lineTo(48 + Math.cos(a) * 45, 48 + Math.sin(a) * 45); g.stroke(); } body(22, 22); dot(48, 48, 11, '#3d5c00'); }
+    else if (id === 'mac') { g.fillStyle = C; [[0, 0, 30], [24, -6, 14], [-22, 14, 14], [-16, -20, 13], [10, 24, 12]].forEach(([x, y, r]) => { g.beginPath(); g.arc(48 + x, 48 + y, r, 0, 7); g.fill(); }); dot(56, 44, 10, '#6a2300'); [[38, 38], [42, 60], [30, 52]].forEach(([x, y]) => dot(x, y, 5, '#fff2c8cc')); }
+    else if (id === 'pl') { body(42, 28); dot(68, 48, 14, '#241a7a'); for (let k = 0; k < 8; k++) { const a = k / 8 * 7; dot(68 + Math.cos(a) * 8, 48 + Math.sin(a) * 8, 2.5, '#c8c0ff'); } dot(40, 48, 9, '#f4f0ffaa'); }
+    else if (id === 'th') { g.strokeStyle = '#9ffff0'; g.lineWidth = 4; g.beginPath(); g.ellipse(48, 50, 45, 14, -.2, 0, 7); g.stroke(); body(28, 28); dot(48, 46, 15, '#0a4a3e'); }
+    else if (id === 'b') { g.strokeStyle = '#e9fdff'; g.lineWidth = 3; for (let i = 0; i < 12; i++) { const a = i / 12 * 7, x = 48 + Math.cos(a) * 36, y = 48 + Math.sin(a) * 36; g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2); g.beginPath(); g.moveTo(0, 4); g.lineTo(0, -2); g.lineTo(-4, -8); g.moveTo(0, -2); g.lineTo(4, -8); g.stroke(); g.restore(); } body(32, 32); dot(48, 48, 18, '#0a3f60'); }
+    else if (id === 'tk') { g.strokeStyle = '#a8c4ff'; g.lineWidth = 3; for (let i = 0; i < 16; i++) { const a = i / 16 * 7; g.beginPath(); g.moveTo(48 + Math.cos(a) * 34, 48 + Math.sin(a) * 34); g.lineTo(48 + Math.cos(a) * 42, 48 + Math.sin(a) * 42); g.stroke(); } body(34, 34); dot(42, 48, 18, '#101d5a'); for (let i = 0; i < 7; i++) dot(64 + Math.random() * 8, 36 + Math.random() * 24, 4, '#ff2e55'); }
+    else if (id === 'mast') { body(38, 34); rnd(40, 30, 3.2, '#8a1aa0'); dot(48, 48, 9, '#3a0a4a'); for (let k = 0; k < 6; k++) { const a = k / 6 * 7; dot(48 + Math.cos(a) * 44, 48 + Math.sin(a) * 44, 3.5, '#c23ad8'); } }
+    else {
+      body(id === 'mon' ? 40 : 36, id === 'mon' ? 32 : 36);
+      if (id === 'neu') { [[-14, 4], [0, -6], [14, 4]].forEach(([x, y]) => dot(48 + x, 48 + y, 10, '#3b1477')); g.strokeStyle = '#3b1477'; g.lineWidth = 5; g.beginPath(); g.moveTo(34, 52); g.lineTo(48, 42); g.lineTo(62, 52); g.stroke(); }
+      if (id === 'mon') { g.strokeStyle = '#1f3c8f'; g.lineWidth = 11; g.beginPath(); g.arc(48, 50, 14, .4, Math.PI * 1.75); g.stroke(); }
+      if (id === 'nk') { dot(48, 48, 16, '#5a3a00'); rnd(8, 28, 5.5, '#ff5a1f'); }
+      if (id === 'eos') { dot(37, 48, 11, '#5a0f2e'); dot(59, 48, 11, '#5a0f2e'); g.strokeStyle = '#5a0f2e'; g.lineWidth = 4; g.beginPath(); g.moveTo(40, 48); g.lineTo(56, 48); g.stroke(); rnd(22, 30, 4.5, '#ff8a1f'); }
+      if (id === 'bas') { dot(48, 48, 14, '#1a0a4a'); rnd(30, 30, 5, '#2c0b78'); }
+    }
+  }
+  return iconCache[def.id] = c.toDataURL();
+}
+function starTex(n) {
+  return canvasTex(256, 80, (g) => {
+    g.font = '900 64px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const txt = '★'.repeat(n); g.lineJoin = 'round';
+    g.shadowColor = n === 3 ? '#ffb000' : '#ffd36b'; g.shadowBlur = 14;
+    g.lineWidth = 10; g.strokeStyle = '#3a1e00'; g.strokeText(txt, 128, 44);
+    const gr = g.createLinearGradient(0, 14, 0, 70); gr.addColorStop(0, '#fff6c8'); gr.addColorStop(.5, '#ffd23f'); gr.addColorStop(1, '#ff9d00');
+    g.fillStyle = gr; g.fillText(txt, 128, 44);
+  });
+}
+const STAR_TEX = [null, starTex(1), starTex(2), starTex(3)];
+
+function updateHUD() {
+  $('coins').textContent = G.coins;
+  $('hpText').textContent = G.hp + ' / ' + MAX_HP;
+  $('hpFill').style.width = (G.hp / MAX_HP * 100) + '%';
+  $('waveText').textContent = G.mode === 'campaign' ? `${G.wave} / ${CAMPAIGN_WAVES}` : `${G.wave}`;
+  $('unitText').textContent = `${G.units.length} / ${maxUnits()}`;
+  $('rerollBtn').disabled = G.coins < 5;
+  const go = $('goBtn'); go.disabled = G.phase !== 'build';
+  go.textContent = G.phase === 'wave' ? 'Бой идёт' : `В бой ▶ ${G.wave + 1}`;
+  renderCards();
+}
+
+function renderTraits() {
+  const box = $('traits'); box.innerHTML = '';
+  const list = Object.keys(FAC).filter(k => G.bonus[k]?.n).sort((a, b) => (G.bonus[b].t - G.bonus[a].t) || (G.bonus[b].n - G.bonus[a].n));
+  for (const k of list) {
+    const b = G.bonus[k], f = FAC[k], max = f.tiers[f.tiers.length - 1], next = f.tiers.find(v => v > b.n) || max;
+    const el = document.createElement('button'); el.className = 'trait' + (b.t ? ' on' : ''); el.style.setProperty('--tc', f.color);
+    el.setAttribute('aria-label', f.name);
+    el.innerHTML = `${crest(k, b.n, 46)}<small>${Math.min(b.n, next)}/${next}</small>`;
+    el.onclick = () => openFaction(k);
+    box.appendChild(el);
+  }
+}
+function openFaction(k) {
+  const f = FAC[k], b = G.bonus[k] || { n: 0, t: 0 }, el = $('unitSheet');
+  const members = [...UNITS, ...IGS].filter(u => u.fac === k || u.org === k);
+  el.style.setProperty('--tc', f.color);
+  el.innerHTML = `
+    <div class="head">${crest(k, Math.max(b.n, f.tiers[0]), 60)}
+    <div><div class="t">${f.name}</div><div class="s">На поле: ${b.n}. Бонус действует на клетки этой группы.</div></div></div>
+    <div class="tiers">${f.tiers.map((v, i) => `<div class="${b.t > i ? 'on' : ''}"><b>${v}</b>${f.text[i]}</div>`).join('')}</div>
+    <div class="members">${members.map(u => `<span class="${G.units.some(x => x.def.id === u.id) ? 'have' : ''}"><img alt="" src="${cellIcon(u)}">${u.name}</span>`).join('')}</div>
+    <button class="btn" id="closeSheet">Закрыть</button>`;
+  el.hidden = false; rangeMesh.visible = rangeFill.visible = false;
+  $('closeSheet').onclick = closeUnit;
+}
+
+function rollShop() {
+  const pool = UNITS.flatMap(u => Array(u.cost <= 25 ? 4 : u.cost <= 30 ? 3 : 2).fill(u));
+  G.shop = Array.from({ length: 5 }, () => ({ def: pool[Math.random() * pool.length | 0], sold: false }));
+  G.sel = null; renderCards(); setInfo();
+}
+
+function renderCards() {
+  const box = $('cards'); box.innerHTML = '';
+  const list = G.legTab ? IGS.map(def => ({ def, sold: false, leg: true })) : G.shop;
+  list.forEach((card, i) => {
+    const d = card.def, el = document.createElement('button');
+    const have = G.units.filter(u => u.def.id === d.id).length;
+    el.className = 'card' + (card.leg ? ' leg' : '') + (card.sold ? ' sold' : '') + (G.coins < d.cost ? ' poor' : '') + (G.sel && G.sel.card === card && G.sel.idx === i ? ' sel' : '');
+    el.style.setProperty('--tc', FAC[d.fac].color);
+    el.innerHTML = `<span class="fac">${svg(FAC[d.fac].icon)}</span>${have ? `<span class="have">×${have}</span>` : ''}<img alt="" src="${cellIcon(d)}"><span class="nm">${d.name}</span><span class="cost"><i></i>${d.cost}</span>`;
+    el.onclick = () => selectCard(card, i);
+    box.appendChild(el);
+  });
+}
+
+function setInfo(html) {
+  $('info').innerHTML = html || (G.legTab
+    ? 'Иммуноглобулины всегда в продаже, но дорогие. Чем больше их на поле, тем сильнее каждый: 2, 3 и 5 штук дают большой бонус.'
+    : 'Выбери карту и нажми на площадку у сосуда. Такая же карта на стоящую клетку усиливает её.');
+}
+
+function selectCard(card, idx) {
+  if (card.sold) return;
+  if (G.sel && G.sel.card === card && G.sel.idx === idx) { G.sel = null; highlight(); renderCards(); setInfo(); return; }
+  G.sel = { card, idx };
+  const d = card.def, f = FAC[d.fac];
+  setInfo(`<b>${d.name}</b> <span class="tag">${f.name}</span>${d.org ? `<span class="tag">${FAC[d.org].name}</span>` : ''}<br>${d.role}${d.ult ? `. Ульта — ${d.ult}` : ''}. ${G.coins < d.cost ? `<b style="color:#ff8a8a">Не хватает ${d.cost - G.coins} монет.</b>` : 'Нажми на площадку.'}`);
+  highlight(); renderCards();
+}
+
+function highlight() {
+  for (const p of pads.values()) {
+    let op = 0, col = '#7be0b0';
+    if (G.sel) {
+      const d = G.sel.card.def;
+      if (!p.unit && G.units.length < maxUnits()) op = .85;
+      else if (p.unit && p.unit.def.id === d.id && p.unit.cards < 9) { op = 1; col = '#ffd36b'; }
+    }
+    p.hl.material.opacity = op; p.hl.material.color.set(col);
+  }
+}
+
+function placeOn(pad) {
+  const card = G.sel.card, d = card.def;
+  if (G.coins < d.cost) { toast(`Не хватает монет: нужно ${d.cost}`); return; }
+  if (pad.unit) {
+    if (pad.unit.def.id !== d.id) { toast('Здесь стоит другая клетка. Усилить можно только такой же.'); return; }
+    if (pad.unit.cards >= 9) { toast('Клетка уже на максимуме ★★★'); return; }
+    const u = pad.unit, before = u.stars;
+    G.coins -= d.cost; u.spent += d.cost; u.cards++;
+    u.stars = starsOf(u.cards);
+    if (u.stars > before) {
+      u.starSprite.material.map = STAR_TEX[u.stars]; u.starSprite.material.needsUpdate = true;
+      u.mergeFx = 1.2; ring(u.pos, '#ffd36b', 1.4, .7); spark(u.pos.clone().setY(.5), '#ffd36b', 24, 2.2, .3, .7, 2);
+      AU.play('merge', u.pos.x, 1); buzz(50); toast(`${d.name} теперь ${'★'.repeat(u.stars)}`);
+    } else {
+      spark(u.pos.clone().setY(.5), d.col, 10, 1.5, .25, .5, 1.5); AU.play('place', u.pos.x, .8);
+      toast(`${d.name}: ещё ${(u.stars === 1 ? 3 : 9) - u.cards} до ${'★'.repeat(u.stars + 1)}`);
+    }
+  } else {
+    if (G.units.length >= maxUnits()) { toast(`Лимит клеток ${maxUnits()}. Он растёт каждые 4 волны.`); return; }
+    G.coins -= d.cost;
+    const mesh = d.leg ? buildIg(d) : buildCell(d);
+    const star = new T.Sprite(new T.SpriteMaterial({ map: STAR_TEX[1], depthWrite: false, transparent: true }));
+    star.scale.set(1.25, .39, 1);
+    const u = { def: d, pad, pos: pad.pos.clone(), mesh, cards: 1, stars: 1, spent: d.cost, cd: 0, ultT: d.ultCd ? d.ultCd * .5 : 0, phase: Math.random() * 6, starSprite: star };
+    scene.add(mesh, star); pad.unit = u; G.units.push(u);
+    ring(u.pos, d.col, 1, .5); spark(u.pos.clone().setY(.3), d.col, 14, 1.8, .25, .5, 1.8);
+    AU.play('place', u.pos.x, 1);
+    computeBonus();
+  }
+  if (!card.leg) card.sold = true;
+  G.sel = null; highlight(); setInfo(); updateHUD();
+}
+
+function openUnit(u) {
+  const s = unitStats(u), d = u.def, refund = Math.floor(u.spent / 2), el = $('unitSheet');
+  const nextTxt = u.cards >= 9 ? 'Максимум ★★★' : `Ещё ${(u.stars === 1 ? 3 : 9) - u.cards} карт до ${'★'.repeat(u.stars + 1)}`;
+  el.innerHTML = `
+    <div class="head"><img alt="" src="${cellIcon(d)}"><div><div class="t">${d.name} <span style="color:var(--gold)">${'★'.repeat(u.stars)}</span></div>
+    <div class="s">${FAC[d.fac].name}${d.org ? ' · ' + FAC[d.org].name : ''} · ${nextTxt}</div></div></div>
+    <div class="s">${d.role}${d.ult ? '. Ульта — ' + d.ult : ''}</div>
+    <div class="stats"><div>Урон<b>${Math.round(s.dmg)}</b></div><div>Атак в сек.<b>${(1 / s.rate).toFixed(1)}</b></div><div>Дальность<b>${s.range.toFixed(1)}</b></div></div>
+    <div class="row"><button class="btn danger" id="destroyBtn">Разрушить +${refund}</button><button class="btn" id="closeSheet">Закрыть</button></div>`;
+  el.hidden = false;
+  showRange(u, s.range);
+  $('closeSheet').onclick = closeUnit;
+  $('destroyBtn').onclick = () => {
+    G.coins += refund; scene.remove(u.mesh, u.starSprite); u.pad.unit = null;
+    G.units.splice(G.units.indexOf(u), 1); spark(u.pos.clone().setY(.4), d.col, 16, 2, .3, .5);
+    AU.play('die', u.pos.x, 1); computeBonus(); closeUnit(); updateHUD(); toast(`${d.name} разрушен, возвращено ${refund}`);
+  };
+}
+const rangeMesh = new T.Mesh(new T.RingGeometry(.96, 1, 64), new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .5, depthWrite: false }));
+rangeMesh.rotation.x = -Math.PI / 2; rangeMesh.visible = false; scene.add(rangeMesh);
+const rangeFill = new T.Mesh(new T.CircleGeometry(1, 64), new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: .07, depthWrite: false }));
+rangeFill.rotation.x = -Math.PI / 2; rangeFill.visible = false; scene.add(rangeFill);
+function showRange(u, r) { for (const m of [rangeMesh, rangeFill]) { m.visible = true; m.position.set(u.pos.x, .2, u.pos.z); m.scale.setScalar(r); m.material.color.set(u.def.col); } }
+function closeUnit() { $('unitSheet').hidden = true; rangeMesh.visible = rangeFill.visible = false; }
+
+let toastT = 0;
+function toast(msg, ms = 2200) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms); }
+let bannerT = 0;
+function showBanner(title, sub = '') { const b = $('banner'); b.innerHTML = title + (sub ? `<small>${sub}</small>` : ''); b.classList.add('on'); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove('on'), 1800); }
+
+/* ---------- Нажатия по полю ---------- */
+const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.16);
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 12) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  ray.setFromCamera({ x: (e.clientX - rect.left) / rect.width * 2 - 1, y: -(e.clientY - rect.top) / rect.height * 2 + 1 }, camera);
+  const hit = new T.Vector3(); if (!ray.ray.intersectPlane(plane, hit)) return;
+  const c = Math.round(hit.x + OX), r = Math.round(hit.z + OZ), pad = pads.get(c + ',' + r);
+  if (G.phase === 'menu' || G.phase === 'end') return;
+  if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на шестиугольные площадки у сосуда'); return; }
+  if (pad && pad.unit) openUnit(pad.unit); else closeUnit();
+});
+
+/* ---------- Ход игры ---------- */
+function startGame(mode) {
+  AU.init();
+  for (const u of G.units) { scene.remove(u.mesh, u.starSprite); u.pad.unit = null; }
+  for (const e of G.foes) removeFoe(e);
+  for (const p of G.shots) scene.remove(p.mesh);
+  for (const z of G.spikes) z.meshes.forEach(m => scene.remove(m));
+  buildBoard(makeLayout(stageAspect())); fit();
+  PROF.games++; saveProf();
+  Object.assign(G, { mode, phase: 'build', paused: false, coins: 100, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null });
+  $('legBtn').classList.remove('on');
+  screenStack = []; show(null); closeUnit();
+  computeBonus(); rollShop(); highlight(); updateHUD();
+  showBanner('Печень', mode === 'campaign' ? '30 волн · в конце босс' : 'Волны без конца · рекорд ' + G.best);
+}
+function startWave() {
+  if (G.phase !== 'build') return;
+  G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0;
+  if (G.wave % 10 !== 0) { showBanner('Волна ' + G.wave); AU.play('wave', 0, .9); }
+  updateHUD();
+}
+function waveCleared() {
+  const bonus = 15 + G.wave * 3;
+  G.coins += bonus; G.phase = 'build';
+  if (G.mode === 'endless' && G.wave > G.best) { G.best = G.wave; try { localStorage.setItem('immuneBest', G.best); } catch (e) {} }
+  if (G.mode === 'campaign' && G.wave >= CAMPAIGN_WAVES) return finish(true);
+  showBanner('Волна отбита', `+${bonus} монет · новые карты`); AU.play('coin', 0, 1);
+  rollShop(); highlight(); updateHUD();
+}
+function finish(win) {
+  G.phase = 'end'; updateHUD();
+  const stars = !win ? 0 : G.hp === MAX_HP ? 3 : G.hp > MAX_HP / 2 ? 2 : 1;
+  if (win) { PROF.wins++; PROF.liverStars = Math.max(PROF.liverStars, stars); }
+  saveProf();
+  $('resTitle').textContent = win ? 'Печень вылечена!' : G.mode === 'endless' ? 'Печень не выдержала' : 'Печень не выдержала';
+  $('resStars').innerHTML = [1, 2, 3].map(i => `<span class="${i <= stars ? '' : 'off'}">★</span>`).join('');
+  $('resStars').hidden = G.mode === 'endless';
+  $('resText').textContent = win
+    ? (stars === 3 ? 'Ни один микроб не дошёл до органа.' : `Здоровье печени: ${G.hp} из ${MAX_HP}.`)
+    : `Ты продержался ${G.wave - 1} волн${G.mode === 'endless' ? `. Рекорд: ${G.best}` : ''}.`;
+  show('result');
+  AU.play(win ? 'win' : 'lose', 0, 1); buzz(win ? [60, 60, 120] : 300);
+}
+
+$('goBtn').onclick = () => { AU.init(); startWave(); };
+$('rerollBtn').onclick = () => { if (G.coins < 5 || G.phase === 'menu') return; G.coins -= 5; AU.play('coin', 0, .8); G.legTab = false; $('legBtn').classList.remove('on'); rollShop(); highlight(); updateHUD(); };
+$('legBtn').onclick = () => { G.legTab = !G.legTab; $('legBtn').classList.toggle('on', G.legTab); G.sel = null; highlight(); setInfo(); renderCards(); };
+$('speedBtn').onclick = () => { G.speed = G.speed === 1 ? 2 : 1; $('speedBtn').textContent = '×' + G.speed; };
+$('playCampaign').onclick = () => startGame('campaign');
+$('playEndless').onclick = () => startGame('endless');
+$('resAgain').onclick = () => startGame(G.mode);
+$('resMenu').onclick = () => goMenu();
+
+/* ---------- Экраны: загрузка, меню, профиль, настройки, пауза ---------- */
+const store = {
+  get(k, d) { try { return Object.assign({}, d, JSON.parse(localStorage.getItem(k)) || {}); } catch (e) { return Object.assign({}, d); } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high' });
+const PROF = store.get('immuneProfile', { name: 'Игрок', avatar: 'neu', games: 0, kills: 0, wins: 0, liverStars: 0 });
+const saveSet = () => store.set('immuneSettings', SET), saveProf = () => store.set('immuneProfile', PROF);
+function buzz(ms) { if (SET.vibro && navigator.vibrate && navigator.userActivation?.hasBeenActive !== false) try { navigator.vibrate(ms); } catch (e) {} }
+function applySettings() {
+  AU.on = SET.sound; if (AU.master) AU.master.gain.value = SET.vol / 100 * .9;
+  renderer.setPixelRatio(SET.quality === 'high' ? Math.min(2, window.devicePixelRatio || 1) : 1);
+  sun.castShadow = SET.quality === 'high';
+  fit();
+}
+
+let screenStack = [];
+function show(id) { document.querySelectorAll('.overlay').forEach(o => { if (o.id !== 'loading') o.hidden = o.id !== id; }); }
+function go(id) { const cur = [...document.querySelectorAll('.overlay')].find(o => !o.hidden && o.id !== 'loading'); if (cur) screenStack.push(cur.id); show(id); renderScreen(id); AU.init(); AU.play('ui'); }
+function back() { const id = screenStack.pop() || 'menu'; show(id); renderScreen(id); AU.play('ui'); }
+document.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
+  if (e.target.closest('[data-back]')) back();
+});
+function starsHtml(n) { return [1, 2, 3].map(i => `<span class="${i <= n ? '' : 'off'}">★</span>`).join(''); }
+function renderScreen(id) {
+  if (id === 'menu') {
+    $('menuAva').src = cellIcon(ALL[PROF.avatar] || ALL.neu); $('menuName').textContent = PROF.name || 'Игрок';
+    $('menuStats').innerHTML = `Печень ${'★'.repeat(PROF.liverStars) || '—'} · рекорд ${G.best} волн`;
+  }
+  if (id === 'modes') {
+    $('liverStars').innerHTML = starsHtml(PROF.liverStars);
+    $('recordText').textContent = G.best ? `Рекорд в бесконечном режиме: ${G.best} волн` : 'Рекорда пока нет';
+  }
+  if (id === 'profile') {
+    $('pName').value = PROF.name;
+    $('avatars').innerHTML = UNITS.map(u => `<button class="${PROF.avatar === u.id ? 'on' : ''}" data-ava="${u.id}" aria-label="${u.name}"><img alt="" src="${cellIcon(u)}"></button>`).join('');
+    $('pStats').innerHTML = `<div>Печень<b>${'★'.repeat(PROF.liverStars) || '—'}</b></div><div>Рекорд волн<b>${G.best}</b></div>
+      <div>Сыграно игр<b>${PROF.games}</b></div><div>Побед<b>${PROF.wins}</b></div><div>Уничтожено микробов<b>${PROF.kills}</b></div><div>Любимая клетка<b style="font-size:13px">${ALL[PROF.avatar]?.name || ''}</b></div>`;
+  }
+  if (id === 'settings') {
+    $('sSound').checked = SET.sound; $('sVol').value = SET.vol; $('sVolText').textContent = SET.vol + '%';
+    $('sVibro').checked = SET.vibro; $('sDmg').checked = SET.dmg;
+    $('sQuality').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.q === SET.quality));
+    $('resetBtn').textContent = 'Сбросить прогресс'; $('resetBtn').dataset.armed = '';
+  }
+}
+$('avatars').onclick = (e) => { const b = e.target.closest('[data-ava]'); if (!b) return; PROF.avatar = b.dataset.ava; saveProf(); renderScreen('profile'); AU.play('place'); };
+$('pName').oninput = () => { PROF.name = $('pName').value.trim() || 'Игрок'; saveProf(); };
+$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui'); };
+$('sVol').oninput = () => { SET.vol = +$('sVol').value; $('sVolText').textContent = SET.vol + '%'; saveSet(); applySettings(); };
+$('sVol').onchange = () => { AU.init(); AU.play('boom', 0, .6); };
+$('sVibro').onchange = () => { SET.vibro = $('sVibro').checked; saveSet(); buzz(40); };
+$('sDmg').onchange = () => { SET.dmg = $('sDmg').checked; saveSet(); };
+$('sQuality').onclick = (e) => { const b = e.target.closest('[data-q]'); if (!b) return; SET.quality = b.dataset.q; saveSet(); applySettings(); renderScreen('settings'); };
+$('resetBtn').onclick = () => {
+  const b = $('resetBtn');
+  if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Точно сбросить? Нажми ещё раз'; return; }
+  Object.assign(PROF, { games: 0, kills: 0, wins: 0, liverStars: 0 }); G.best = 0; saveProf();
+  try { localStorage.removeItem('immuneBest'); } catch (e) {}
+  b.dataset.armed = ''; b.textContent = 'Прогресс сброшен';
+};
+$('pauseBtn').onclick = () => { if (G.phase !== 'build' && G.phase !== 'wave') return; G.paused = true; screenStack = []; show('pause'); AU.play('ui'); };
+$('resumeBtn').onclick = () => { G.paused = false; show(null); AU.play('ui'); };
+$('quitBtn').onclick = () => goMenu();
+function goMenu() {
+  G.paused = false; G.phase = 'menu';
+  for (const e of G.foes) removeFoe(e); G.foes = []; G.queue = [];
+  for (const p of G.shots) scene.remove(p.mesh); G.shots = [];
+  closeUnit(); screenStack = []; show('menu'); renderScreen('menu'); updateHUD();
+}
+
+const TIPS = [
+  'Совет: Стражи замедляют микробов, а Бомбардиры бьют по скоплению.',
+  'Совет: IgA тормозит шипами, IgD добивает замедленных вдвое сильнее.',
+  'Совет: 3 одинаковые карты превращают клетку в ★★.',
+  'Совет: ненужную клетку можно разрушить и вернуть половину монет.',
+  'Совет: Приобретённые клетки запоминают микробов и бьют их всё сильнее.'
+];
+function boot() {
+  $('loadTip').textContent = TIPS[Math.random() * TIPS.length | 0];
+  const steps = [
+    () => document.fonts ? document.fonts.ready : null,
+    () => { applySettings(); },
+    () => { UNITS.forEach(cellIcon); IGS.forEach(cellIcon); },
+    () => { renderer.compile(scene, camera); }
+  ];
+  let i = 0;
+  const next = async () => {
+    try { await steps[i](); } catch (e) {}
+    i++; $('loadBar').style.width = (i / steps.length * 100) + '%';
+    if (i < steps.length) setTimeout(next, 250);
+    else setTimeout(() => { if (G.phase === 'menu') { show('menu'); renderScreen('menu'); } $('loading').classList.add('out'); setTimeout(() => $('loading').hidden = true, 600); }, 450);
+  };
+  setTimeout(next, 200);
+}
+
+/* ---------- Камера под вертикальный экран ---------- */
+const fitRay = new T.Raycaster(), groundPlane = new T.Plane(new T.Vector3(0, 1, 0), 0);
+function fit() {
+  const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  const pts = [];
+  pads.forEach(p => { for (const dx of [-.5, .5]) for (const dz of [-.5, .5]) pts.push(new T.Vector3(p.pos.x + dx, 0, p.pos.z + dz), new T.Vector3(p.pos.x + dx, .7, p.pos.z + dz)); });
+  const ob = new T.Box3().setFromObject(organ);
+  for (const x of [ob.min.x, ob.max.x]) for (const z of [ob.min.z, ob.max.z]) pts.push(new T.Vector3(x, ob.max.y, z), new T.Vector3(x, 0, z));
+  const ps = PATH.pts[0]; for (const dx of [-.8, .8]) for (const dz of [-.8, .8]) pts.push(new T.Vector3(ps.x + dx, 0, ps.z + dz));
+  const center = new T.Box3().setFromPoints(pts).getCenter(new T.Vector3()).setY(0);
+  const place = (tilt, d, tgt) => { camera.position.set(tgt.x, Math.sin(tilt) * d, tgt.z + Math.cos(tilt) * d); camera.lookAt(tgt); camera.updateMatrixWorld(); };
+  const extent = () => { let x0 = 9, x1 = -9, y0 = 9, y1 = -9; for (const p of pts) { const v = p.clone().project(camera); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); } return { x0, x1, y0, y1 }; };
+  let best = null;
+  for (let tilt = .9; tilt <= 1.16; tilt += .04) {
+    const tgt = center.clone();
+    let d = 30;
+    for (let it = 0; it < 4; it++) {
+      let lo = 5, hi = 80;
+      for (let k = 0; k < 22; k++) { d = (lo + hi) / 2; place(tilt, d, tgt); const e = extent(); if (e.x1 - e.x0 < 1.95 && e.y1 - e.y0 < 1.93) hi = d; else lo = d; }
+      d = hi; place(tilt, d, tgt); const e = extent();
+      // сдвигаем цель так, чтобы середина поля встала в середину экрана
+      fitRay.setFromCamera({ x: (e.x0 + e.x1) / 2, y: (e.y0 + e.y1) / 2 }, camera);
+      const hit = new T.Vector3(); if (fitRay.ray.intersectPlane(groundPlane, hit)) { tgt.x = hit.x; tgt.z = hit.z; }
+    }
+    if (!best || d < best.d - .05) best = { tilt, d, tgt };
+  }
+  place(best.tilt, best.d, best.tgt);
+  updateBackdrop();
+}
+new ResizeObserver(fit).observe(stage); fit();
+
+let lastT = performance.now();
+function loop(t) {
+  const dt = Math.min(.05, (t - lastT) / 1000); lastT = t;
+  if (!G.paused) for (let i = 0; i < G.speed; i++) update(dt);
+  renderNums(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+computeBonus(); rollShop(); updateHUD();
+requestAnimationFrame(loop);
+boot();
+</script>

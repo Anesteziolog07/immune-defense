@@ -67,7 +67,7 @@ body {
 /* ---------- Поле ---------- */
 #stage { flex: 1; position: relative; min-height: 0; overflow: hidden; touch-action: none; }
 #stage canvas { display: block; width: 100%; height: 100%; }
-#stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, #0c0306cc 100%); }
+#stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 62%, #1a061477 100%); }
 #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .dmg {
   position: absolute; left: 0; top: 0; font: 800 13px var(--display); color: #fff;
@@ -292,7 +292,7 @@ body {
         <button class="btn big" data-go="settings">Настройки</button>
       </div>
       <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.4 · прототип</p>
+      <p class="ver">Версия 0.5 · прототип</p>
     </div>
   </div>
 
@@ -491,16 +491,14 @@ const AU = {
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5;
     const master = ctx.createGain(); master.gain.value = (typeof SET !== 'undefined' ? SET.vol / 100 : .8) * .9; this.master = master; master.connect(comp); comp.connect(ctx.destination);
     // Короткая «комнатная» реверберация для объёма
-    const len = ctx.sampleRate * 1.8, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    const len = ctx.sampleRate * .6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
-    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .3; rev.connect(wet); wet.connect(master);
+    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .1; rev.connect(wet); wet.connect(master);
     this.out = master; this.rev = rev;
     const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     this.noise = nb;
-    const bb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), bd = bb.getChannelData(0);
-    let last = 0; for (let i = 0; i < bd.length; i++) { last = (last + .02 * (Math.random() * 2 - 1)) / 1.02; bd[i] = last * 3.5; }
-    this.brown = bb;
+    this.chipInit();
   },
   bus(pan, vol) {
     const ctx = this.ctx, g = ctx.createGain(); g.gain.value = vol;
@@ -522,106 +520,98 @@ const AU = {
     g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + .006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     s.connect(f); f.connect(g); g.connect(dst); s.start(t0, Math.random() * .5); s.stop(t0 + dur + .02);
   },
-  shaper(k) {
-    this.shapers ||= {};
-    if (this.shapers[k]) return this.shapers[k];
-    const n = 1024, c = new Float32Array(n);
-    for (let i = 0; i < n; i++) { const x = i / n * 2 - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); }
-    const w = this.ctx.createWaveShaper(); w.curve = c; w.oversample = '2x'; return this.shapers[k] = w;
+  // 8-битный звук в духе старых приставок: импульсные волны, «треугольник», шум сдвигового регистра.
+  // Высота и громкость меняются ступеньками по кадрам (1/60 с) — отсюда характерный «приставочный» звук.
+  chipInit() {
+    const ctx = this.ctx; this.pw = {};
+    for (const [k, d] of [['p12', .125], ['p25', .25], ['p50', .5]]) {
+      const n = 48, re = new Float32Array(n), im = new Float32Array(n);
+      for (let i = 1; i < n; i++) re[i] = 2 / (i * Math.PI) * Math.sin(i * Math.PI * d);
+      this.pw[k] = ctx.createPeriodicWave(re, im);
+    }
+    const mk = (tap, hold) => {
+      const b = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = b.getChannelData(0);
+      let reg = 1, v = 0;
+      for (let i = 0; i < d.length; i++) {
+        if (i % hold === 0) { const bit = (reg ^ (reg >> tap)) & 1; reg = (reg >> 1) | (bit << 14); v = reg & 1 ? .8 : -.8; }
+        d[i] = v;
+      }
+      return b;
+    };
+    this.nLong = mk(1, 2); this.nShort = mk(6, 2);
+    const c = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; c[i] = Math.round(x * 7) / 7; }
+    this.crushCurve = c;
   },
-  // Генератор с фильтром и перегрузом: из этих кирпичиков собраны все звуки
-  osc(dst, type, f0, f1, t0, dur, vol, o = {}) {
-    const ctx = this.ctx, s = ctx.createOscillator(), g = ctx.createGain();
-    s.type = type; s.frequency.setValueAtTime(f0, t0); s.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur * (o.bend || 1));
-    if (o.detune) s.detune.value = o.detune;
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + (o.a || .004)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    let node = s;
-    if (o.lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = o.lp; f.Q.value = o.q || 1; node.connect(f); node = f; }
-    if (o.drive) { const w = ctx.createWaveShaper(); w.curve = this.shaper(o.drive).curve; node.connect(w); node = w; }
-    node.connect(g); g.connect(dst); s.start(t0); s.stop(t0 + dur + .03);
+  tone8(dst, wave, t0, n, fq, vl) {
+    const ctx = this.ctx, o = ctx.createOscillator(), g = ctx.createGain(), w = ctx.createWaveShaper(), F = 1 / 60;
+    if (wave === 'tri') o.type = 'triangle'; else o.setPeriodicWave(this.pw[wave]);
+    w.curve = this.crushCurve;
+    g.gain.setValueAtTime(0, t0);
+    for (let i = 0; i < n; i++) { o.frequency.setValueAtTime(Math.max(30, fq(i)), t0 + i * F); g.gain.setValueAtTime(Math.max(0, vl(i)), t0 + i * F); }
+    g.gain.setValueAtTime(0, t0 + n * F);
+    o.connect(w); w.connect(g); g.connect(dst); o.start(t0); o.stop(t0 + n * F + .02);
   },
-  nz(dst, ftype, f0, f1, q, t0, dur, vol, o = {}) {
-    const ctx = this.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-    s.buffer = o.brown ? this.brown : this.noise; s.playbackRate.value = o.rate || (.85 + Math.random() * .3);
-    f.type = ftype; f.Q.value = q; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t0 + dur);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + (o.a || .003)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    let node = f;
-    if (o.drive) { const w = ctx.createWaveShaper(); w.curve = this.shaper(o.drive).curve; f.connect(w); node = w; }
-    s.connect(f); node.connect(g); g.connect(dst); s.start(t0, Math.random() * .6); s.stop(t0 + dur + .03);
-  },
-  bubbles(dst, t, n, vol) { for (let i = 0; i < n; i++) { const f = 380 + Math.random() * 700, tt = t + Math.random() * .12; this.osc(dst, 'sine', f, f * (1.6 + Math.random()), tt, .045, vol); } },
-  crackle(dst, t, n, spread, vol) { for (let i = 0; i < n; i++) this.nz(dst, 'highpass', 2500 + Math.random() * 4000, 1500, 1, t + Math.random() * spread, .02 + Math.random() * .03, vol * (.5 + Math.random() * .5)); },
-  heart(dst, t, vol) {
-    this.osc(dst, 'sine', 75, 38, t, .2, vol, { drive: 2 }); this.nz(dst, 'lowpass', 400, 80, 1, t, .12, vol * .35, { brown: true });
-    this.osc(dst, 'sine', 64, 34, t + .24, .22, vol * .8, { drive: 2 }); this.nz(dst, 'lowpass', 350, 70, 1, t + .24, .12, vol * .3, { brown: true });
+  noise8(dst, short, t0, n, rate, vl) {
+    const ctx = this.ctx, s = ctx.createBufferSource(), g = ctx.createGain(), F = 1 / 60;
+    s.buffer = short ? this.nShort : this.nLong; s.loop = true;
+    g.gain.setValueAtTime(0, t0);
+    for (let i = 0; i < n; i++) { s.playbackRate.setValueAtTime(Math.max(.02, rate(i)), t0 + i * F); g.gain.setValueAtTime(Math.max(0, vl(i)), t0 + i * F); }
+    g.gain.setValueAtTime(0, t0 + n * F);
+    s.connect(g); g.connect(dst); s.start(t0, Math.random() * .5); s.stop(t0 + n * F + .02);
   },
   play(kind, x = 0, vol = 1) {
-    if (!this.ctx || !this.on || this.ctx.state !== 'running') return;
-    const now = this.ctx.currentTime, gap = { boom: .06, die: .04, hit: .035, shot: .05, beat: .3 }[kind] ?? .05;
+    if (!this.ctx || !this.on || this.ctx.state !== 'running' || !this.pw) return;
+    const now = this.ctx.currentTime, gap = { boom: .07, die: .045, hit: .04, shot: .05 }[kind] ?? .05;
     if (now - (this.last[kind] || 0) < gap) return;
     this.last[kind] = now;
-    const boost = { spit: 2.2, shot: 1.8, zip: 1.8, coin: 1.6, hit: 1.5, dart: 1.2 }[kind] || 1;
-    const b = this.bus(x / 4, vol * boost), t = now, r = 1 + (Math.random() - .5) * .16, R = () => .85 + Math.random() * .3;
+    const b = this.bus(x / 4, vol * .55), t = now, F = 1 / 60, r = 1 + (Math.random() - .5) * .14;
+    const dec = (v0, n) => (i) => v0 * (1 - i / n);              // ровное затухание
+    const exp = (f0, k) => (i) => f0 * Math.pow(k, i);           // скольжение высоты
     switch (kind) {
-      case 'pop':   // нейтрофил: хлёсткий шлепок
-        this.nz(b, 'bandpass', 2200 * r, 500, 2.5, t, .07, .5); this.osc(b, 'sine', 480 * r, 130, t, .08, .4, { drive: 3 }); this.nz(b, 'highpass', 7000, 5000, 1, t, .012, .25); break;
-      case 'thump': // моноцит и IgD: тяжёлый удар с отдачей
-        this.osc(b, 'sine', 190 * r, 40, t, .26, .95, { drive: 4 }); this.nz(b, 'lowpass', 1600, 150, 1, t, .1, .5); this.nz(b, 'bandpass', 900, 300, 3, t + .01, .08, .25); break;
-      case 'spit':  // макрофаг и дендритная: влажный «плевок» с пузырями
-        this.nz(b, 'bandpass', 320 * r, 2200, 7, t, .18, .55); this.nz(b, 'lowpass', 900, 200, 1, t, .1, .3, { brown: true }); this.bubbles(b, t + .03, 3, .12); break;
-      case 'dart':  // киллеры: тонкий свист и щелчок
-        this.nz(b, 'highpass', 5000 * r, 3000, 1, t, .05, .3); this.osc(b, 'triangle', 2000 * r, 280, t, .1, .25); this.osc(b, 'sine', 120, 60, t, .06, .3); break;
-      case 'shot':  // антитела: мягкий «пфф» с эхом
-        this.osc(b, 'square', 1000 * R(), 260, t, .07, .12, { lp: 2400 }); this.nz(b, 'bandpass', 2600, 1100, 3, t, .05, .2);
-        this.osc(b, 'square', 900 * R(), 240, t + .08, .06, .04, { lp: 1800 }); break;
-      case 'lob':   // гранулы: миномётный «тунк»
-        this.osc(b, 'sine', 280 * r, 70, t, .16, .55, { drive: 2 }); this.nz(b, 'lowpass', 1200, 200, 1, t, .12, .35); this.nz(b, 'bandpass', 600, 1800, 2, t + .02, .25, .12); break;
-      case 'boom':  // взрыв: суббас, рокот, треск
-        this.osc(b, 'sine', 95 * r, 26, t, .7, .9, { drive: 5 }); this.nz(b, 'lowpass', 3800 * r, 70, .8, t, .65, .8, { drive: 3 });
-        this.nz(b, 'lowpass', 600, 60, 1, t + .02, .9, .45, { brown: true }); this.crackle(b, t + .03, 7, .35, .18); break;
-      case 'zip':   // пронзатели: рассекающий выстрел
-        this.osc(b, 'sawtooth', 2600 * r, 150, t, .17, .1, { drive: 3, lp: 5000 }); this.nz(b, 'bandpass', 7000, 700, 4, t, .16, .3); this.nz(b, 'lowpass', 1500, 300, 1, t + .05, .2, .15); break;
-      case 'hit': {
-        const f = [1900, 2700, 3500][Math.random() * 3 | 0] * r;
-        this.nz(b, 'bandpass', f, f * .5, 6, t, .035, .28); this.osc(b, 'sine', 750 * r, 260, t, .035, .1); break; }
-      case 'die':   // микроб лопается
-        this.nz(b, 'bandpass', 1100 * r, 140, 1.4, t, .22, .6, { drive: 2 }); this.osc(b, 'sine', 340 * r, 55, t, .18, .35); this.bubbles(b, t + .05, 2, .1); break;
-      case 'leak':  // печень получила урон: тяжёлое сердцебиение и гул
-        this.heart(b, t, 1.1); this.osc(b, 'sawtooth', 110, 70, t, .4, .08, { drive: 4, lp: 600 }); break;
-      case 'beat':  this.heart(b, t, .55); break;
-      case 'place': // клетка встала: мягкое «плюх»
-        this.nz(b, 'bandpass', 500, 2600, 5, t, .12, .35); this.osc(b, 'sine', 240, 80, t, .16, .6, { drive: 2 }); this.nz(b, 'highpass', 6000, 4000, 1, t + .02, .015, .2); this.bubbles(b, t + .04, 2, .08); break;
-      case 'merge': // слияние в звезду: нарастающий вихрь, искры, удар
-        this.nz(b, 'bandpass', 220, 5500, 1.5, t, .5, .5); this.crackle(b, t + .28, 10, .3, .14);
-        this.osc(b, 'sine', 150, 45, t + .48, .3, .9, { drive: 4 }); this.nz(b, 'lowpass', 2500, 100, 1, t + .48, .3, .45); break;
-      case 'coin':  this.osc(b, 'triangle', 2500, 2350, t, .08, .1); this.osc(b, 'triangle', 3300, 3150, t + .055, .1, .08); this.nz(b, 'highpass', 8000, 6000, 1, t, .02, .1); break;
-      case 'ui':    this.nz(b, 'bandpass', 3600, 2600, 8, t, .025, .25); this.osc(b, 'sine', 520, 330, t, .035, .08); break;
-      case 'wave':  // начало волны: два сильных удара сердца и нарастающий гул
-        this.heart(b, t, 1); this.nz(b, 'lowpass', 150, 900, 1, t, 1.1, .25, { brown: true, a: .5 }); this.osc(b, 'sawtooth', 55, 52, t + .1, 1, .05, { lp: 300, a: .4 }); break;
-      case 'siren': // босс: тревога и рокот
-        for (let i = 0; i < 3; i++) { this.osc(b, 'triangle', 420, 820, t + i * .55, .27, .2, { drive: 2 }); this.osc(b, 'triangle', 820, 420, t + i * .55 + .27, .27, .2, { drive: 2 }); }
-        this.nz(b, 'lowpass', 120, 400, 1, t, 1.6, .4, { brown: true, a: .3 }); break;
-      case 'ult':   // ульта иммуноглобулина
-        this.nz(b, 'bandpass', 180, 4200, 1.3, t, .38, .55); this.crackle(b, t + .2, 8, .25, .12);
-        this.osc(b, 'sine', 80, 26, t + .35, .7, 1, { drive: 5 }); this.nz(b, 'lowpass', 3500, 70, 1, t + .35, .7, .7, { drive: 3 }); break;
-      case 'organ': this.heart(b, t, .9); break;
-      case 'win':   this.nz(b, 'bandpass', 200, 5000, 1.2, t, .8, .5); this.crackle(b, t + .4, 16, .6, .14); for (let i = 0; i < 3; i++) this.osc(b, 'sine', 120 + i * 30, 45, t + .7 + i * .22, .3, .8, { drive: 3 }); break;
-      case 'lose':  this.osc(b, 'sawtooth', 180, 35, t, 1.4, .2, { drive: 4, lp: 900 }); this.osc(b, 'sine', 90, 28, t, 1.5, .9); this.nz(b, 'lowpass', 800, 60, 1, t, 1.5, .5, { brown: true }); break;
+      case 'pop':   // нейтрофил: короткий хлёсткий «тык»
+        this.tone8(b, 'p25', t, 5, exp(980 * r, .62), dec(.55, 5)); this.noise8(b, true, t, 3, () => 1.4, dec(.35, 3)); break;
+      case 'thump': // моноцит, IgD: тяжёлый удар
+        this.tone8(b, 'tri', t, 9, exp(300 * r, .74), dec(1, 9)); this.noise8(b, false, t, 6, exp(.32, .7), dec(.6, 6)); break;
+      case 'spit':  // макрофаг, дендритная: булькающий плевок
+        this.tone8(b, 'p12', t, 8, (i) => (260 + i * 85) * (i % 2 ? 1.18 : 1) * r, dec(.5, 8)); this.noise8(b, false, t, 4, () => .7, dec(.3, 4)); break;
+      case 'dart':  // Т-киллер, NK, IgE: быстрый «пиу»
+        this.tone8(b, 'p50', t, 5, exp(2000 * r, .78), dec(.4, 5)); this.noise8(b, true, t, 2, () => 2.2, dec(.2, 2)); break;
+      case 'shot':  // антитела: классический выстрел
+        this.tone8(b, 'p25', t, 7, exp(1400 * r, .8), dec(.38, 7)); break;
+      case 'lob':   // запуск гранулы
+        this.tone8(b, 'tri', t, 7, exp(600 * r, .82), dec(.8, 7)); this.tone8(b, 'p12', t, 4, exp(300 * r, 1.25), dec(.2, 4)); break;
+      case 'boom':  // взрыв: шум с понижением + низкий «бум»
+        this.noise8(b, false, t, 34, exp(.55 * r, .93), dec(1, 34)); this.tone8(b, 'tri', t, 14, exp(140 * r, .88), dec(1, 14));
+        this.noise8(b, true, t, 6, () => .35, dec(.4, 6)); break;
+      case 'zip':   // пронзатели: режущий свист вниз
+        this.tone8(b, 'p12', t, 10, exp(2600 * r, .74), dec(.42, 10)); this.noise8(b, true, t, 4, () => 1.8, dec(.22, 4)); break;
+      case 'hit':   this.noise8(b, true, t, 2, () => 1.4 + Math.random() * .8, dec(.3, 2)); this.tone8(b, 'p50', t, 2, () => 700 * r, dec(.15, 2)); break;
+      case 'die':   // микроб лопается: «блуп» вниз
+        this.tone8(b, 'p50', t, 8, (i) => [760, 600, 480, 380, 300, 240, 190, 150][i] * r, dec(.42, 8)); this.noise8(b, false, t, 5, exp(.9, .72), dec(.35, 5)); break;
+      case 'leak':  // печень получила урон: тревожный удар
+        this.tone8(b, 'p50', t, 14, (i) => (i % 4 < 2 ? 330 : 247) * Math.pow(.96, i), dec(.55, 14)); this.tone8(b, 'tri', t, 12, exp(160, .9), dec(1, 12));
+        this.noise8(b, false, t, 8, exp(.25, .9), dec(.5, 8)); break;
+      case 'place': // клетка встала: «плюп» вверх
+        this.tone8(b, 'p25', t, 6, (i) => [330, 440, 587, 784, 784, 784][i], (i) => .4 * (i < 4 ? 1 : .5)); this.tone8(b, 'tri', t, 5, exp(220, .8), dec(.7, 5)); break;
+      case 'merge': // слияние в звезду: нарастающий «апгрейд»
+        this.tone8(b, 'p25', t, 28, (i) => 260 * Math.pow(1.065, i) * (i % 2 ? 1.05 : 1), (i) => .38 * (i < 22 ? 1 : (28 - i) / 6));
+        this.noise8(b, true, t + 6 * F, 18, () => 2.6, (i) => (i % 3 ? 0 : .12));
+        this.tone8(b, 'tri', t + 26 * F, 10, exp(260, .8), dec(1, 10)); this.noise8(b, false, t + 26 * F, 8, exp(.5, .85), dec(.5, 8)); break;
+      case 'coin':  this.tone8(b, 'p50', t, 4, () => 988, () => .32); this.tone8(b, 'p50', t + 4 * F, 14, () => 1319, dec(.32, 14)); break;
+      case 'ui':    this.tone8(b, 'p50', t, 3, () => 1050, dec(.22, 3)); break;
+      case 'wave':  // начало волны: «тревога, готовься»
+        for (let k = 0; k < 2; k++) this.tone8(b, 'p25', t + k * .2, 10, exp(220, 1.13), dec(.42, 10));
+        this.tone8(b, 'tri', t, 24, (i) => (i % 8 < 4 ? 110 : 98), dec(.8, 24)); this.noise8(b, false, t, 6, () => .3, dec(.35, 6)); break;
+      case 'siren': // босс: сирена
+        this.tone8(b, 'p50', t, 60, (i) => (Math.floor(i / 7) % 2 ? 392 : 523), (i) => .26 * (i < 54 ? 1 : (60 - i) / 6));
+        this.tone8(b, 'tri', t, 60, (i) => (Math.floor(i / 7) % 2 ? 98 : 131), () => .5); break;
+      case 'ult':   // ульта: мощный разряд с грохотом
+        this.tone8(b, 'p12', t, 16, exp(500, 1.12), dec(.35, 16)); this.noise8(b, true, t, 14, () => 2.2, (i) => (i % 2 ? .18 : 0));
+        this.noise8(b, false, t + 16 * F, 36, exp(.6, .93), dec(1, 36)); this.tone8(b, 'tri', t + 16 * F, 20, exp(180, .9), dec(1, 20)); break;
+      case 'organ': this.tone8(b, 'tri', t, 10, exp(140, .88), dec(.9, 10)); break;
+      case 'win':   this.tone8(b, 'p25', t, 40, (i) => 300 * Math.pow(1.05, i) * (i % 2 ? 1.04 : 1), dec(.4, 40)); this.noise8(b, true, t + .2, 30, () => 2.4, (i) => (i % 3 ? 0 : .12)); this.tone8(b, 'tri', t, 40, exp(120, 1.02), dec(.7, 40)); break;
+      case 'lose':  this.tone8(b, 'p25', t, 60, (i) => 700 * Math.pow(.965, i) * (i % 4 < 2 ? 1 : .94), dec(.4, 60)); this.tone8(b, 'tri', t, 60, exp(160, .975), dec(.9, 60)); this.noise8(b, false, t + .4, 30, exp(.4, .95), dec(.4, 30)); break;
     }
-  },
-  // Фоновое биение сердца и шум кровотока (не музыка — звук организма)
-  ambient(on, fast = false) {
-    if (!this.ctx) return;
-    clearInterval(this.beatT); this.beatT = null;
-    if (this.bed) { this.bed.g.gain.setTargetAtTime(0, this.ctx.currentTime, .3); const old = this.bed; setTimeout(() => { try { old.s.stop(); } catch (e) {} }, 1200); this.bed = null; }
-    if (!on || !this.on) return;
-    const ctx = this.ctx, s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
-    s.buffer = this.brown; s.loop = true; f.type = 'lowpass'; f.frequency.value = 260; f.Q.value = 2;
-    lfo.frequency.value = fast ? 1.3 : 1; lg.gain.value = 120; lfo.connect(lg); lg.connect(f.frequency); lfo.start();
-    g.gain.value = 0; g.gain.setTargetAtTime(.09, ctx.currentTime, .8);
-    s.connect(f); f.connect(g); g.connect(this.out); s.start();
-    this.bed = { s, g };
-    this.beatT = setInterval(() => this.play('beat', 0, fast ? .5 : .32), fast ? 820 : 1100);
   }
 };
 
@@ -632,24 +622,24 @@ const stage = document.getElementById('stage');
 const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.outputEncoding = T.sRGBEncoding;
-renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
+renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
 
 const scene = new T.Scene();
-scene.background = new T.Color('#160510');
-scene.fog = new T.Fog('#160510', 22, 46);
+scene.background = new T.Color('#3a1232');
+scene.fog = new T.Fog('#3a1232', 26, 60);
 const camera = new T.PerspectiveCamera(38, 1, .1, 100);
 
-scene.add(new T.HemisphereLight('#ffc6d8', '#2a0718', .45));
-const sun = new T.DirectionalLight('#fff1e6', .95);
+scene.add(new T.HemisphereLight('#ffe6ee', '#4a1840', .6));
+const sun = new T.DirectionalLight('#fff1e6', 1.1);
 sun.position.set(-5, 12, 6); sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 10, bottom: -10, near: 1, far: 40 });
 sun.shadow.bias = -.0015; sun.shadow.radius = 4;
 scene.add(sun);
-const rim = new T.DirectionalLight('#7ad8ff', .4); rim.position.set(7, 5, -9); scene.add(rim);
-const warm = new T.PointLight('#ff4a6a', .6, 14, 2); warm.position.set(0, 3, 0); scene.add(warm);
+const rim = new T.DirectionalLight('#7ad8ff', .6); rim.position.set(7, 5, -9); scene.add(rim);
+const warm = new T.PointLight('#ff6a8a', .5, 16, 2); warm.position.set(0, 3, 0); scene.add(warm);
 
 function canvasTex(w, h, draw) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
@@ -694,7 +684,7 @@ function heightAt(x, z) {
   const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.4, .78, dp);        // русло сосуда
   return Math.min(h, trench + Math.max(0, h) * smooth(.4, 1.2, dp));
 }
-const terrainMat = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: .5, metalness: 0, clearcoat: .55, clearcoatRoughness: .35, emissive: '#ffffff', emissiveIntensity: .55 });
+const terrainMat = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: .5, metalness: 0, clearcoat: .55, clearcoatRoughness: .35, emissive: '#ffffff', emissiveIntensity: .6 });
 function buildTerrain() {
   // точки сосуда в сетку для быстрого расстояния
   TER.hash.clear();
@@ -706,8 +696,8 @@ function buildTerrain() {
   const geo = new T.PlaneGeometry(W, W, seg, seg); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), col = new T.Color(), tmp = new T.Color();
   const P = {
-    floorA: new T.Color('#3a0a1c'), floorB: new T.Color('#5e1530'), bank: new T.Color('#a02842'), bed: new T.Color('#22030a'),
-    valley: new T.Color('#160410'), hill: new T.Color('#4e1a3e'), crest: new T.Color('#9a4a72'), vein: new T.Color('#e8344f')
+    floorA: new T.Color('#5e1836'), floorB: new T.Color('#86284c'), bank: new T.Color('#e8506e'), bed: new T.Color('#3a0816'),
+    valley: new T.Color('#5a1e4a'), hill: new T.Color('#c0588a'), crest: new T.Color('#ffc4d6'), vein: new T.Color('#ff5a7c')
   };
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + c.x, z = pos.getZ(i) + c.z;
@@ -729,25 +719,90 @@ function buildTerrain() {
     g.lineCap = 'round'; g.lineJoin = 'round';
     g.shadowColor = '#ff2a4a'; g.shadowBlur = 22; g.strokeStyle = 'rgba(255,40,70,.22)'; g.lineWidth = 1.4 * k;
     g.beginPath(); PATH.pts.forEach((p, i) => i ? g.lineTo((p.x - x0) * k, (p.z - z0) * k) : g.moveTo((p.x - x0) * k, (p.z - z0) * k)); g.stroke();
-    const branch = (x, y, a, w, depth) => {
+    // артерии — алые, вены — голубые, лимфа — золотистая
+    const TONES = [['255,70,100', '#ff3a5c'], ['110,175,255', '#4a9cff'], ['255,205,110', '#ffb84a']];
+    const branch = (x, y, a, w, depth, tone) => {
       if (depth <= 0 || w < .5) return;
       g.beginPath(); g.moveTo(x, y);
       for (let i = 0; i < 7; i++) { a += (Math.random() - .5) * .55; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); }
-      g.shadowBlur = 8; g.strokeStyle = `rgba(255,${50 + depth * 14},${80 + depth * 8},${.16 + w * .07})`; g.lineWidth = w * .8; g.stroke();
-      branch(x, y, a + .5 + Math.random() * .3, w * .74, depth - 1);
-      if (Math.random() < .75) branch(x, y, a - .5 - Math.random() * .3, w * .7, depth - 1);
+      g.shadowColor = tone[1]; g.shadowBlur = 9; g.strokeStyle = `rgba(${tone[0]},${.22 + w * .08})`; g.lineWidth = w * .85; g.stroke();
+      branch(x, y, a + .5 + Math.random() * .3, w * .74, depth - 1, tone);
+      if (Math.random() < .75) branch(x, y, a - .5 - Math.random() * .3, w * .7, depth - 1, tone);
     };
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 42; i++) {
       let x, y, tries = 0;
       do { x = Math.random() * S; y = Math.random() * S; tries++; } while (tries < 20 && boxDist(x / k + x0, y / k + z0) < .6);
-      branch(x, y, Math.random() * 7, 3.2, 6);
+      branch(x, y, Math.random() * 7, 3.4, 6, TONES[i % 5 === 0 ? 2 : i % 2]);
     }
-    for (let i = 0; i < 140; i++) { const x = Math.random() * S, y = Math.random() * S; if (boxDist(x / k + x0, y / k + z0) < .5) continue; const r = 2 + Math.random() * 5; const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); gr.addColorStop(0, 'rgba(255,170,200,.5)'); gr.addColorStop(1, 'rgba(255,120,160,0)'); g.fillStyle = gr; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6); }
+    for (let i = 0; i < 260; i++) {
+      const x = Math.random() * S, y = Math.random() * S; if (boxDist(x / k + x0, y / k + z0) > .5) continue;
+      const r = (.25 + Math.random() * .45) * k, tint = ['190,140,255', '120,230,210', '255,200,120', '120,190,255', '255,150,200'][i % 5];
+      const gr = g.createRadialGradient(x, y, r * .2, x, y, r); gr.addColorStop(0, `rgba(${tint},.16)`); gr.addColorStop(.7, `rgba(${tint},.07)`); gr.addColorStop(1, `rgba(${tint},0)`);
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    }
+    for (let i = 0; i < 140; i++) { const x = Math.random() * S, y = Math.random() * S; if (boxDist(x / k + x0, y / k + z0) < .5) continue; const r = 2 + Math.random() * 5; const gr = g.createRadialGradient(x, y, 0, x, y, r * 3); const tint = ['255,190,215', '150,235,255', '255,225,150'][i % 3]; gr.addColorStop(0, `rgba(${tint},.55)`); gr.addColorStop(1, `rgba(${tint},0)`); g.fillStyle = gr; g.fillRect(x - r * 3, y - r * 3, r * 6, r * 6); }
   });
   terrainMat.emissiveMap = emi; terrainMat.needsUpdate = true;
   if (TER.mesh) { scene.remove(TER.mesh); TER.mesh.geometry.dispose(); }
   TER.mesh = new T.Mesh(geo, terrainMat); TER.mesh.receiveShadow = true; scene.add(TER.mesh);
   warm.position.set(c.x, 3.5, c.z);
+  buildDecor();
+}
+
+// Украшения на холмах: гроздья клеток-пузырей и колышущиеся ворсинки со светящимися кончиками
+const DECOR = { bub: null, vil: null, tip: null, data: [], bdata: [] };
+const bubGeo = new T.SphereGeometry(1, 24, 16), vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = new T.SphereGeometry(1, 14, 10);
+vilGeo.translate(0, .57, 0);
+const bubMat = new T.MeshPhysicalMaterial({ roughness: .12, metalness: 0, clearcoat: 1, transparent: true, opacity: .78, emissive: '#3a1030', emissiveIntensity: .35 });
+const vilMat = new T.MeshPhysicalMaterial({ roughness: .35, clearcoat: .7, emissive: '#3a0a1a', emissiveIntensity: .25 });
+const tipMat = new T.MeshBasicMaterial({ toneMapped: false });
+function decorSpots(n, dmin, dmax) {
+  const out = [], b = TER.box; let tries = 0;
+  while (out.length < n && tries < n * 80) {
+    tries++;
+    const x = b.min.x - 9 + Math.random() * (b.max.x - b.min.x + 18), z = b.min.z - 9 + Math.random() * (b.max.z - b.min.z + 18), d = boxDist(x, z);
+    if (d >= dmin && d <= dmax && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > 1.6)) out.push([x, z]);
+  }
+  return out;
+}
+function buildDecor() {
+  for (const k of ['bub', 'vil', 'tip']) if (DECOR[k]) { scene.remove(DECOR[k]); DECOR[k].dispose(); }
+  const BUB = ['#d8b4ff', '#9ff0d8', '#ffc4a8', '#a8d8ff', '#ffb0d0'].map(c => new T.Color(c));
+  const bl = [];
+  decorSpots(18, 1.1, 8).forEach(([cx, cz]) => {
+    const n = 3 + (Math.random() * 4 | 0);
+    for (let i = 0; i < n; i++) { const r = .14 + Math.random() * .36, x = cx + (Math.random() - .5) * 1.1, z = cz + (Math.random() - .5) * 1.1; bl.push({ x, z, r, y: heightAt(x, z) + r * .7, ph: Math.random() * 6, c: BUB[Math.random() * BUB.length | 0] }); }
+  });
+  const VIL = ['#ff8aa0', '#ffb08a', '#ff9ac8', '#ffc2a0'].map(c => new T.Color(c)), TIP = ['#7ff7ff', '#ffd36b', '#ff9ad0', '#b8ff8a'].map(c => new T.Color(c));
+  const vl = [];
+  decorSpots(20, 1.3, 9).forEach(([cx, cz]) => {
+    const tc = TIP[Math.random() * TIP.length | 0];
+    for (let i = 0; i < 7; i++) { const x = cx + (Math.random() - .5) * 1.1, z = cz + (Math.random() - .5) * 1.1; vl.push({ x, z, h: .45 + Math.random() * 1.05, y: heightAt(x, z) - .05, ph: Math.random() * 6, c: VIL[Math.random() * VIL.length | 0], tc }); }
+  });
+  DECOR.bub = new T.InstancedMesh(bubGeo, bubMat, Math.max(1, bl.length)); bl.forEach((b, i) => DECOR.bub.setColorAt(i, b.c));
+  DECOR.vil = new T.InstancedMesh(vilGeo, vilMat, Math.max(1, vl.length)); DECOR.tip = new T.InstancedMesh(tipGeo, tipMat, Math.max(1, vl.length));
+  vl.forEach((v, i) => { DECOR.vil.setColorAt(i, v.c); DECOR.tip.setColorAt(i, v.tc); });
+  DECOR.bdata = bl; DECOR.data = vl;
+  DECOR.bub.castShadow = DECOR.vil.castShadow = true;
+  for (const k of ['bub', 'vil', 'tip']) scene.add(DECOR[k]);
+  animateDecor(0);
+}
+const dmy = new T.Object3D(), upV = new T.Vector3();
+function animateDecor(now) {
+  if (!DECOR.vil) return;
+  DECOR.data.forEach((v, i) => {
+    dmy.position.set(v.x, v.y, v.z); dmy.rotation.set(Math.sin(now * 1.3 + v.ph) * .16, 0, Math.cos(now * 1.1 + v.ph * 1.7) * .16); dmy.scale.set(1, v.h, 1); dmy.updateMatrix();
+    DECOR.vil.setMatrixAt(i, dmy.matrix);
+    upV.set(0, v.h * 1.14 + .02, 0).applyEuler(dmy.rotation);
+    dmy.position.set(v.x + upV.x, v.y + upV.y, v.z + upV.z); const ts = .09 + .025 * Math.sin(now * 3 + v.ph); dmy.scale.set(ts, ts, ts); dmy.updateMatrix();
+    DECOR.tip.setMatrixAt(i, dmy.matrix);
+  });
+  DECOR.bdata.forEach((b, i) => {
+    const s = b.r * (1 + .05 * Math.sin(now * 2 + b.ph));
+    dmy.position.set(b.x, b.y + Math.sin(now * .8 + b.ph) * .04, b.z); dmy.rotation.set(0, 0, 0); dmy.scale.set(s, s * .92, s); dmy.updateMatrix();
+    DECOR.bub.setMatrixAt(i, dmy.matrix);
+  });
+  DECOR.vil.instanceMatrix.needsUpdate = DECOR.tip.instanceMatrix.needsUpdate = DECOR.bub.instanceMatrix.needsUpdate = true;
 }
 
 // Плавающие эритроциты, тромбоциты и блики — фон живёт, но не мешает игре
@@ -761,7 +816,7 @@ const drift = [];
     m.castShadow = true; scene.add(m); drift.push(m);
   }
   for (let i = 0; i < 40; i++) {
-    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: i % 3 ? '#ff9ab8' : '#8fe8ff', blending: T.AdditiveBlending, depthWrite: false, opacity: .5 }));
+    const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: ['#ff9ab8', '#8fe8ff', '#ffe08a', '#c8a6ff'][i % 4], blending: T.AdditiveBlending, depthWrite: false, opacity: .5 }));
     const sc = .12 + Math.random() * .22; s.scale.set(sc, sc, 1);
     s.userData = { mote: true, ph: Math.random() * 6, sp: .2 + Math.random() * .4, y: .6 + Math.random() * 2 }; scene.add(s); drift.push(s);
   }
@@ -867,9 +922,9 @@ const organ = new T.Group();
 function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
 
 const padGeo = new T.CylinderGeometry(.4, .46, .14, 32);
-const padMat = new T.MeshPhysicalMaterial({ color: '#c97d8e', roughness: .32, metalness: 0, clearcoat: 1, clearcoatRoughness: .2, emissive: '#3a0a18', emissiveIntensity: .35 });
+const padMat = new T.MeshPhysicalMaterial({ color: '#e2a6b6', roughness: .32, metalness: 0, clearcoat: 1, clearcoatRoughness: .2, emissive: '#3a0a18', emissiveIntensity: .35 });
 const padRimGeo = new T.TorusGeometry(.4, .035, 8, 40);
-const padRimMat = new T.MeshStandardMaterial({ color: '#ffd6de', emissive: '#ff6f8f', emissiveIntensity: .35, roughness: .3 });
+const padRimMat = new T.MeshStandardMaterial({ color: '#bff6ff', emissive: '#5ad8ff', emissiveIntensity: .6, roughness: .3 });
 const ringGeo = new T.RingGeometry(.4, .52, 40);
 
 function updateBackdrop() {
@@ -883,6 +938,7 @@ function updateBackdrop() {
   });
 }
 function animateBackdrop(dt, now) {
+  animateDecor(now);
   const o = TER.box.clone().expandByScalar(7);
   for (const m of drift) {
     const u = m.userData;
@@ -1804,13 +1860,13 @@ function startGame(mode) {
   PROF.games++; saveProf();
   Object.assign(G, { mode, phase: 'build', paused: false, coins: 100, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null });
   $('legBtn').classList.remove('on');
-  screenStack = []; show(null); closeUnit(); AU.ambient(true, false);
+  screenStack = []; show(null); closeUnit();
   computeBonus(); rollShop(); highlight(); updateHUD();
   showBanner('Печень', mode === 'campaign' ? '30 волн · в конце босс' : 'Волны без конца · рекорд ' + G.best);
 }
 function startWave() {
   if (G.phase !== 'build') return;
-  G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0; AU.ambient(true, true);
+  G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0;
   if (G.wave % 10 !== 0) { showBanner('Волна ' + G.wave); AU.play('wave', 0, .9); }
   updateHUD();
 }
@@ -1819,11 +1875,11 @@ function waveCleared() {
   G.coins += bonus; G.phase = 'build';
   if (G.mode === 'endless' && G.wave > G.best) { G.best = G.wave; try { localStorage.setItem('immuneBest', G.best); } catch (e) {} }
   if (G.mode === 'campaign' && G.wave >= CAMPAIGN_WAVES) return finish(true);
-  showBanner('Волна отбита', `+${bonus} монет · новые карты`); AU.play('coin', 0, 1); AU.ambient(true, false);
+  showBanner('Волна отбита', `+${bonus} монет · новые карты`); AU.play('coin', 0, 1);
   rollShop(); highlight(); updateHUD();
 }
 function finish(win) {
-  G.phase = 'end'; updateHUD(); AU.ambient(false);
+  G.phase = 'end'; updateHUD();
   const stars = !win ? 0 : G.hp === MAX_HP ? 3 : G.hp > MAX_HP / 2 ? 2 : 1;
   if (win) { PROF.wins++; PROF.liverStars = Math.max(PROF.liverStars, stars); }
   saveProf();
@@ -1895,7 +1951,7 @@ function renderScreen(id) {
 }
 $('avatars').onclick = (e) => { const b = e.target.closest('[data-ava]'); if (!b) return; PROF.avatar = b.dataset.ava; saveProf(); renderScreen('profile'); AU.play('place'); };
 $('pName').oninput = () => { PROF.name = $('pName').value.trim() || 'Игрок'; saveProf(); };
-$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui'); if (!SET.sound) AU.ambient(false); };
+$('sSound').onchange = () => { SET.sound = $('sSound').checked; saveSet(); applySettings(); AU.init(); AU.play('ui');};
 $('sVol').oninput = () => { SET.vol = +$('sVol').value; $('sVolText').textContent = SET.vol + '%'; saveSet(); applySettings(); };
 $('sVol').onchange = () => { AU.init(); AU.play('boom', 0, .6); };
 $('sVibro').onchange = () => { SET.vibro = $('sVibro').checked; saveSet(); buzz(40); };
@@ -1908,11 +1964,11 @@ $('resetBtn').onclick = () => {
   try { localStorage.removeItem('immuneBest'); } catch (e) {}
   b.dataset.armed = ''; b.textContent = 'Прогресс сброшен';
 };
-$('pauseBtn').onclick = () => { if (G.phase !== 'build' && G.phase !== 'wave') return; G.paused = true; AU.ambient(false); screenStack = []; show('pause'); AU.play('ui'); };
-$('resumeBtn').onclick = () => { G.paused = false; show(null); AU.play('ui'); AU.ambient(true, G.phase === 'wave'); };
+$('pauseBtn').onclick = () => { if (G.phase !== 'build' && G.phase !== 'wave') return; G.paused = true; screenStack = []; show('pause'); AU.play('ui'); };
+$('resumeBtn').onclick = () => { G.paused = false; show(null); AU.play('ui'); };
 $('quitBtn').onclick = () => goMenu();
 function goMenu() {
-  G.paused = false; G.phase = 'menu'; AU.ambient(false);
+  G.paused = false; G.phase = 'menu';
   for (const e of G.foes) removeFoe(e); G.foes = []; G.queue = [];
   for (const p of G.shots) scene.remove(p.mesh); G.shots = [];
   closeUnit(); screenStack = []; show('menu'); renderScreen('menu'); updateHUD();

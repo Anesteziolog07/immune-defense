@@ -319,7 +319,7 @@ body {
       </div>
       <button class="btn big" data-look="menu">Фон и звуки</button>
       <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.6 · прототип</p>
+      <p class="ver">Версия 0.7 · прототип</p>
     </div>
   </div>
 
@@ -536,6 +536,7 @@ const AU = {
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
     for (let i = 0; i < pd.length; i++) { const w = Math.random() * 2 - 1; b0 = .99886 * b0 + w * .0555179; b1 = .99332 * b1 + w * .0750759; b2 = .969 * b2 + w * .153852; b3 = .8665 * b3 + w * .3104856; b4 = .55 * b4 + w * .5329522; b5 = -.7616 * b5 - w * .016898; pd[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * .5362) * .11; b6 = w * .115926; }
     this.pink = pb; this.ambNodes = [];
+    this.loadSamples();
     if (typeof SET !== 'undefined' && SET.amb && SET.amb !== 'off') setTimeout(() => this.amb(SET.amb), 300);
   },
   bus(pan, vol) {
@@ -707,13 +708,29 @@ const AU = {
     const now = this.ctx.currentTime, gap = { boom: .06, die: .04, hit: .035, shot: .05 }[kind] ?? .05;
     if (now - (this.last[kind] || 0) < gap) return;
     this.last[kind] = now;
-    const st = (typeof SET !== 'undefined' && SET.sfx) || 'juicy';
-    if (st === 'chip') this.chip(kind, x, vol, now); else if (st === 'soft') this.soft(kind, x, vol, now); else this.juicy(kind, x, vol, now);
+    const st = (typeof SET !== 'undefined' && SET.sfx) || 'real';
+    if (st === 'real' && this.smp && this.smp[kind === 'organ' ? 'leak' : kind]) this.sample(kind === 'organ' ? 'leak' : kind, x, vol);
+    else if (st === 'chip') this.chip(kind, x, vol, now); else if (st === 'soft') this.soft(kind, x, vol, now); else this.juicy(kind, x, vol, now);
   },
 
-  // ---------- Фоновые звуки природы (без музыки) ----------
+  // ---------- Записанные эффекты (CC0: Kenney, OpenGameArt) ----------
+  loadSamples() {
+    const N = { pop: 2, thump: 2, spit: 2, dart: 2, shot: 2, lob: 2, boom: 3, zip: 2, hit: 2, die: 3, leak: 2, place: 2, merge: 2, coin: 2, ui: 2, wave: 2, ult: 2, win: 1, lose: 1, siren: 1 };
+    this.smp = {};
+    for (const [k, n] of Object.entries(N)) for (let i = 0; i < n; i++)
+      fetch(`assets/snd/${k}_${i}.wav`).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => this.ctx.decodeAudioData(b)).then(buf => { (this.smp[k] ||= []).push(buf); }).catch(() => {});
+  },
+  sample(kind, x, vol) {
+    const ctx = this.ctx, list = this.smp[kind], src = ctx.createBufferSource();
+    const gainK = { hit: .35, ui: .6, shot: .45, dart: .5, pop: .55, spit: .6, die: .55, zip: .55, coin: .6, boom: .85, lob: .6 }[kind] ?? .75;
+    src.buffer = list[Math.random() * list.length | 0];
+    src.playbackRate.value = .92 + Math.random() * .16;
+    src.connect(this.bus(x / 4, vol * gainK)); src.start();
+  },
+
+  // ---------- Фоновые звуки природы (записи CC0, без музыки) ----------
   ambBus() {
-    if (!this.ab) { this.ab = this.ctx.createGain(); this.ab.connect(this.out); const s = this.ctx.createGain(); s.gain.value = .5; this.ab.connect(s); s.connect(this.rev); }
+    if (!this.ab) { this.ab = this.ctx.createGain(); this.ab.connect(this.out); }
     this.ab.gain.value = (typeof SET !== 'undefined' ? SET.ambVol : 50) / 100 * .7;
     return this.ab;
   },
@@ -729,37 +746,22 @@ const AU = {
   abus(pan, vol) { const ctx = this.ctx, g = ctx.createGain(); g.gain.value = vol; let n = g; if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); n = p; } n.connect(this.ambBus()); return g; },
   amb(id) {
     if (!this.ctx) return;
-    clearInterval(this.ambT); this.ambT = null;
-    (this.ambNodes || []).forEach(n => { try { n.stop(); } catch (e) {} }); this.ambNodes = [];
-    if (this.ab) { try { this.ab.disconnect(); } catch (e) {} this.ab = null; }
+    this.ambId = id;
+    if (this.ambSrc) { const old = this.ambSrc; this.ambSrc = null; try { old.g.gain.setTargetAtTime(0, this.ctx.currentTime, .25); setTimeout(() => { try { old.s.stop(); } catch (e) {} }, 1200); } catch (e) {} }
     if (!id || id === 'off' || !this.on) return;
-    const R = Math.random, P = () => R() * 1.6 - .8;
-    let tick = null;
-    switch (id) {
-      case 'rain': this.loopN('pink', [['highpass', 500], ['lowpass', 7000]], .45);
-        tick = (t) => { for (let i = 0; i < 4; i++) if (R() < .6) this.nz(this.abus(P(), .6), 'highpass', 3000 + R() * 4000, 2500, 1, t + R() * .1, .012 + R() * .02, .08 + R() * .1); }; break;
-      case 'surf': { const a = this.loopN('brown', [['lowpass', 600]], .55); this.lfo(a.g.gain, .11, .45); this.lfo(a.fl[0].frequency, .11, 260);
-        const f = this.loopN('white', [['highpass', 2500], ['lowpass', 8000]], .06); this.lfo(f.g.gain, .11, .05); break; }
-      case 'brook': { const w = this.loopN('white', [['bandpass', 1600, .9]], .16); this.lfo(w.fl[0].frequency, 3.3, 500); this.lfo(w.g.gain, .7, .05);
-        tick = (t) => { if (R() < .35) { const f = 500 + R() * 900; this.osc(this.abus(P(), .7), 'sine', f, f * 1.7, t + R() * .1, .05, .05); } }; break; }
-      case 'wind': { const w = this.loopN('pink', [['bandpass', 500, 2.5]], .5); this.lfo(w.fl[0].frequency, .06, 280); this.lfo(w.g.gain, .045, .3); break; }
-      case 'crickets': { this.loopN('brown', [['lowpass', 300]], .12);
-        const cr = [{ f: 4300, pan: -.6, next: 0 }, { f: 4700, pan: .55, next: .4 }, { f: 3900, pan: .1, next: .9 }];
-        tick = (t) => cr.forEach(c => { if (t > c.next) { const b = this.abus(c.pan, .5); for (let k = 0; k < 3; k++) this.osc(b, 'sine', c.f, c.f * 1.01, t + k * .045, .028, .045); c.next = t + .6 + R() * .7; } }); break; }
-      case 'birds': this.loopN('pink', [['bandpass', 700, 1]], .1);
-        tick = (t) => { if (R() < .035) { const n = 2 + (R() * 4 | 0), base = 2200 + R() * 1800, b = this.abus(P(), .6); let tt = t; for (let k = 0; k < n; k++) { const up = R() < .5; this.osc(b, 'sine', up ? base : base * 1.4, up ? base * 1.4 : base * .9, tt, .07 + R() * .05, .05); tt += .09 + R() * .06; } } }; break;
-      case 'under': { const a = this.loopN('brown', [['lowpass', 260]], .6); this.lfo(a.g.gain, .15, .2);
-        tick = (t) => { if (R() < .3) { const f = 200 + R() * 300; this.osc(this.abus(P(), .8), 'sine', f, f * 2.8, t + R() * .1, .09, .06); } }; break; }
-      case 'fire': this.loopN('brown', [['lowpass', 350]], .35); this.loopN('pink', [['bandpass', 1200, .8]], .04);
-        tick = (t) => { for (let i = 0; i < 3; i++) if (R() < .35) this.nz(this.abus(R() * .8 - .4, .8), 'highpass', 2000 + R() * 5000, 1500, 1, t + R() * .1, .004 + R() * .012, .08 + R() * .18);
-          if (R() < .02) this.nz(this.abus(R() * .6 - .3, .8), 'lowpass', 900, 200, 1, t, .05, .3); }; break;
-      case 'storm': { this.loopN('pink', [['highpass', 700], ['lowpass', 5000]], .25); let next = this.ctx.currentTime + 3;
-        tick = (t) => { if (t > next) { next = t + 10 + R() * 14; this.nz(this.abus(R() - .5, 1), 'lowpass', 160, 50, .8, t, 3 + R() * 2, .7, { brown: true, a: .4 }); this.nz(this.abus(0, .5), 'lowpass', 1200, 200, 1, t + .1, .6, .25, { a: .05 }); } }; break; }
-      case 'cave': this.loopN('pink', [['lowpass', 500]], .07);
-        tick = (t) => { if (R() < .07) { const f = 900 + R() * 900, b = this.abus(R() * 1.2 - .6, 1); this.osc(b, 'sine', f, f * .55, t, .08, .09); this.osc(b, 'sine', f * 1.5, f * .9, t + .002, .05, .03); } }; break;
-    }
-    if (tick) this.ambT = setInterval(() => { if (this.ctx.state === 'running') tick(this.ctx.currentTime + .05); }, 100);
+    this.ambBufs ||= {};
+    const start = (buf) => {
+      if (this.ambId !== id) return;
+      const s = this.ctx.createBufferSource(), g = this.ctx.createGain();
+      s.buffer = buf; s.loop = true; s.loopStart = .06; s.loopEnd = buf.duration - .02;
+      g.gain.value = 0; g.gain.setTargetAtTime(1, this.ctx.currentTime, .4);
+      s.connect(g); g.connect(this.ambBus()); s.start(0, .06);
+      this.ambSrc = { s, g };
+    };
+    if (this.ambBufs[id]) return start(this.ambBufs[id]);
+    fetch(`assets/snd/amb_${id}.m4a`).then(r => r.arrayBuffer()).then(b => this.ctx.decodeAudioData(b)).then(buf => { this.ambBufs[id] = buf; start(buf); }).catch(() => {});
   },
+
   chip(kind, x, vol, now) {
     const b = this.bus(x / 4, vol * .55), t = now, F = 1 / 60, r = 1 + (Math.random() - .5) * .14;
     const dec = (v0, n) => (i) => v0 * (1 - i / n);              // ровное затухание
@@ -861,54 +863,59 @@ function vnoise(x, z) {
 function fbm(x, z) { let s = 0, a = .5, f = 1; for (let i = 0; i < 4; i++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= .5; } return s; }
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-// Каждая тема: небо и туман, свет, палитра земли, узор, украшения, искорки, площадки
+// Фоны на настоящих текстурах (Poly Haven, CC0): своя земля для поля и для холмов, своё небо, свет и украшения.
+// Украшения: «капли» (камни, кусты, ракушки, кристаллы) и «стебли» (деревья, пальмы, ели, кактусы, колонны, камыш, цветы).
+const TREE = (cols, tips, o = {}) => Object.assign({ colors: cols, tips, h: [.7, 1.4], tip: 6, flat: .9, thick: 3, n: 14, per: 3, sway: .05 }, o);
 const THEMES = [
-  { name: 'Глубокий океан', bg: '#04142a', fog: [20, 58], hemi: ['#9fdcff', '#04101e', .65], sun: ['#cfe8ff', .95], rim: ['#3cf0ff', .7], exp: 1,
-    pal: ['#0d3a52', '#156078', '#2fb6c8', '#06202e', '#061a2e', '#14506e', '#7fe0e8'], amp: 1, freq: .16, pattern: 'caustics', veins: ['60,240,255', '140,200,255'], emi: .7,
-    blob: { geo: 'sphere', colors: ['#ff9ad0', '#9ff0ff', '#c8a6ff'], opacity: .55, size: [.2, .55], n: 16 },
-    stalk: { colors: ['#ff7a5a', '#ffb36b', '#ff5a8a'], tips: ['#ffe08a', '#7ff7ff'], h: [.4, 1.2], tip: 1, flat: 1, n: 18 },
-    motes: ['#7ff7ff', '#ffffff', '#9fdcff'], pad: '#d9f4ff', rim2: '#7ff7ff' },
-  { name: 'Закат в дюнах', bg: '#c86a5a', fog: [24, 64], hemi: ['#ffd9b0', '#7a3a3a', .85], sun: ['#ffb070', 1.25], rim: ['#8a6aff', .5], exp: 1,
-    pal: ['#d39462', '#e8b47e', '#c8603a', '#6a2a1a', '#a8604a', '#e0905a', '#ffd0a0'], amp: 1.3, freq: .1, pattern: 'ripples', veins: [], emi: .35,
-    blob: { geo: 'dodeca', colors: ['#9a5a3a', '#b87a52', '#7a4a32'], opacity: 1, size: [.2, .6], n: 14, flat: .6 },
-    stalk: { colors: ['#4f8a46', '#62a052'], tips: ['#ff9ad0', '#ffd36b'], h: [.5, 1.1], tip: 1.3, flat: 1, n: 12 },
-    motes: ['#ffe0a0', '#ffffff'], pad: '#fff0dc', rim2: '#ffb070' },
-  { name: 'Изумрудный лес', bg: '#0a2014', fog: [20, 52], hemi: ['#d8ffd0', '#0a2010', .65], sun: ['#fff2c8', 1.05], rim: ['#a8ff8a', .45], exp: 1,
-    pal: ['#2a5a2a', '#3e7e3a', '#7acb5a', '#123a18', '#0e2a14', '#2e6a32', '#8acb6a'], amp: 1.1, freq: .2, pattern: 'moss', veins: ['230,255,120'], emi: .4,
-    blob: { geo: 'sphere', colors: ['#2e6a32', '#3a7e3a', '#4a9040'], opacity: 1, size: [.3, .8], n: 16 },
-    stalk: { colors: ['#f2e6d0', '#e8dcc0'], tips: ['#ff5a4a', '#ffb03a', '#e8e0ff'], h: [.25, .6], tip: 2.6, flat: .5, n: 18 },
-    motes: ['#e8ff6a', '#ffe06a'], pad: '#f0ffe8', rim2: '#c8ff6a' },
-  { name: 'Ледяные кристаллы', bg: '#0e1a33', fog: [24, 60], hemi: ['#e8f6ff', '#1a2a4a', .85], sun: ['#ffffff', 1.1], rim: ['#7ad8ff', .8], exp: 1,
-    pal: ['#7aa6d4', '#a8c8ea', '#6ab8ff', '#2a4a7a', '#3a5a8a', '#8ab0d8', '#ffffff'], amp: 1.2, freq: .2, pattern: 'ice', veins: ['200,240,255'], emi: .5,
-    blob: { geo: 'octa', colors: ['#bfefff', '#d8c8ff', '#ffffff'], opacity: .8, size: [.25, .75], n: 20, tall: 1.9 },
-    stalk: null, motes: ['#ffffff', '#bfefff'], pad: '#ffffff', rim2: '#7ad8ff' },
-  { name: 'Звёздная туманность', bg: '#07051a', fog: [26, 70], hemi: ['#c8b4ff', '#05031a', .6], sun: ['#e8d8ff', .85], rim: ['#ff6ad8', .75], exp: 1,
-    pal: ['#1a1440', '#2a1e5a', '#8a5aff', '#0a0620', '#0c0828', '#2a1a5a', '#8a6aff'], amp: .9, freq: .14, pattern: 'stars', veins: ['255,110,220', '140,200,255'], emi: .9,
-    blob: { geo: 'sphere', colors: ['#ff9ad0', '#8fe8ff', '#ffe08a', '#b48aff'], opacity: .9, size: [.15, .5], n: 14, glow: true },
-    stalk: null, motes: ['#ffffff', '#c8a6ff', '#8fe8ff'], pad: '#e8e0ff', rim2: '#ff6ad8' },
-  { name: 'Вулкан', bg: '#140604', fog: [20, 52], hemi: ['#ffb08a', '#1a0604', .55], sun: ['#ffcf9a', .95], rim: ['#ff5a1a', .85], exp: 1,
-    pal: ['#2e1e1a', '#3e2a24', '#ff6a1a', '#1a0a06', '#140806', '#3a2a26', '#6a5a56'], amp: 1.3, freq: .18, pattern: 'lava', veins: ['255,120,30', '255,190,60'], emi: 1,
-    blob: { geo: 'dodeca', colors: ['#2a2220', '#3a302c', '#1e1816'], opacity: 1, size: [.25, .7], n: 16, flat: .7 },
-    stalk: null, motes: ['#ffb03a', '#ff6a1a'], pad: '#e8d8d0', rim2: '#ff8a3a' },
-  { name: 'Весенний луг', bg: '#7ec0ea', fog: [26, 64], hemi: ['#ffffff', '#5a8a3a', .95], sun: ['#fff6e0', 1.25], rim: ['#ffffff', .35], exp: 1,
-    pal: ['#74c056', '#94d468', '#c8f08a', '#3a6a2a', '#5aa04a', '#7ac85a', '#d8f8a8'], amp: .9, freq: .14, pattern: 'flowers', veins: [], emi: .3,
-    blob: { geo: 'sphere', colors: ['#4a9a3a', '#5ab04a', '#3e8a34'], opacity: 1, size: [.3, .7], n: 14 },
-    stalk: { colors: ['#4a9a3a'], tips: ['#ff6a8a', '#ffd34a', '#ffffff', '#b48aff'], h: [.25, .55], tip: 1.9, flat: .7, n: 24 },
-    motes: ['#ffffff', '#ffd34a'], pad: '#fffaf0', rim2: '#ffd34a' },
-  { name: 'Неоновый город', bg: '#05030c', fog: [24, 62], hemi: ['#8a8aff', '#05030c', .5], sun: ['#c8c8ff', .75], rim: ['#ff2ad8', .9], exp: 1,
-    pal: ['#0e0c1c', '#16122c', '#2af0ff', '#05030c', '#08061a', '#141030', '#2a2060'], amp: .6, freq: .12, pattern: 'grid', veins: [], emi: 1,
-    blob: null,
-    stalk: { colors: ['#1a1440', '#221a50'], tips: ['#2af0ff', '#ff2ad8', '#ffe02a'], h: [.7, 2], tip: 1.5, flat: 1, n: 16, thick: 2.2 },
-    motes: ['#2af0ff', '#ff2ad8'], pad: '#e0f8ff', rim2: '#2af0ff' },
-  { name: 'Мрамор и золото', bg: '#d8cfc4', fog: [28, 72], hemi: ['#ffffff', '#a89a8a', .95], sun: ['#fff6e8', 1.1], rim: ['#ffd38a', .4], exp: .95,
-    pal: ['#cdbfa8', '#e2d6c2', '#d8b46a', '#8a6a3a', '#b8aa98', '#d8ccb8', '#fff8ec'], amp: 1, freq: .14, pattern: 'marble', veins: [], emi: .45,
-    blob: { geo: 'sphere', colors: ['#ffffff', '#f0e0ff', '#ffe8d0'], opacity: 1, size: [.15, .45], n: 14 },
-    stalk: { colors: ['#f0ece8'], tips: ['#ffd36b'], h: [.8, 1.6], tip: 1.6, flat: .45, n: 10, thick: 2.4 },
-    motes: ['#ffd36b', '#ffffff'], pad: '#ffffff', rim2: '#ffd36b' },
-  { name: 'Облачное небо', bg: '#7ab0e8', fog: [24, 62], hemi: ['#ffffff', '#7a9ac8', .95], sun: ['#fffaf0', 1.2], rim: ['#ffd8f0', .5], exp: .95,
-    pal: ['#a8c4ea', '#c8dcf6', '#ffc8d8', '#7a94c0', '#a8c0e8', '#e8f0ff', '#ffffff'], amp: 1.4, freq: .12, pattern: 'clouds', veins: [], emi: .35,
-    blob: { geo: 'sphere', colors: ['#ffffff', '#f4f8ff', '#fff0f6'], opacity: .95, size: [.4, .95], n: 18 },
-    stalk: null, motes: ['#ffffff', '#ffe8a0'], pad: '#ffffff', rim2: '#ffc8d8' }
+  { name: 'Тропический пляж', floor: 'coast_sand_01', hills: 'coast_sand_rocks_02', bg: '#8fd3ff', fog: [26, 72], hemi: ['#ffffff', '#c8a878', .95], sun: ['#fff2d8', 1.3], rim: ['#9fe0ff', .4], exp: 1,
+    bank: '#e8d2a0', amp: 1, freq: .14, scale: [4.5, 6],
+    stalk: TREE(['#8a6a44', '#9a7a52'], ['#3f9a3a', '#4fae3e'], { h: [1.1, 1.8], tip: 7, flat: .32, thick: 1.8, n: 12, per: 2, sway: .07 }),
+    blob: { geo: 'sphere', colors: ['#ffd0dc', '#fff4e8', '#ffb8a0'], size: [.08, .18], n: 14, flat: .5 },
+    motes: ['#ffffff'], moteA: .25, pad: '#fffaf0', rim2: '#ff8aa8' },
+  { name: 'Лесная поляна', floor: 'leafy_grass', hills: 'forest_leaves_04', bg: '#bfe6a8', fog: [24, 62], hemi: ['#f4ffe8', '#3a5a2a', .85], sun: ['#fff4d0', 1.25], rim: ['#d8ffb0', .35], exp: 1,
+    bank: '#6a5a3a', amp: 1.1, freq: .16, scale: [4, 6], tint: '#d4ffc4',
+    stalk: TREE(['#6a4a2e', '#7a5636'], ['#3a8a32', '#4a9a3a', '#2f7a2c']),
+    blob: { geo: 'sphere', colors: ['#3e8a34', '#4a9a3a'], size: [.25, .55], n: 12, flat: .8 },
+    motes: ['#fff6a0'], moteA: .45, pad: '#fffdf0', rim2: '#ffd36b' },
+  { name: 'Цветочный луг', floor: 'sparse_grass', hills: 'aerial_grass_rock', bg: '#a8dcff', fog: [26, 70], hemi: ['#ffffff', '#5a8a3a', .95], sun: ['#fff6e0', 1.25], rim: ['#ffffff', .3], exp: 1,
+    bank: '#7a6a44', amp: .9, freq: .14, scale: [4, 7], tint: '#dcffb8',
+    stalk: TREE(['#4a9a3a'], ['#ff5a7a', '#ffd34a', '#ffffff', '#b48aff', '#ff9a3a'], { h: [.2, .45], tip: 1.9, flat: .6, thick: .8, n: 26, per: 6, sway: .18 }),
+    blob: { geo: 'sphere', colors: ['#4a9a3a', '#5ab04a'], size: [.25, .5], n: 12, flat: .8 },
+    motes: ['#ffffff', '#ffd34a'], moteA: .5, pad: '#ffffff', rim2: '#ff6a8a' },
+  { name: 'Снежная долина', floor: 'snow_02', hills: 'snow_field_aerial', bg: '#cfe6ff', fog: [24, 62], hemi: ['#ffffff', '#8aa0c8', .9], sun: ['#ffffff', 1.15], rim: ['#9fd8ff', .5], exp: .95,
+    bank: '#8aa8c8', amp: 1.2, freq: .18, scale: [4, 6],
+    stalk: TREE(['#5a4030'], ['#2a5a3a', '#1f4a30', '#2e6a42'], { h: [.5, 1], tip: 4.5, flat: 2.2, thick: 2, n: 16, per: 4, sway: .03 }),
+    blob: { geo: 'octa', colors: ['#bfefff', '#e0f4ff', '#d8c8ff'], size: [.18, .45], n: 10, tall: 1.9 },
+    motes: ['#ffffff'], moteA: .7, fall: true, pad: '#ffffff', rim2: '#4aa8ff' },
+  { name: 'Красный каньон', floor: 'red_sand', hills: 'terrain_red_01', bg: '#ffcf9a', fog: [26, 70], hemi: ['#fff0dc', '#7a3a2a', .85], sun: ['#ffd8a8', 1.3], rim: ['#ffb070', .4], exp: 1,
+    bank: '#8a4a2a', amp: 1.4, freq: .12, scale: [4.5, 6],
+    stalk: TREE(['#4f8a46', '#5a9a4e'], ['#ff6aa0', '#ffd34a'], { h: [.5, 1], tip: 1.6, flat: 1, thick: 2.6, n: 8, per: 2, sway: 0 }),
+    blob: { geo: 'dodeca', colors: ['#9a4a2e', '#b45a36', '#7a3a24'], size: [.2, .6], n: 14, flat: .65 },
+    motes: ['#ffe0b0'], moteA: .25, pad: '#fff4e8', rim2: '#ff8a3a' },
+  { name: 'Старая мостовая', floor: 'mossy_cobblestone', hills: 'grassy_cobblestone', bg: '#b8d8c8', fog: [24, 64], hemi: ['#f4fff0', '#4a5a3a', .85], sun: ['#fff6e0', 1.2], rim: ['#c8ffd8', .35], exp: 1,
+    bank: '#4a4a3a', amp: .9, freq: .16, scale: [3.5, 5],
+    stalk: TREE(['#d8d0c4', '#c8c0b4'], ['#e8e0d4'], { h: [1, 1.7], tip: 3.4, flat: .35, thick: 3.2, n: 8, per: 1, sway: 0 }),
+    blob: { geo: 'sphere', colors: ['#3e8a34', '#4f9a3c'], size: [.25, .5], n: 14, flat: .8 },
+    motes: ['#fff6c0'], moteA: .3, pad: '#f4f0e8', rim2: '#7acb5a' },
+  { name: 'Мраморный дворец', floor: 'marble_01', hills: 'marble_cliff_01', bg: '#f0e8dc', fog: [28, 76], hemi: ['#ffffff', '#a89a8a', .95], sun: ['#fff6e8', 1.15], rim: ['#ffd38a', .4], exp: .95,
+    bank: '#c8a868', amp: 1, freq: .14, scale: [5, 6],
+    stalk: TREE(['#f4f0ea'], ['#ffd36b'], { h: [1.1, 1.8], tip: 3.4, flat: .35, thick: 3.2, n: 9, per: 1, sway: 0 }),
+    blob: { geo: 'sphere', colors: ['#ffffff', '#f6ecff', '#fff0e0'], size: [.12, .3], n: 12 },
+    motes: ['#ffd36b'], moteA: .4, pad: '#ffffff', rim2: '#ffc84a' },
+  { name: 'Вулкан', floor: 'rock_ground', hills: 'aerial_rocks_04', bg: '#2a0e08', fog: [20, 56], hemi: ['#ffb08a', '#2a0a04', .6], sun: ['#ffcf9a', 1], rim: ['#ff5a1a', .9], exp: 1,
+    bank: '#ff6a1a', amp: 1.4, freq: .18, scale: [4, 5], tint: '#8a7c76', lava: true,
+    stalk: null, blob: { geo: 'dodeca', colors: ['#2a2220', '#3a302c', '#1e1816'], size: [.25, .7], n: 16, flat: .7 },
+    motes: ['#ffb03a', '#ff6a1a'], moteA: .8, pad: '#efe0d8', rim2: '#ff8a3a' },
+  { name: 'Речной берег', floor: 'ganges_river_pebbles', hills: 'mossy_rock', bg: '#a8d8e8', fog: [24, 66], hemi: ['#f0faff', '#4a6a5a', .9], sun: ['#fff6e8', 1.2], rim: ['#9fe8ff', .4], exp: 1,
+    bank: '#4a6a7a', amp: 1, freq: .15, scale: [3.5, 6],
+    stalk: TREE(['#6a8a3a', '#7a9a44'], ['#7a5a32', '#6a4a2a'], { h: [.5, 1.1], tip: 1.3, flat: 2.4, thick: .7, n: 18, per: 6, sway: .2 }),
+    blob: { geo: 'dodeca', colors: ['#9a9a90', '#b0aca0', '#8a8880'], size: [.15, .4], n: 12, flat: .6 },
+    motes: ['#ffffff'], moteA: .3, pad: '#fffaf0', rim2: '#5ad8ff' },
+  { name: 'Песчаная пустыня', floor: 'aerial_sand', hills: 'dirt_aerial_02', bg: '#ffe2b0', fog: [26, 72], hemi: ['#fff8e8', '#a87a4a', .9], sun: ['#fff0c8', 1.35], rim: ['#ffc890', .4], exp: 1,
+    bank: '#a8784a', amp: 1.2, freq: .1, scale: [5, 6],
+    stalk: TREE(['#4f8a46', '#5a9a4e'], ['#ff6aa0', '#ffd34a'], { h: [.6, 1.2], tip: 1.6, flat: 1, thick: 2.6, n: 10, per: 2, sway: 0 }),
+    blob: { geo: 'dodeca', colors: ['#b08a5a', '#c89a66'], size: [.2, .5], n: 10, flat: .6 },
+    motes: ['#fff0c8'], moteA: .25, pad: '#fff8ec', rim2: '#ff9a5a' }
 ];
 let TH = THEMES[0];
 
@@ -928,80 +935,31 @@ function boxDist(x, z) {
 function heightAt(x, z) {
   const db = boxDist(x, z), dp = pathDist(x, z);
   let h = (fbm(x * .5 + 3, z * .5) - .5) * .05;
-  if (TH.pattern === 'ripples') h += Math.sin(x * 1.1 + z * .5 + fbm(x * .3, z * .3) * 4) * .12 * smooth(0, 2, db);
   h += smooth(0, 3.5, db) * (.5 + 2.2 * fbm(x * TH.freq, z * TH.freq)) * TH.amp + db * .09 * TH.amp;
   const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.4, .78, dp);
   return Math.min(h, trench + Math.max(0, h) * smooth(.4, 1.2, dp));
 }
-const terrainMat = new T.MeshPhysicalMaterial({ vertexColors: true, roughness: .5, metalness: 0, clearcoat: .45, clearcoatRoughness: .35, emissive: '#ffffff', emissiveIntensity: .6 });
 
-// Цвет точки земли по теме и узору
-function groundColor(x, z, h, dp, db, col, tmp, P) {
-  const n = fbm(x * .7, z * .7);
-  switch (TH.pattern) {
-    case 'ripples': col.copy(P[0]).lerp(P[1], .5 + .5 * Math.sin(x * 2.2 + z * .9 + fbm(x * .4, z * .4) * 5)); break;
-    case 'marble': { const w = Math.abs(Math.sin((x + fbm(x * .4, z * .4) * 6) * 1.3)); col.copy(P[1]).lerp(P[0], smooth(.0, .5, w)).lerp(new T.Color('#b8b0a8'), (1 - smooth(0, .06, w)) * .6); break; }
-    case 'moss': col.copy(P[0]).lerp(P[1], smooth(.35, .7, fbm(x * 2.2, z * 2.2))); break;
-    case 'ice': col.copy(P[0]).lerp(P[1], smooth(.3, .8, n)).lerp(new T.Color('#ffffff'), smooth(.65, .9, fbm(x * 1.5, z * 1.5)) * .6); break;
-    case 'clouds': col.copy(P[0]).lerp(P[1], smooth(.3, .7, fbm(x * .9, z * .9))); break;
-    case 'stars': case 'grid': col.copy(P[0]).lerp(P[1], smooth(.4, .8, n) * .6); break;
-    default: col.copy(P[0]).lerp(P[1], smooth(.3, .75, n));
-  }
-  if (db > 0) { tmp.copy(P[4]).lerp(P[5], smooth(0, 1.6, h)).lerp(P[6], smooth(1.4, 2.8, h) * .8); col.lerp(tmp, smooth(0, 1.5, db)); }
-  col.lerp(P[2], (1 - smooth(.45, 1.05, dp)) * .6);
-  col.lerp(P[3], 1 - smooth(.3, .5, dp));
-  return col;
+// Земля: две текстуры (поле и холмы) смешиваются по атрибуту blend
+const texLoader = new T.TextureLoader(), texCache = {};
+function tex(name, normal = false) {
+  const key = name + (normal ? '_nor' : '_diff');
+  if (texCache[key]) return texCache[key];
+  const t = texLoader.load(`assets/tex/${key}.jpg`);
+  t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  if (!normal) t.encoding = T.sRGBEncoding;
+  return texCache[key] = t;
 }
-// Светящийся узор поверх земли (рисуется в мировых координатах)
-function drawPattern(g, S, x0, z0, k) {
-  const R = Math.random, onBoard = (px, py) => boxDist(px / k + x0, py / k + z0) < .5;
-  g.lineCap = 'round'; g.lineJoin = 'round';
-  const branch = (x, y, a, w, depth, tone) => {
-    if (depth <= 0 || w < .5) return;
-    g.beginPath(); g.moveTo(x, y);
-    for (let i = 0; i < 7; i++) { a += (R() - .5) * .55; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); }
-    g.shadowColor = `rgb(${tone})`; g.shadowBlur = 9; g.strokeStyle = `rgba(${tone},${.22 + w * .08})`; g.lineWidth = w * .85; g.stroke();
-    branch(x, y, a + .5 + R() * .3, w * .74, depth - 1, tone);
-    if (R() < .75) branch(x, y, a - .5 - R() * .3, w * .7, depth - 1, tone);
-  };
-  const glowDot = (x, y, r, rgb, a) => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${rgb},${a})`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); };
-  switch (TH.pattern) {
-    case 'caustics':
-      for (let i = 0; i < 70; i++) { const y0 = R() * S, amp = 6 + R() * 14, ph = R() * 6; g.beginPath(); for (let x = 0; x <= S; x += 8) g.lineTo(x, y0 + Math.sin(x * .02 + ph) * amp + Math.sin(x * .053 + ph * 2) * amp * .5); g.strokeStyle = `rgba(150,240,255,${.06 + R() * .08})`; g.lineWidth = 1.5 + R() * 2; g.shadowBlur = 6; g.shadowColor = '#7ff7ff'; g.stroke(); }
-      break;
-    case 'stars':
-      for (let i = 0; i < 9; i++) glowDot(R() * S, R() * S, 80 + R() * 160, ['160,90,255', '255,90,200', '90,160,255'][i % 3], .18);
-      for (let i = 0; i < 900; i++) { const r = R() < .9 ? .8 + R() : 1.6 + R() * 1.5; g.fillStyle = `rgba(255,255,255,${.4 + R() * .6})`; g.beginPath(); g.arc(R() * S, R() * S, r, 0, 7); g.fill(); }
-      break;
-    case 'grid': {
-      const step = k; g.shadowBlur = 8;
-      for (let x = (-x0 % 1) * k; x < S; x += step) { g.strokeStyle = 'rgba(42,240,255,.28)'; g.shadowColor = '#2af0ff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
-      for (let y = (-z0 % 1) * k; y < S; y += step) { g.strokeStyle = 'rgba(255,42,216,.24)'; g.shadowColor = '#ff2ad8'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, y); g.lineTo(S, y); g.stroke(); }
-      break; }
-    case 'lava':
-      for (let i = 0; i < 40; i++) { let x, y, t = 0; do { x = R() * S; y = R() * S; t++; } while (t < 20 && onBoard(x, y)); branch(x, y, R() * 7, 4.5, 6, i % 3 ? '255,120,30' : '255,200,70'); }
-      for (let i = 0; i < 60; i++) glowDot(R() * S, R() * S, 10 + R() * 25, '255,110,30', .25);
-      break;
-    case 'ice':
-      g.shadowBlur = 6; g.shadowColor = '#bfefff';
-      for (let i = 0; i < 120; i++) { let x = R() * S, y = R() * S, a = R() * 7; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 4; j++) { a += (R() - .5) * 1.2; x += Math.cos(a) * (8 + R() * 18); y += Math.sin(a) * (8 + R() * 18); g.lineTo(x, y); } g.strokeStyle = `rgba(220,248,255,${.15 + R() * .2})`; g.lineWidth = .8 + R(); g.stroke(); }
-      break;
-    case 'marble':
-      g.shadowBlur = 5; g.shadowColor = '#ffd36b';
-      for (let i = 0; i < 26; i++) { let x = R() * S, y = R() * S, a = R() * 7; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 30; j++) { a += (R() - .5) * .35; x += Math.cos(a) * 9; y += Math.sin(a) * 9; g.lineTo(x, y); } g.strokeStyle = `rgba(230,180,80,${.25 + R() * .25})`; g.lineWidth = .8 + R() * 1.6; g.stroke(); }
-      break;
-    case 'flowers':
-      for (let i = 0; i < 500; i++) { const x = R() * S, y = R() * S; if (onBoard(x, y) && R() < .7) continue; g.fillStyle = ['rgba(255,110,140,.6)', 'rgba(255,215,80,.6)', 'rgba(255,255,255,.6)', 'rgba(180,140,255,.6)'][i % 4]; g.beginPath(); g.arc(x, y, 1.5 + R() * 2.5, 0, 7); g.fill(); }
-      break;
-    case 'clouds':
-      for (let i = 0; i < 70; i++) glowDot(R() * S, R() * S, 30 + R() * 70, i % 4 ? '255,255,255' : '255,210,230', .18);
-      break;
-    case 'moss':
-      for (let i = 0; i < 160; i++) { const x = R() * S, y = R() * S; if (onBoard(x, y)) continue; glowDot(x, y, 3 + R() * 6, '230,255,120', .35); }
-      break;
-  }
-  TH.veins.forEach((tone, ti) => { for (let i = 0; i < 18; i++) { let x, y, t = 0; do { x = R() * S; y = R() * S; t++; } while (t < 20 && onBoard(x, y)); branch(x, y, R() * 7, 3.2, 6, tone); } });
-}
+const terrainMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: .85, metalness: 0, emissive: '#000000', normalScale: new T.Vector2(1.1, 1.1) });
+const terrU = { map2: { value: null }, map2Scale: { value: .7 } };
+terrainMat.onBeforeCompile = (sh) => {
+  sh.uniforms.map2 = terrU.map2; sh.uniforms.map2Scale = terrU.map2Scale;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float blend;\nvarying float vBlend;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBlend = blend;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D map2;\nuniform float map2Scale;\nvarying float vBlend;')
+    .replace('#include <map_fragment>', '#ifdef USE_MAP\n  vec4 tA = texture2D( map, vUv );\n  vec4 tB = texture2D( map2, vUv * map2Scale );\n  diffuseColor *= mix( tA, tB, vBlend );\n#endif');
+};
+terrainMat.customProgramCacheKey = () => 'terrain2';
 
 function buildTerrain() {
   TER.hash.clear();
@@ -1009,50 +967,78 @@ function buildTerrain() {
   TER.box = new T.Box3(); pads.forEach(p => TER.box.expandByPoint(p.pos)); TER.box.expandByObject(organ); TER.box.expandByPoint(PATH.pts[0]);
   TER.box.expandByScalar(.9);
   const c = TER.box.getCenter(new T.Vector3()), sz = TER.box.getSize(new T.Vector3());
-  const W = Math.max(sz.x, sz.z) + 26, res = .17, seg = Math.min(300, Math.ceil(W / res));
+  const W = Math.max(sz.x, sz.z) + 26, seg = Math.min(300, Math.ceil(W / .17));
   const geo = new T.PlaneGeometry(W, W, seg, seg); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3), col = new T.Color(), tmp = new T.Color();
-  const P = TH.pal.map(h => new T.Color(h));
+  const pos = geo.attributes.position, uv = geo.attributes.uv, cols = new Float32Array(pos.count * 3), blend = new Float32Array(pos.count);
+  const col = new T.Color(), bank = new T.Color(TH.bank), dark = new T.Color('#2a1a14'), base = new T.Color(TH.tint || '#ffffff');
+  const S = TH.scale[0];
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + c.x, z = pos.getZ(i) + c.z;
     const h = heightAt(x, z), dp = pathDist(x, z), db = boxDist(x, z);
-    pos.setXYZ(i, x, h, z);
-    groundColor(x, z, h, dp, db, col, tmp, P);
+    pos.setXYZ(i, x, h, z); uv.setXY(i, x / S, z / S);
+    blend[i] = smooth(.2, 2.4, db);
+    // мягкие пятна света и тени разбивают повтор текстуры, берега и русло темнее
+    col.copy(base).multiplyScalar(.86 + .28 * fbm(x * .35 + 7, z * .35));
+    col.lerp(bank, (1 - smooth(.42, .95, dp)) * .45);
+    col.lerp(dark, (1 - smooth(.3, .52, dp)) * .8);
+    if (db > 0) col.multiplyScalar(.82 + .3 * smooth(-.2, 2.2, h));
     cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
   }
-  geo.setAttribute('color', new T.BufferAttribute(cols, 3)); geo.computeVertexNormals();
-  const S = 1024, x0 = c.x - W / 2, z0 = c.z - W / 2, k = S / W;
-  const bank = new T.Color(TH.pal[2]), bankRGB = `${bank.r * 255 | 0},${bank.g * 255 | 0},${bank.b * 255 | 0}`;
-  const emi = canvasTex(S, S, (g) => {
-    g.fillStyle = '#000'; g.fillRect(0, 0, S, S);
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    g.shadowColor = TH.pal[2]; g.shadowBlur = 22; g.strokeStyle = `rgba(${bankRGB},.25)`; g.lineWidth = 1.4 * k;
-    g.beginPath(); PATH.pts.forEach((p, i) => i ? g.lineTo((p.x - x0) * k, (p.z - z0) * k) : g.moveTo((p.x - x0) * k, (p.z - z0) * k)); g.stroke();
-    g.shadowBlur = 0;
-    drawPattern(g, S, x0, z0, k);
-  });
-  if (terrainMat.emissiveMap) terrainMat.emissiveMap.dispose();
-  terrainMat.emissiveMap = emi; terrainMat.emissiveIntensity = TH.emi; terrainMat.needsUpdate = true;
+  geo.setAttribute('color', new T.BufferAttribute(cols, 3)); geo.setAttribute('blend', new T.BufferAttribute(blend, 1)); geo.computeVertexNormals();
+  terrainMat.map = tex(TH.floor); terrainMat.normalMap = tex(TH.floor, true); terrU.map2.value = tex(TH.hills); terrU.map2Scale.value = TH.scale[0] / TH.scale[1];
+  if (terrainMat.emissiveMap) { terrainMat.emissiveMap.dispose(); terrainMat.emissiveMap = null; }
+  terrainMat.emissive.set('#000000');
+  if (TH.lava) {
+    // трещины лавы светятся
+    const N = 1024, x0 = c.x - W / 2, z0 = c.z - W / 2, k = N / W;
+    terrainMat.emissiveMap = canvasTex(N, N, (g) => {
+      g.fillStyle = '#000'; g.fillRect(0, 0, N, N); g.lineCap = 'round';
+      const branch = (x, y, a, w, depth) => {
+        if (depth <= 0 || w < .5) return;
+        g.beginPath(); g.moveTo(x, y);
+        for (let i = 0; i < 7; i++) { a += (Math.random() - .5) * .6; x += Math.cos(a) * 8; y += Math.sin(a) * 8; g.lineTo(x, y); }
+        g.shadowColor = '#ff5a10'; g.shadowBlur = 10; g.strokeStyle = `rgba(255,${120 + depth * 15},40,${.5 + w * .08})`; g.lineWidth = w; g.stroke();
+        branch(x, y, a + .5, w * .72, depth - 1); if (Math.random() < .7) branch(x, y, a - .5, w * .7, depth - 1);
+      };
+      for (let i = 0; i < 46; i++) { let x, y, t = 0; do { x = Math.random() * N; y = Math.random() * N; t++; } while (t < 20 && boxDist(x / k + x0, y / k + z0) < .6); branch(x, y, Math.random() * 7, 4, 6); }
+      g.shadowBlur = 24; g.strokeStyle = 'rgba(255,90,20,.35)'; g.lineWidth = 1.2 * k;
+      g.beginPath(); PATH.pts.forEach((p, i) => i ? g.lineTo((p.x - x0) * k, (p.z - z0) * k) : g.moveTo((p.x - x0) * k, (p.z - z0) * k)); g.stroke();
+    });
+    terrainMat.emissive.set('#ffffff'); terrainMat.emissiveIntensity = 1.3;
+  }
+  terrainMat.needsUpdate = true;
   if (TER.mesh) { scene.remove(TER.mesh); TER.mesh.geometry.dispose(); }
   TER.mesh = new T.Mesh(geo, terrainMat); TER.mesh.receiveShadow = true; scene.add(TER.mesh);
   warm.position.set(c.x, 3.5, c.z);
   buildDecor();
 }
 
-// Украшения темы: «капли» (пузыри, камни, кристаллы, кусты) и «стебли» (кораллы, грибы, цветы, колонны, неоновые столбы)
+// Украшения
 const DECOR = { bub: null, vil: null, tip: null, data: [], bdata: [] };
-const BLOB_GEO = { sphere: new T.SphereGeometry(1, 24, 16), octa: new T.OctahedronGeometry(1, 0), dodeca: new T.DodecahedronGeometry(1, 0) };
-const vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = new T.SphereGeometry(1, 14, 10);
+const BLOB_GEO = { sphere: new T.SphereGeometry(1, 24, 16), octa: new T.OctahedronGeometry(1, 0), dodeca: new T.DodecahedronGeometry(1, 1) };
+const vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = new T.IcosahedronGeometry(1, 2);
 vilGeo.translate(0, .57, 0);
-const bubMat = new T.MeshPhysicalMaterial({ roughness: .12, metalness: 0, clearcoat: 1, transparent: true, opacity: .78, emissive: '#000000', emissiveIntensity: 1 });
-const vilMat = new T.MeshPhysicalMaterial({ roughness: .35, clearcoat: .7 });
-const tipMat = new T.MeshBasicMaterial({ toneMapped: false });
+const bubMat = new T.MeshStandardMaterial({ roughness: .6, metalness: 0 });
+const vilMat = new T.MeshStandardMaterial({ roughness: .8 });
+const tipMat = new T.MeshStandardMaterial({ roughness: .75, flatShading: true });
 function decorSpots(n, dmin, dmax) {
   const out = [], b = TER.box; let tries = 0;
   while (out.length < n && tries < n * 80) {
     tries++;
     const x = b.min.x - 9 + Math.random() * (b.max.x - b.min.x + 18), z = b.min.z - 9 + Math.random() * (b.max.z - b.min.z + 18), d = boxDist(x, z);
-    if (d >= dmin && d <= dmax && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > 1.6)) out.push([x, z]);
+    if (d >= dmin && d <= dmax && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > 1.5)) out.push([x, z]);
+  }
+  return out;
+}
+// свободные места на самом поле: подальше от сосуда и площадок
+function innerSpots(n) {
+  const out = [], b = TER.box; let tries = 0;
+  while (out.length < n && tries < n * 120) {
+    tries++;
+    const x = b.min.x + Math.random() * (b.max.x - b.min.x), z = b.min.z + Math.random() * (b.max.z - b.min.z);
+    if (pathDist(x, z) < 1.15) continue;
+    let ok = true; pads.forEach(p => { if (Math.hypot(p.pos.x - x, p.pos.z - z) < .85) ok = false; });
+    if (ok && Math.hypot(organ.position.x - x, organ.position.z - z) > 2 && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > .9)) out.push([x, z]);
   }
   return out;
 }
@@ -1062,61 +1048,58 @@ function buildDecor() {
   const pick = (a) => a[Math.random() * a.length | 0];
   if (TH.blob) {
     const B = TH.blob, cols = B.colors.map(c => new T.Color(c));
-    decorSpots(B.n, 1.1, 8).forEach(([cx, cz]) => {
-      const n = 3 + (Math.random() * 4 | 0);
-      for (let i = 0; i < n; i++) { const r = B.size[0] + Math.random() * (B.size[1] - B.size[0]), x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : .65), ph: Math.random() * 6, c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .4 }); }
+    decorSpots(B.n, .8, 8).forEach(([cx, cz]) => {
+      const n = 2 + (Math.random() * 4 | 0);
+      for (let i = 0; i < n; i++) { const r = B.size[0] + Math.random() * (B.size[1] - B.size[0]), x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); }
     });
-    bubMat.opacity = B.opacity; bubMat.transparent = B.opacity < 1; bubMat.roughness = B.geo === 'sphere' ? .12 : .45;
-    bubMat.flatShading = B.geo !== 'sphere'; bubMat.emissive.set(B.glow ? '#ffffff' : '#000000'); bubMat.emissiveIntensity = B.glow ? .35 : 1; bubMat.needsUpdate = true;
+    innerSpots(8).forEach(([x, z]) => { const r = (B.size[0] + Math.random() * (B.size[1] - B.size[0])) * .6; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); });
+    bubMat.flatShading = B.geo !== 'sphere'; bubMat.roughness = B.geo === 'octa' ? .15 : .7; bubMat.transparent = B.geo === 'octa'; bubMat.opacity = B.geo === 'octa' ? .85 : 1; bubMat.needsUpdate = true;
     DECOR.bub = new T.InstancedMesh(BLOB_GEO[B.geo], bubMat, Math.max(1, DECOR.bdata.length));
     DECOR.bdata.forEach((b, i) => DECOR.bub.setColorAt(i, b.c));
-    DECOR.bub.castShadow = true; scene.add(DECOR.bub);
+    DECOR.bub.castShadow = true; DECOR.bub.receiveShadow = true; scene.add(DECOR.bub);
   }
   if (TH.stalk) {
     const S = TH.stalk, cols = S.colors.map(c => new T.Color(c)), tips = S.tips.map(c => new T.Color(c));
-    decorSpots(S.n, 1.3, 9).forEach(([cx, cz]) => {
-      const tc = pick(tips);
-      for (let i = 0; i < 6; i++) { const x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; DECOR.data.push({ x, z, h: S.h[0] + Math.random() * (S.h[1] - S.h[0]), y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc }); }
+    decorSpots(S.n, 1, 9).forEach(([cx, cz]) => {
+      for (let i = 0; i < S.per; i++) { const x = cx + (Math.random() - .5) * 1.4, z = cz + (Math.random() - .5) * 1.4; DECOR.data.push({ x, z, h: S.h[0] + Math.random() * (S.h[1] - S.h[0]), y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .25 }); }
     });
-    vilMat.emissive.set(TH.pattern === 'grid' ? '#1a1060' : '#000000'); vilMat.needsUpdate = true;
+    innerSpots(Math.round(S.n * .5)).forEach(([x, z]) => DECOR.data.push({ x, z, h: (S.h[0] + Math.random() * (S.h[1] - S.h[0])) * .6, y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .2, small: .6 }));
     DECOR.vil = new T.InstancedMesh(vilGeo, vilMat, Math.max(1, DECOR.data.length)); DECOR.tip = new T.InstancedMesh(tipGeo, tipMat, Math.max(1, DECOR.data.length));
     DECOR.data.forEach((v, i) => { DECOR.vil.setColorAt(i, v.c); DECOR.tip.setColorAt(i, v.tc); });
-    DECOR.vil.castShadow = true; scene.add(DECOR.vil, DECOR.tip);
+    DECOR.vil.castShadow = DECOR.tip.castShadow = true; scene.add(DECOR.vil, DECOR.tip);
   }
   animateDecor(0);
 }
 const dmy = new T.Object3D(), upV = new T.Vector3();
 function animateDecor(now) {
   if (DECOR.vil) {
-    const S = TH.stalk, thick = S.thick || 1, sway = TH.pattern === 'grid' || TH.pattern === 'marble' ? .02 : .16;
+    const S = TH.stalk;
     DECOR.data.forEach((v, i) => {
-      dmy.position.set(v.x, v.y, v.z); dmy.rotation.set(Math.sin(now * 1.3 + v.ph) * sway, 0, Math.cos(now * 1.1 + v.ph * 1.7) * sway); dmy.scale.set(thick, v.h, thick); dmy.updateMatrix();
+      dmy.position.set(v.x, v.y, v.z); dmy.rotation.set(Math.sin(now * 1.3 + v.ph) * S.sway + v.lean, 0, Math.cos(now * 1.1 + v.ph * 1.7) * S.sway); dmy.scale.set(S.thick * (v.small || 1), v.h, S.thick * (v.small || 1)); dmy.updateMatrix();
       DECOR.vil.setMatrixAt(i, dmy.matrix);
-      upV.set(0, v.h * 1.14 + .02, 0).applyEuler(dmy.rotation);
-      const ts = (.09 + .02 * Math.sin(now * 3 + v.ph)) * S.tip;
-      dmy.position.set(v.x + upV.x, v.y + upV.y, v.z + upV.z); dmy.scale.set(ts, ts * S.flat, ts); dmy.updateMatrix();
+      upV.set(0, v.h * 1.14, 0).applyEuler(dmy.rotation);
+      const ts = .09 * S.tip * (v.small || 1);
+      dmy.position.set(v.x + upV.x, v.y + upV.y + ts * S.flat * .3, v.z + upV.z); dmy.rotation.y = v.ph; dmy.scale.set(ts, ts * S.flat, ts); dmy.updateMatrix();
       DECOR.tip.setMatrixAt(i, dmy.matrix);
     });
     DECOR.vil.instanceMatrix.needsUpdate = DECOR.tip.instanceMatrix.needsUpdate = true;
   }
-  if (DECOR.bub) {
+  if (DECOR.bub && now === 0) {
     const B = TH.blob;
     DECOR.bdata.forEach((b, i) => {
-      const pulse = B.geo === 'sphere' ? 1 + .05 * Math.sin(now * 2 + b.ph) : 1;
-      dmy.position.set(b.x, b.y + (B.geo === 'sphere' ? Math.sin(now * .8 + b.ph) * .04 : 0), b.z);
-      dmy.rotation.set(b.rx, b.rot + (B.glow ? now * .3 : 0), 0);
-      dmy.scale.set(b.r * pulse, b.r * pulse * (B.tall || B.flat || .92), b.r * pulse); dmy.updateMatrix();
+      dmy.position.set(b.x, b.y, b.z); dmy.rotation.set(b.rx, b.rot, 0);
+      dmy.scale.set(b.r, b.r * (B.tall || B.flat || 1), b.r); dmy.updateMatrix();
       DECOR.bub.setMatrixAt(i, dmy.matrix);
     });
     DECOR.bub.instanceMatrix.needsUpdate = true;
   }
 }
 
-// Искорки темы: светлячки, снег, пузырьки, звёзды, угольки
+// Искорки темы: пыльца, снег, угольки
 const drift = [];
 for (let i = 0; i < 44; i++) {
   const s = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffffff', blending: T.AdditiveBlending, depthWrite: false, opacity: .5 }));
-  const sc = .12 + Math.random() * .22; s.scale.set(sc, sc, 1);
+  const sc = .1 + Math.random() * .18; s.scale.set(sc, sc, 1);
   s.userData = { mote: true, ph: Math.random() * 6, sp: .2 + Math.random() * .4, y: .6 + Math.random() * 2 }; scene.add(s); drift.push(s);
 }
 
@@ -1125,10 +1108,11 @@ function applyTheme(i) {
   scene.background = new T.Color(TH.bg); scene.fog.color.set(TH.bg); scene.fog.near = TH.fog[0]; scene.fog.far = TH.fog[1];
   hemi.color.set(TH.hemi[0]); hemi.groundColor.set(TH.hemi[1]); hemi.intensity = TH.hemi[2];
   sun.color.set(TH.sun[0]); sun.intensity = TH.sun[1]; rim.color.set(TH.rim[0]); rim.intensity = TH.rim[1];
-  warm.color.set(TH.rim[0]); renderer.toneMappingExposure = TH.exp;
+  warm.color.set(TH.rim[0]); warm.intensity = TH.lava ? .8 : .15; renderer.toneMappingExposure = TH.exp;
   padMat.color.set(TH.pad); padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
-  drift.forEach((m, k) => m.material.color.set(TH.motes[k % TH.motes.length]));
-  document.documentElement.style.setProperty('--stagebg', TH.bg);
+  drift.forEach((m, k) => { m.material.color.set(TH.motes[k % TH.motes.length]); m.visible = k < 44 * (TH.moteA > .4 ? 1 : .5); });
+  // заранее подгружаем текстуры этой темы
+  tex(TH.floor); tex(TH.floor, true); tex(TH.hills);
   if (PATH) { buildTerrain(); updateBackdrop(); }
 }
 
@@ -1251,9 +1235,9 @@ function animateBackdrop(dt, now) {
   animateDecor(now);
   for (const m of drift) {
     const u = m.userData;
-    const fall = TH.pattern === 'ice' || TH.pattern === 'clouds' ? -1 : 1;
+    const fall = TH.fall ? -1 : 1;
     m.position.y += dt * u.sp * .3 * fall; m.position.x += Math.sin(now * u.sp + u.ph) * dt * .15;
-    m.material.opacity = .25 + .25 * Math.sin(now * u.sp * 3 + u.ph);
+    m.material.opacity = TH.moteA * (.5 + .5 * Math.sin(now * u.sp * 3 + u.ph));
     const gh = heightAt(m.position.x, m.position.z);
     if (m.position.y > gh + 3.2) m.position.y = gh + .3; if (m.position.y < gh + .1) m.position.y = gh + 3;
   }
@@ -2211,7 +2195,8 @@ const store = {
   get(k, d) { try { return Object.assign({}, d, JSON.parse(localStorage.getItem(k)) || {}); } catch (e) { return Object.assign({}, d); } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
-const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high', theme: 0, amb: 'off', ambVol: 50, sfx: 'juicy' });
+const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high', theme: 0, amb: 'off', ambVol: 50, sfx: 'real' });
+if ((SET.ver || 0) < 7) { SET.sfx = 'real'; SET.theme = 0; SET.amb = ({ surf: 'sea', brook: 'river', storm: 'rain', fire: 'off' })[SET.amb] || SET.amb; SET.ver = 7; }
 const PROF = store.get('immuneProfile', { name: 'Игрок', avatar: 'neu', games: 0, kills: 0, wins: 0, liverStars: 0 });
 const saveSet = () => store.set('immuneSettings', SET), saveProf = () => store.set('immuneProfile', PROF);
 function buzz(ms) { if (SET.vibro && navigator.vibrate && navigator.userActivation?.hasBeenActive !== false) try { navigator.vibrate(ms); } catch (e) {} }
@@ -2281,11 +2266,11 @@ function goMenu() {
 
 /* ---------- Панель «Фон и звуки» ---------- */
 const AMBS = [
-  { id: 'rain', name: 'Дождь' }, { id: 'surf', name: 'Морской прибой' }, { id: 'brook', name: 'Лесной ручей' }, { id: 'wind', name: 'Ветер в поле' },
-  { id: 'crickets', name: 'Ночные сверчки' }, { id: 'birds', name: 'Утренние птицы' }, { id: 'under', name: 'Под водой' }, { id: 'fire', name: 'Костёр' },
-  { id: 'storm', name: 'Далёкая гроза' }, { id: 'cave', name: 'Капли в пещере' }
+  { id: 'rain', name: 'Дождь' }, { id: 'forest', name: 'Лесной шелест' }, { id: 'river', name: 'Горная река' }, { id: 'wind', name: 'Ветер' },
+  { id: 'birds', name: 'Птицы в парке' }, { id: 'sea', name: 'Морской прибой' }, { id: 'crickets', name: 'Ночные сверчки' }, { id: 'cave', name: 'Капли в пещере' },
+  { id: 'under', name: 'Под водой' }, { id: 'bubbles', name: 'Пузырьки' }
 ];
-const SFXS = [{ id: 'juicy', name: 'Сочные', sub: 'объёмные, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
+const SFXS = [{ id: 'real', name: 'Настоящие записи', sub: 'живые звуки' }, { id: 'juicy', name: 'Сочные', sub: 'синтез, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
 let lookTab = 'bg', lookFrom = null;
 function openLook(from) {
   lookFrom = from; AU.init();
@@ -2308,7 +2293,7 @@ function renderLook() {
     h += `<label class="lookvol">Громкость фона<input type="range" id="ambVol" min="0" max="100" step="5" value="${SET.ambVol}"></label>`;
     h += `<button class="opt wide no" data-no="Звук фона">Ничего не нравится</button>`;
   } else {
-    h = SFXS.map(x => `<button class="opt wide${(SET.sfx || 'juicy') === x.id ? ' on' : ''}" data-sfx="${x.id}"><span><b>${x.name}</b> · <small>${x.sub}</small></span></button>`).join('');
+    h = SFXS.map(x => `<button class="opt wide${(SET.sfx || 'real') === x.id ? ' on' : ''}" data-sfx="${x.id}"><span><b>${x.name}</b> · <small>${x.sub}</small></span></button>`).join('');
     h += `<button class="opt wide" data-demo="1">▶ Послушать набор</button>`;
     h += `<button class="opt wide no" data-no="Эффекты">Ничего не нравится</button>`;
   }

@@ -1,6 +1,6 @@
 {
-  "name": "Иммунная защита",
-  "short_name": "Иммунитет",
+  "name": "Клеточный рубеж",
+  "short_name": "Клеточный рубеж",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

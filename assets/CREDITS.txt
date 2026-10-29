@@ -1,15 +1,20 @@
-Иммунная защита — источники ресурсов (все CC0, разрешено использовать бесплатно, в том числе в платных играх)
+Клеточный рубеж — источники ресурсов (все CC0, разрешено использовать бесплатно, в том числе в платных играх)
 
-Текстуры земли: Poly Haven — https://polyhaven.com (CC0)
-  coast_sand_01, coast_sand_rocks_02, leafy_grass, forest_leaves_04, sparse_grass, aerial_grass_rock,
-  snow_02, snow_field_aerial, red_sand, terrain_red_01, mossy_cobblestone, grassy_cobblestone,
-  marble_01, marble_cliff_01, rock_ground, aerial_rocks_04, ganges_river_pebbles, mossy_rock,
-  aerial_sand, dirt_aerial_02
+Рисованные текстуры земли (папка tex2), OpenGameArt, CC0:
+  Big pack of hand painted tiling textures (drummyfish, текстуры Minetest) — mt_*.jpg
+  Handpainted rock textures (hptex pack 4) — rock_01, rock_02, rock_03
+  Hand painted grass — grass_paint, grass_paint2
+  2 seamless lava tiles — lava_paint
+  Hand painted water texture 2k — water_cobble
+  Ancient civilization jungle pack — jungle_mud
+Старые текстуры (папка tex, Poly Haven, CC0) в игре больше не используются.
 
 Звуки эффектов (CC0):
   Kenney — Sci-Fi Sounds, Interface Sounds (https://kenney.nl, зеркало на opengameart.org)
   OpenGameArt: 75 CC0 breaking/falling/hit sfx, 100 CC0 SFX, 40 CC0 water/splash/slime SFX, 25 CC0 bang/firework SFX
 
-Фоновые звуки (CC0, OpenGameArt):
-  Rain (loopable), Forest Ambience, Park Ambiences (river, wind, birds), Sea and River Wave Sounds,
-  Crickets Ambient Noise (loopable), Dripping Water Loop, Underwater or Space Engine Rumble, 40 CC0 water SFX (bubbles loop)
+Фоновые звуки (amb2_*.m4a, OpenGameArt, CC0):
+  Morning sounds perfect loop (утро в лесу), Outside ambience 1 (летний день), Swamp environment audio (болото),
+  Cicada sounds (цикады), Cricket sounds (ночь), Rain long thunder (дождь и гром, тихий дождь),
+  NHFEA sound pack — waterfall (водопад), Beach ocean waves (морской берег), Windy ambient noise (ветер)
+Старые фоновые звуки (amb_*.m4a) в игре больше не используются.

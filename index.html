@@ -5,7 +5,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Иммунитет">
+<meta name="apple-mobile-web-app-title" content="Клеточный рубеж">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>Клеточный рубеж</title>
@@ -91,7 +91,6 @@ body {
 #banner.on { opacity: 1; transform: scale(1); }
 #traits { display: flex; gap: 10px; padding: 6px 12px 2px; min-height: 62px; overflow-x: auto; scrollbar-width: none; position: relative; z-index: 3; align-items: flex-start; }
 #traits::-webkit-scrollbar { display: none; }
-#traits:empty::before { content: 'Здесь появятся отряды твоих клеток: 2 одинаковых дают бонус'; font-size: 11.5px; color: var(--muted); align-self: center; }
 .trait { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--muted); font: inherit; }
 .trait small { font: 700 10px var(--display); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .trait.on small { color: var(--tc); text-shadow: 0 0 8px var(--tc); }
@@ -411,7 +410,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.13 · прототип</p>
+      <p class="ver">Версия 0.14 · прототип</p>
     </div>
   </div>
 
@@ -894,15 +893,15 @@ const AU = {
       g.gain.value = 0;
       // приглушаем верхние частоты и громкость: звук должен быть мягким, не резать слух
       const soft = this.ctx.createBiquadFilter(), shelf = this.ctx.createBiquadFilter();
-      soft.type = 'lowpass'; soft.frequency.value = ({ rain: 1700, forest: 2200, river: 1100, wind: 700, birds: 3200, sea: 900, crickets: 4200, cave: 2000, under: 600, bubbles: 1500 })[id] || 1500; soft.Q.value = .5;
-      shelf.type = 'highshelf'; shelf.frequency.value = 800; shelf.gain.value = -6;
-      const vol = ({ rain: .7, forest: .8, river: .6, wind: .65, birds: .55, sea: .7, crickets: .35, cave: .6, under: .8, bubbles: .5 })[id] || .6;
+      soft.type = 'lowpass'; soft.frequency.value = ({ morning: 7000, summer: 6000, swamp: 5000, cicada: 3800, night: 6000, thunder: 3500, waterfall: 3000, beach: 3200, wind: 2500, softrain: 4000 })[id] || 5000; soft.Q.value = .5;
+      shelf.type = 'highshelf'; shelf.frequency.value = 3000; shelf.gain.value = -3;
+      const vol = ({ morning: .8, summer: .8, swamp: .75, cicada: .5, night: .6, thunder: .85, waterfall: .7, beach: .8, wind: .75, softrain: .85 })[id] || .75;
       g.gain.setTargetAtTime(vol, this.ctx.currentTime, 1.2);
       s.connect(soft); soft.connect(shelf); shelf.connect(g); g.connect(this.ambBus()); s.start(0, .06);
       this.ambSrc = { s, g };
     };
     if (this.ambBufs[id]) return start(this.ambBufs[id]);
-    fetch(`assets/snd/amb_${id}.m4a`).then(r => r.arrayBuffer()).then(b => this.ctx.decodeAudioData(b)).then(buf => { this.ambBufs[id] = buf; start(buf); }).catch(() => {});
+    fetch(`assets/snd/amb2_${id}.m4a`).then(r => r.arrayBuffer()).then(b => this.ctx.decodeAudioData(b)).then(buf => { this.ambBufs[id] = buf; start(buf); }).catch(() => {});
   },
 
   chip(kind, x, vol, now) {
@@ -1006,59 +1005,60 @@ function vnoise(x, z) {
 function fbm(x, z) { let s = 0, a = .5, f = 1; for (let i = 0; i < 4; i++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= .5; } return s; }
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-// Фоны на настоящих текстурах (Poly Haven, CC0): своя земля для поля и для холмов, своё небо, свет и украшения.
+// Фоны на рисованных текстурах (OpenGameArt, CC0): своя земля для поля и для холмов, своё небо, свет и украшения.
+// scale — сколько единиц поля занимает один повтор текстуры (маленькие 256-пиксельные — мельче, большие 1024 — крупнее).
 // Украшения: «капли» (камни, кусты, ракушки, кристаллы) и «стебли» (деревья, пальмы, ели, кактусы, колонны, камыш, цветы).
 const TREE = (cols, tips, o = {}) => Object.assign({ colors: cols, tips, h: [.7, 1.4], tip: 6, flat: .9, thick: 3, n: 14, per: 3, sway: .05 }, o);
 const THEMES = [
-  { name: 'Тропический пляж', soil: '#d8c09a', floor: 'coast_sand_01', hills: 'coast_sand_rocks_02', bg: '#8fd3ff', fog: [26, 72], hemi: ['#ffffff', '#c8a878', .95], sun: ['#fff2d8', 1.3], rim: ['#9fe0ff', .4], exp: 1,
-    bank: '#e8d2a0', amp: 1, freq: .14, scale: [4.5, 6],
-    stalk: TREE(['#8a6a44', '#9a7a52'], ['#3f9a3a', '#4fae3e'], { h: [1.1, 1.8], tip: 7, flat: .32, thick: 1.8, n: 12, per: 2, sway: .07 }),
-    blob: { geo: 'sphere', colors: ['#ffd0dc', '#fff4e8', '#ffb8a0'], size: [.08, .18], n: 14, flat: .5 },
-    motes: ['#ffffff'], moteA: .25, pad: '#fffaf0', rim2: '#ff8aa8' },
-  { name: 'Лесная поляна', soil: '#7a5a3a', floor: 'leafy_grass', hills: 'forest_leaves_04', bg: '#bfe6a8', fog: [24, 62], hemi: ['#f4ffe8', '#3a5a2a', .85], sun: ['#fff4d0', 1.25], rim: ['#d8ffb0', .35], exp: 1,
-    bank: '#6a5a3a', amp: 1.1, freq: .16, scale: [4, 6], tint: '#d4ffc4',
-    stalk: TREE(['#6a4a2e', '#7a5636'], ['#3a8a32', '#4a9a3a', '#2f7a2c']),
-    blob: { geo: 'sphere', colors: ['#3e8a34', '#4a9a3a'], size: [.25, .55], n: 12, flat: .8 },
-    motes: ['#fff6a0'], moteA: .45, pad: '#fffdf0', rim2: '#ffd36b' },
-  { name: 'Цветочный луг', soil: '#8a6a44', floor: 'sparse_grass', hills: 'aerial_grass_rock', bg: '#a8dcff', fog: [26, 70], hemi: ['#ffffff', '#5a8a3a', .95], sun: ['#fff6e0', 1.25], rim: ['#ffffff', .3], exp: 1,
-    bank: '#7a6a44', amp: .9, freq: .14, scale: [4, 7], tint: '#dcffb8',
+  { name: 'Цветущий луг', soil: '#7a8a4a', floor: 'grass_paint', hills: 'grass_paint2', bg: '#a8dcff', fog: [26, 70], hemi: ['#ffffff', '#5a8a3a', .95], sun: ['#fff6e0', 1.2], rim: ['#ffffff', .3], exp: 1,
+    bank: '#7a5a3a', amp: .9, freq: .14, scale: [4, 5],
     stalk: TREE(['#4a9a3a'], ['#ff5a7a', '#ffd34a', '#ffffff', '#b48aff', '#ff9a3a'], { h: [.2, .45], tip: 1.9, flat: .6, thick: .8, n: 26, per: 6, sway: .18 }),
-    blob: { geo: 'sphere', colors: ['#4a9a3a', '#5ab04a'], size: [.25, .5], n: 12, flat: .8 },
-    motes: ['#ffffff', '#ffd34a'], moteA: .5, pad: '#ffffff', rim2: '#ff6a8a' },
-  { name: 'Снежная долина', soil: '#dfe8f2', floor: 'snow_02', hills: 'snow_field_aerial', bg: '#cfe6ff', fog: [24, 62], hemi: ['#ffffff', '#8aa0c8', .9], sun: ['#ffffff', 1.15], rim: ['#9fd8ff', .5], exp: .95,
-    bank: '#8aa8c8', amp: 1.2, freq: .18, scale: [4, 6],
+    blob: { geo: 'sphere', colors: ['#3f8f30', '#56a83e', '#6ab84a'], size: [.25, .5], n: 12, flat: .8 },
+    motes: ['#ffffff', '#ffd34a'], moteA: .5, padc: '#c8b494', rim2: '#ff6a8a' },
+  { name: 'Лесная опушка', soil: '#6a5a3a', floor: 'mt_grass', hills: 'rock_01', bg: '#bfe6a8', fog: [24, 62], hemi: ['#f4ffe8', '#3a5a2a', .9], sun: ['#fff4d0', 1.2], rim: ['#d8ffb0', .35], exp: 1,
+    bank: '#5a4a2e', amp: 1.1, freq: .16, scale: [2.2, 4.5],
+    stalk: TREE(['#6a4a2e', '#7a5636'], ['#3a8a32', '#4a9a3a', '#2f7a2c']),
+    blob: { geo: 'dodeca', colors: ['#8a8a80', '#9a988c', '#6f8a5a'], size: [.15, .4], n: 12, flat: .6 },
+    motes: ['#fff6a0'], moteA: .45, padc: '#b8b0a0', rim2: '#ffd36b' },
+  { name: 'Тропический остров', soil: '#d8c09a', floor: 'mt_sand', hills: 'mt_water', bg: '#8fd3ff', fog: [26, 72], hemi: ['#ffffff', '#c8a878', .95], sun: ['#fff2d8', 1.25], rim: ['#9fe0ff', .4], exp: .9,
+    tint: '#f2d29e', ring: [.3, 1.6], flow: 1, bank: '#c8a070', amp: .12, freq: .14, scale: [2, 2.6],
+    stalk: TREE(['#8a6a44', '#9a7a52'], ['#2a7a26', '#358a2c', '#2f8030'], { h: [1.1, 1.8], tip: 7, flat: .32, thick: 1.8, n: 12, per: 2, sway: .07 }),
+    blob: { geo: 'sphere', colors: ['#ffd0dc', '#fff4e8', '#ffb8a0'], size: [.08, .18], n: 14, flat: .5 },
+    motes: ['#ffffff'], moteA: .25, padc: '#d8c8a4', rim2: '#ff8aa8' },
+  { name: 'Пустынные дюны', soil: '#c8a070', floor: 'mt_desert_sand', hills: 'mt_desert_stone', bg: '#ffe2b0', fog: [26, 72], hemi: ['#fff8e8', '#a87a4a', .9], sun: ['#fff0c8', 1.3], rim: ['#ffc890', .4], exp: 1,
+    tint: '#ffe8c8', bank: '#a8784a', amp: 1.2, freq: .1, scale: [2.4, 2.6],
+    stalk: TREE(['#4f8a46', '#5a9a4e'], ['#ff6aa0', '#ffd34a'], { h: [.6, 1.2], tip: 1.6, flat: 1, thick: 2.6, n: 10, per: 2, sway: 0 }),
+    blob: { geo: 'dodeca', colors: ['#b07a5a', '#c89066', '#9a6a4a'], size: [.2, .5], n: 10, flat: .6 },
+    motes: ['#fff0c8'], moteA: .25, padc: '#c8a882', rim2: '#ff9a5a' },
+  { name: 'Снежная долина', soil: '#dfe8f2', floor: 'mt_ice', hills: 'mt_snow', bg: '#cfe6ff', fog: [24, 62], hemi: ['#ffffff', '#8aa0c8', .85], sun: ['#ffffff', 1.05], rim: ['#9fd8ff', .5], exp: .9,
+    bank: '#8aa8c8', amp: 1.2, freq: .18, scale: [2.2, 2.6], tint: '#f4f8ff',
     stalk: TREE(['#5a4030'], ['#2a5a3a', '#1f4a30', '#2e6a42'], { h: [.5, 1], tip: 4.5, flat: 2.2, thick: 2, n: 16, per: 4, sway: .03 }),
     blob: { geo: 'octa', colors: ['#bfefff', '#e0f4ff', '#d8c8ff'], size: [.18, .45], n: 10, tall: 1.9 },
-    motes: ['#ffffff'], moteA: .7, fall: true, pad: '#ffffff', rim2: '#4aa8ff' },
-  { name: 'Красный каньон', soil: '#a8583a', floor: 'red_sand', hills: 'terrain_red_01', bg: '#ffcf9a', fog: [26, 70], hemi: ['#fff0dc', '#7a3a2a', .85], sun: ['#ffd8a8', 1.3], rim: ['#ffb070', .4], exp: 1,
-    bank: '#8a4a2a', amp: 1.4, freq: .12, scale: [4.5, 6],
-    stalk: TREE(['#4f8a46', '#5a9a4e'], ['#ff6aa0', '#ffd34a'], { h: [.5, 1], tip: 1.6, flat: 1, thick: 2.6, n: 8, per: 2, sway: 0 }),
-    blob: { geo: 'dodeca', colors: ['#9a4a2e', '#b45a36', '#7a3a24'], size: [.2, .6], n: 14, flat: .65 },
-    motes: ['#ffe0b0'], moteA: .25, pad: '#fff4e8', rim2: '#ff8a3a' },
-  { name: 'Старая мостовая', soil: '#8a8478', floor: 'mossy_cobblestone', hills: 'grassy_cobblestone', bg: '#b8d8c8', fog: [24, 64], hemi: ['#f4fff0', '#4a5a3a', .85], sun: ['#fff6e0', 1.2], rim: ['#c8ffd8', .35], exp: 1,
-    bank: '#4a4a3a', amp: .9, freq: .16, scale: [3.5, 5],
+    motes: ['#ffffff'], moteA: .7, fall: true, padc: '#a8b8cc', rim2: '#4aa8ff' },
+  { name: 'Старая мостовая', soil: '#8a8478', floor: 'mt_cobble', hills: 'mt_mossycobble', bg: '#b8d8c8', fog: [24, 64], hemi: ['#f4fff0', '#4a5a3a', .9], sun: ['#fff6e0', 1.2], rim: ['#c8ffd8', .35], exp: 1,
+    bank: '#4a4a3a', amp: .9, freq: .16, scale: [1.8, 2],
     stalk: TREE(['#d8d0c4', '#c8c0b4'], ['#e8e0d4'], { h: [1, 1.7], tip: 3.4, flat: .35, thick: 3.2, n: 8, per: 1, sway: 0 }),
     blob: { geo: 'sphere', colors: ['#3e8a34', '#4f9a3c'], size: [.25, .5], n: 14, flat: .8 },
-    motes: ['#fff6c0'], moteA: .3, pad: '#f4f0e8', rim2: '#7acb5a' },
-  { name: 'Мраморный дворец', soil: '#e2d6c4', floor: 'marble_01', hills: 'marble_cliff_01', bg: '#f0e8dc', fog: [28, 76], hemi: ['#ffffff', '#a89a8a', .95], sun: ['#fff6e8', 1.15], rim: ['#ffd38a', .4], exp: .95,
-    bank: '#c8a868', amp: 1, freq: .14, scale: [5, 6],
-    stalk: TREE(['#f4f0ea'], ['#ffd36b'], { h: [1.1, 1.8], tip: 3.4, flat: .35, thick: 3.2, n: 9, per: 1, sway: 0 }),
-    blob: { geo: 'sphere', colors: ['#ffffff', '#f6ecff', '#fff0e0'], size: [.12, .3], n: 12 },
-    motes: ['#ffd36b'], moteA: .4, pad: '#ffffff', rim2: '#ffc84a' },
-  { name: 'Вулкан', soil: '#5a4a44', floor: 'rock_ground', hills: 'aerial_rocks_04', bg: '#2a0e08', fog: [20, 56], hemi: ['#ffb08a', '#2a0a04', .6], sun: ['#ffcf9a', 1], rim: ['#ff5a1a', .9], exp: 1,
-    bank: '#ff6a1a', amp: 1.4, freq: .18, scale: [4, 5], tint: '#8a7c76', lava: true,
+    motes: ['#fff6c0'], moteA: .3, padc: '#b8ad9c', rim2: '#7acb5a' },
+  { name: 'Вулкан', soil: '#5a4a44', floor: 'rock_02', hills: 'lava_paint', bg: '#2a0e08', fog: [20, 56], hemi: ['#ffb08a', '#2a0a04', .65], sun: ['#ffcf9a', 1.05], rim: ['#ff5a1a', .9], exp: 1,
+    flow: .25, bank: '#ff6a1a', amp: .2, freq: .18, scale: [3.5, 4], tint: '#a89890', lava: true,
     stalk: null, blob: { geo: 'dodeca', colors: ['#2a2220', '#3a302c', '#1e1816'], size: [.25, .7], n: 16, flat: .7 },
-    motes: ['#ffb03a', '#ff6a1a'], moteA: .8, pad: '#efe0d8', rim2: '#ff8a3a' },
-  { name: 'Речной берег', soil: '#9a9488', floor: 'ganges_river_pebbles', hills: 'mossy_rock', bg: '#a8d8e8', fog: [24, 66], hemi: ['#f0faff', '#4a6a5a', .9], sun: ['#fff6e8', 1.2], rim: ['#9fe8ff', .4], exp: 1,
-    bank: '#4a6a7a', amp: 1, freq: .15, scale: [3.5, 6],
+    motes: ['#ffb03a', '#ff6a1a'], moteA: .8, padc: '#6a5a52', rim2: '#ff8a3a' },
+  { name: 'Осенняя роща', soil: '#a8783a', floor: 'mt_dry_grass', hills: 'mt_dirt', bg: '#f6dcb4', fog: [24, 66], hemi: ['#fff4e0', '#6a4a2a', .9], sun: ['#ffe8c0', 1.2], rim: ['#ffc890', .4], exp: 1,
+    bank: '#6a4a2a', amp: 1, freq: .15, scale: [2.2, 2.6],
+    stalk: TREE(['#5a3e28', '#6a4a30'], ['#e8762a', '#d84a2a', '#f0b030', '#c8901a']),
+    blob: { geo: 'sphere', colors: ['#d86a2a', '#e8a030', '#b8502a'], size: [.2, .45], n: 12, flat: .8 },
+    motes: ['#ffb05a', '#ff8a3a'], moteA: .45, fall: true, padc: '#c0a888', rim2: '#ff8a3a' },
+  { name: 'Галечный берег', soil: '#9a9488', floor: 'mt_gravel', hills: 'water_cobble', bg: '#a8d8e8', fog: [24, 66], hemi: ['#f0faff', '#4a6a5a', .9], sun: ['#fff6e8', 1.2], rim: ['#9fe8ff', .4], exp: 1,
+    ring: [.3, 1.6], flow: .6, bank: '#4a6a7a', amp: .12, freq: .15, scale: [2, 4],
     stalk: TREE(['#6a8a3a', '#7a9a44'], ['#7a5a32', '#6a4a2a'], { h: [.5, 1.1], tip: 1.3, flat: 2.4, thick: .7, n: 18, per: 6, sway: .2 }),
     blob: { geo: 'dodeca', colors: ['#9a9a90', '#b0aca0', '#8a8880'], size: [.15, .4], n: 12, flat: .6 },
-    motes: ['#ffffff'], moteA: .3, pad: '#fffaf0', rim2: '#5ad8ff' },
-  { name: 'Песчаная пустыня', soil: '#c8a070', floor: 'aerial_sand', hills: 'dirt_aerial_02', bg: '#ffe2b0', fog: [26, 72], hemi: ['#fff8e8', '#a87a4a', .9], sun: ['#fff0c8', 1.35], rim: ['#ffc890', .4], exp: 1,
-    bank: '#a8784a', amp: 1.2, freq: .1, scale: [5, 6],
-    stalk: TREE(['#4f8a46', '#5a9a4e'], ['#ff6aa0', '#ffd34a'], { h: [.6, 1.2], tip: 1.6, flat: 1, thick: 2.6, n: 10, per: 2, sway: 0 }),
-    blob: { geo: 'dodeca', colors: ['#b08a5a', '#c89a66'], size: [.2, .5], n: 10, flat: .6 },
-    motes: ['#fff0c8'], moteA: .25, pad: '#fff8ec', rim2: '#ff9a5a' }
+    motes: ['#ffffff'], moteA: .3, padc: '#b8b4aa', rim2: '#5ad8ff' },
+  { name: 'Джунгли', soil: '#5a6a3a', floor: 'jungle_mud', hills: 'grass_paint2', bg: '#9fd8a8', fog: [22, 60], hemi: ['#f0ffe8', '#2a4a2a', .9], sun: ['#fff4d8', 1.15], rim: ['#c8ff90', .4], exp: 1,
+    bank: '#3a4a2a', amp: 1.2, freq: .17, scale: [3, 4.5], tint: '#e8f4d8',
+    stalk: TREE(['#7a6a44', '#6a5a3a'], ['#2f8a2a', '#3a9a32', '#4aa83a'], { h: [1.2, 2], tip: 8, flat: .3, thick: 1.6, n: 14, per: 3, sway: .06 }),
+    blob: { geo: 'sphere', colors: ['#2a7a2a', '#3a8a30', '#1f6a24'], size: [.3, .6], n: 14, flat: .7 },
+    motes: ['#e8ff8a', '#ffe68a'], moteA: .6, padc: '#a8ac90', rim2: '#ffd36b' }
 ];
 let TH = THEMES[0];
 
@@ -1085,22 +1085,21 @@ function heightAt(x, z) {
 
 // Земля: две текстуры (поле и холмы) смешиваются по атрибуту blend
 const texLoader = new T.TextureLoader(), texCache = {};
-function tex(name, normal = false) {
-  const key = name + (normal ? '_nor' : '_diff');
-  if (texCache[key]) return texCache[key];
-  const t = texLoader.load(`assets/tex/${key}.jpg`);
-  t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  if (!normal) t.encoding = T.sRGBEncoding;
-  return texCache[key] = t;
+function tex(name) {
+  if (texCache[name]) return texCache[name];
+  const t = texLoader.load(`assets/tex2/${name}.jpg`);
+  t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); t.encoding = T.sRGBEncoding;
+  return texCache[name] = t;
 }
-const terrainMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: .85, metalness: 0, emissive: '#000000', normalScale: new T.Vector2(1.1, 1.1) });
-const terrU = { map2: { value: null }, map2Scale: { value: .7 } };
+const terrainMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: .9, metalness: 0, emissive: '#000000' });
+const terrU = { map2: { value: null }, map2Scale: { value: .7 }, map2Off: { value: new T.Vector2() } };
 terrainMat.onBeforeCompile = (sh) => {
-  sh.uniforms.map2 = terrU.map2; sh.uniforms.map2Scale = terrU.map2Scale;
+  sh.uniforms.map2 = terrU.map2; sh.uniforms.map2Scale = terrU.map2Scale; sh.uniforms.map2Off = terrU.map2Off;
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float blend;\nvarying float vBlend;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBlend = blend;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D map2;\nuniform float map2Scale;\nvarying float vBlend;')
-    .replace('#include <map_fragment>', '#ifdef USE_MAP\n  vec4 tA = texture2D( map, vUv );\n  vec4 tB = texture2D( map2, vUv * map2Scale );\n  diffuseColor *= mix( tA, tB, vBlend );\n#endif');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D map2;\nuniform float map2Scale;\nuniform vec2 map2Off;\nvarying float vBlend;')
+    .replace('#include <map_fragment>', '#ifdef USE_MAP\n  vec4 tA = texture2D( map, vUv );\n  vec4 tB = texture2D( map2, vUv * map2Scale + map2Off );\n  diffuseColor *= mix( tA, tB, vBlend );\n#endif')
+    .replace('#include <emissivemap_fragment>', '#ifdef USE_EMISSIVEMAP\n  totalEmissiveRadiance *= texture2D( emissiveMap, vUv * map2Scale + map2Off ).rgb * vBlend;\n#endif');
 };
 terrainMat.customProgramCacheKey = () => 'terrain2';
 
@@ -1128,27 +1127,9 @@ function buildTerrain() {
     cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
   }
   geo.setAttribute('color', new T.BufferAttribute(cols, 3)); geo.setAttribute('blend', new T.BufferAttribute(blend, 1)); geo.computeVertexNormals();
-  terrainMat.map = tex(TH.floor); terrainMat.normalMap = tex(TH.floor, true); terrU.map2.value = tex(TH.hills); terrU.map2Scale.value = TH.scale[0] / TH.scale[1];
-  if (terrainMat.emissiveMap) { terrainMat.emissiveMap.dispose(); terrainMat.emissiveMap = null; }
-  terrainMat.emissive.set('#000000');
-  if (TH.lava) {
-    // трещины лавы светятся
-    const N = 1024, x0 = c.x - W / 2, z0 = c.z - W / 2, k = N / W;
-    terrainMat.emissiveMap = canvasTex(N, N, (g) => {
-      g.fillStyle = '#000'; g.fillRect(0, 0, N, N); g.lineCap = 'round';
-      const branch = (x, y, a, w, depth) => {
-        if (depth <= 0 || w < .5) return;
-        g.beginPath(); g.moveTo(x, y);
-        for (let i = 0; i < 7; i++) { a += (Math.random() - .5) * .6; x += Math.cos(a) * 8; y += Math.sin(a) * 8; g.lineTo(x, y); }
-        g.shadowColor = '#ff5a10'; g.shadowBlur = 10; g.strokeStyle = `rgba(255,${120 + depth * 15},40,${.5 + w * .08})`; g.lineWidth = w; g.stroke();
-        branch(x, y, a + .5, w * .72, depth - 1); if (Math.random() < .7) branch(x, y, a - .5, w * .7, depth - 1);
-      };
-      for (let i = 0; i < 46; i++) { let x, y, t = 0; do { x = Math.random() * N; y = Math.random() * N; t++; } while (t < 20 && boxDist(x / k + x0, y / k + z0) < .6); branch(x, y, Math.random() * 7, 4, 6); }
-      g.shadowBlur = 24; g.strokeStyle = 'rgba(255,90,20,.35)'; g.lineWidth = 1.2 * k;
-      g.beginPath(); PATH.pts.forEach((p, i) => i ? g.lineTo((p.x - x0) * k, (p.z - z0) * k) : g.moveTo((p.x - x0) * k, (p.z - z0) * k)); g.stroke();
-    });
-    terrainMat.emissive.set('#ffffff'); terrainMat.emissiveIntensity = 1.3;
-  }
+  terrainMat.map = tex(TH.floor); terrU.map2.value = tex(TH.hills); terrU.map2Scale.value = TH.scale[0] / TH.scale[1];
+  terrainMat.emissiveMap = null; terrainMat.emissive.set('#000000');
+  if (TH.lava) { terrainMat.emissiveMap = tex(TH.hills); terrainMat.emissive.set('#ffffff'); terrainMat.emissiveIntensity = .9; }   // светится сама лава вокруг поля
   terrainMat.needsUpdate = true;
   if (TER.mesh) { scene.remove(TER.mesh); TER.mesh.geometry.dispose(); }
   TER.mesh = new T.Mesh(geo, terrainMat); TER.mesh.receiveShadow = true; scene.add(TER.mesh);
@@ -1169,7 +1150,7 @@ function decorSpots(n, dmin, dmax) {
   while (out.length < n && tries < n * 80) {
     tries++;
     const x = b.min.x - 9 + Math.random() * (b.max.x - b.min.x + 18), z = b.min.z - 9 + Math.random() * (b.max.z - b.min.z + 18), d = boxDist(x, z);
-    if (d >= dmin && d <= dmax && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > 1.5)) out.push([x, z]);
+    if (d >= dmin && d <= dmax && pathDist(x, z) > 2 && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > 1.5)) out.push([x, z]);
   }
   return out;
 }
@@ -1191,9 +1172,9 @@ function buildDecor() {
   const pick = (a) => a[Math.random() * a.length | 0];
   if (TH.blob) {
     const B = TH.blob, cols = B.colors.map(c => new T.Color(c));
-    decorSpots(B.n, .8, 8).forEach(([cx, cz]) => {
+    decorSpots(B.n, ...(TH.ring || [.8, 8])).forEach(([cx, cz]) => {
       const n = 2 + (Math.random() * 4 | 0);
-      for (let i = 0; i < n; i++) { const r = B.size[0] + Math.random() * (B.size[1] - B.size[0]), x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); }
+      for (let i = 0; i < n; i++) { const r = B.size[0] + Math.random() * (B.size[1] - B.size[0]), x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; if (pathDist(x, z) < 1.1 + r) continue; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); }
     });
     innerSpots(8).forEach(([x, z]) => { const r = (B.size[0] + Math.random() * (B.size[1] - B.size[0])) * .6; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); });
     bubMat.flatShading = B.geo !== 'sphere'; bubMat.roughness = B.geo === 'octa' ? .15 : .7; bubMat.transparent = B.geo === 'octa'; bubMat.opacity = B.geo === 'octa' ? .85 : 1; bubMat.needsUpdate = true;
@@ -1203,8 +1184,8 @@ function buildDecor() {
   }
   if (TH.stalk) {
     const S = TH.stalk, cols = S.colors.map(c => new T.Color(c)), tips = S.tips.map(c => new T.Color(c));
-    decorSpots(S.n, 1, 9).forEach(([cx, cz]) => {
-      for (let i = 0; i < S.per; i++) { const x = cx + (Math.random() - .5) * 1.4, z = cz + (Math.random() - .5) * 1.4; DECOR.data.push({ x, z, h: S.h[0] + Math.random() * (S.h[1] - S.h[0]), y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .25 }); }
+    decorSpots(S.n, ...(TH.ring || [1, 9])).forEach(([cx, cz]) => {
+      for (let i = 0; i < S.per; i++) { const x = cx + (Math.random() - .5) * 1.4, z = cz + (Math.random() - .5) * 1.4; if (pathDist(x, z) < 1.3) continue; DECOR.data.push({ x, z, h: S.h[0] + Math.random() * (S.h[1] - S.h[0]), y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .25 }); }
     });
     innerSpots(Math.round(S.n * .5)).forEach(([x, z]) => DECOR.data.push({ x, z, h: (S.h[0] + Math.random() * (S.h[1] - S.h[0])) * .6, y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .2, small: .6 }));
     DECOR.vil = new T.InstancedMesh(vilGeo, vilMat, Math.max(1, DECOR.data.length)); DECOR.tip = new T.InstancedMesh(tipGeo, tipMat, Math.max(1, DECOR.data.length));
@@ -1215,6 +1196,7 @@ function buildDecor() {
 }
 const dmy = new T.Object3D(), upV = new T.Vector3();
 function animateDecor(now) {
+  if (TH.flow) terrU.map2Off.value.set(now * .012 * TH.flow, now * .007 * TH.flow);   // вода и лава медленно текут
   if (DECOR.vil) {
     const S = TH.stalk;
     DECOR.data.forEach((v, i) => {
@@ -1252,10 +1234,10 @@ function applyTheme(i, rebuild = true) {
   hemi.color.set(TH.hemi[0]); hemi.groundColor.set(TH.hemi[1]); hemi.intensity = TH.hemi[2];
   sun.color.set(TH.sun[0]); sun.intensity = TH.sun[1]; rim.color.set(TH.rim[0]); rim.intensity = TH.rim[1];
   warm.color.set(TH.rim[0]); warm.intensity = TH.lava ? .8 : .15; renderer.toneMappingExposure = TH.exp;
-  padMat.color.set('#ece6de').lerp(new T.Color(TH.soil || '#8a6a4a'), .25); padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
+  padMat.color.set(TH.padc || '#ddd4c4'); padMat.map = tex(TH.padt || 'mt_stone'); padMat.needsUpdate = true; padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
   drift.forEach((m, k) => { m.material.color.set(TH.motes[k % TH.motes.length]); m.visible = k < 44 * (TH.moteA > .4 ? 1 : .5); });
   // заранее подгружаем текстуры этой темы
-  tex(TH.floor); tex(TH.floor, true); tex(TH.hills);
+  tex(TH.floor); tex(TH.hills);
   if (PATH && rebuild) { buildTerrain(); updateBackdrop(); }
 }
 
@@ -1313,33 +1295,29 @@ const portal = new T.Group();
 {
   // Ворота из камня с аркой, внутри — светящаяся закрученная мембрана; микробы выходят из неё
   const stone = new T.MeshStandardMaterial({ color: '#8a7a8a', roughness: .7, flatShading: true });
-  const trim = new T.MeshStandardMaterial({ color: '#ffe8b8', emissive: '#ffb050', emissiveIntensity: .8, roughness: .3 });
+  const trim = new T.MeshStandardMaterial({ color: '#ffe8b8', emissive: '#ffb050', emissiveIntensity: .35, roughness: .3 });
   const pill = (z) => { const m = new T.Mesh(new T.CylinderGeometry(.11, .14, 1.05, 8), stone); m.position.set(0, .52, z); m.castShadow = true; portal.add(m);
     const cap = new T.Mesh(new T.CylinderGeometry(.16, .16, .08, 8), stone); cap.position.set(0, .06, z); portal.add(cap); };
   pill(-.52); pill(.52);
   const arch = new T.Mesh(new T.TorusGeometry(.52, .1, 10, 32, Math.PI), stone); arch.rotation.y = Math.PI / 2; arch.position.y = 1.05; arch.castShadow = true; portal.add(arch);
   const band = new T.Mesh(new T.TorusGeometry(.43, .025, 8, 40, Math.PI), trim); band.rotation.y = Math.PI / 2; band.position.y = 1.05; portal.add(band);
   for (const z of [-.43, .43]) { const b = new T.Mesh(new T.CylinderGeometry(.025, .025, .98, 6), trim); b.position.set(0, .56, z); portal.add(b); }
-  // проём: ровный яркий свет — белый в глубине, тёплый к краям, без вращения и пульса
+  // проём: весь залит ровным мягким светом — светлее в глубине, теплее к краям, без вращения и пульса
   const mat = new T.ShaderMaterial({
-    uniforms: { c1: { value: new T.Color('#fff6e0') }, c2: { value: new T.Color('#ffb070') } },
-    vertexShader: 'varying vec2 vU; void main(){ vU = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    uniforms: { c1: { value: new T.Color('#fff0d6') }, c2: { value: new T.Color('#f6c48a') } },
+    vertexShader: 'varying vec2 vU; void main(){ vU = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
     fragmentShader: `uniform vec3 c1; uniform vec3 c2; varying vec2 vU;
-      void main(){ vec2 p = (vU - .5) * 2.; float r = length(p);
-        vec3 col = mix(c1 * 1.6, c2, smoothstep(0., .95, r));
-        float al = smoothstep(1., .82, r);
+      void main(){ float r = length((vU - vec2(0., .62)) / vec2(.42, .78));
+        vec3 col = mix(c1, c2, smoothstep(.1, 1., r)) * .92;
+        float al = 1.;
         gl_FragColor = vec4(col, al); }`,
     transparent: true, depthWrite: false, side: T.DoubleSide, toneMapped: false
   });
-  const door = new T.Mesh(new T.CircleGeometry(.47, 48), mat); door.scale.y = 1.35; door.position.y = .66; door.rotation.y = Math.PI / 2; portal.add(door);
-  const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffd8a0', blending: T.AdditiveBlending, depthWrite: false, opacity: .7 }));
-  glow.scale.set(2.6, 2.6, 1); glow.position.set(.15, .7, 0); portal.add(glow);
-  // луч света падает из ворот вперёд, на сосуд
-  const beamTex = canvasTex(64, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,240,210,.9)'); gr.addColorStop(1, 'rgba(255,200,140,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); const sg = g.createLinearGradient(0, 0, w, 0); sg.addColorStop(0, 'rgba(0,0,0,1)'); sg.addColorStop(.5, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = sg; g.fillRect(0, 0, w, h); });
-  beamTex.encoding = T.LinearEncoding;
-  const beam = new T.Mesh(new T.PlaneGeometry(1.1, 2.6), new T.MeshBasicMaterial({ map: beamTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: .55, toneMapped: false }));
-  beam.rotation.x = -Math.PI / 2; beam.rotation.z = Math.PI / 2; beam.position.set(1.35, .03, 0); portal.add(beam);
-  const lamp = new T.PointLight('#ffd8a8', 1.4, 4.5, 2); lamp.position.set(.5, .8, 0); portal.add(lamp);
+  const doorShape = new T.Shape(); doorShape.moveTo(-.42, .02); doorShape.lineTo(-.42, 1.05); doorShape.absarc(0, 1.05, .42, Math.PI, 0, true); doorShape.lineTo(.42, .02); doorShape.closePath();   // проём целиком, по форме арки
+  const door = new T.Mesh(new T.ShapeGeometry(doorShape, 24), mat); door.rotation.y = Math.PI / 2; portal.add(door);
+  const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffd8a0', blending: T.AdditiveBlending, depthWrite: false, opacity: .22 }));
+  glow.scale.set(1.9, 2.2, 1); glow.position.set(.15, .7, 0); portal.add(glow);
+  const lamp = new T.PointLight('#ffd8a8', .5, 3.5, 2); lamp.position.set(.5, .8, 0); portal.add(lamp);
   portal.userData = { glow, mat };
   scene.add(portal);
 }
@@ -1348,13 +1326,13 @@ organ.rotation.y = Math.PI / 2; scene.add(organ);
 // Уровни-органы. theme — фон уровня, diff — во сколько раз крепче микробы
 const LEVELS = [
   { id: 'liver', organ: 'Печень', region: 'Пищеварительная система', theme: 1, diff: 1 },
-  { id: 'lungs', organ: 'Лёгкие', region: 'Дыхательная система', theme: 3, diff: 1.25 },
-  { id: 'heart', organ: 'Сердце', region: 'Сердечно-сосудистая система', theme: 4, diff: 1.55 },
+  { id: 'lungs', organ: 'Лёгкие', region: 'Дыхательная система', theme: 4, diff: 1.25 },
+  { id: 'heart', organ: 'Сердце', region: 'Сердечно-сосудистая система', theme: 7, diff: 1.55 },
   { id: 'kidney', organ: 'Почки', region: 'Мочевыделительная система', theme: 8, diff: 1.9 },
-  { id: 'stomach', organ: 'Желудок', region: 'Пищеварительная система', theme: 9, diff: 2.3 },
+  { id: 'stomach', organ: 'Желудок', region: 'Пищеварительная система', theme: 3, diff: 2.3 },
   { id: 'spleen', organ: 'Селезёнка', region: 'Иммунная система', theme: 5, diff: 2.8 },
-  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 6, diff: 3.4 },
-  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 7, diff: 4.2 }
+  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 2, diff: 3.4 },
+  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 6, diff: 4.2 }
 ];
 function organTex(base, spots) {
   return canvasTex(512, 512, (g, W, H) => {
@@ -1421,14 +1399,18 @@ function setOrgan(lv) {
 setOrgan(LEVELS[0]);
 function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
 
-const padGeo = new T.LatheGeometry([[0, 0], [.44, 0], [.46, .03], [.45, .07], [.41, .1], [.34, .1], [.31, .075], [0, .075]].map(([x, y]) => new T.Vector2(x, y)), 48);   // невысокий постамент с чашей
+const padGeo = new T.LatheGeometry([[0, 0], [.48, 0], [.47, .02], [.43, .025], [.44, .06], [.41, .105], [.35, .115], [.33, .095], [0, .095]].map(([x, y]) => new T.Vector2(x, y)), 6);   // шестигранная каменная плита со скошенным краем и неглубокой серединой на тёмном основании
+{ const p = padGeo.attributes.position, c = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) { const y = p.getY(i), k = y < .03 ? .4 : y < .07 ? .8 : 1; c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = k; }
+  padGeo.setAttribute('color', new T.BufferAttribute(c, 3)); }
+{ const p = padGeo.attributes.position, uv = padGeo.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) * 1.1 + .5, p.getZ(i) * 1.1 + .5); }   // рисунок камня ложится сверху ровно
 const stoneGeo = new T.DodecahedronGeometry(1, 0), stoneMat = new T.MeshStandardMaterial({ roughness: .85, flatShading: true });
 const poleGeo = new T.CylinderGeometry(.015, .015, .56, 6), poleMat = new T.MeshStandardMaterial({ color: '#6a4a2e', roughness: .8 });
 const flagGeo = (() => { const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute([0, .1, 0, 0, -.1, 0, .24, 0, 0], 3)); g.computeVertexNormals(); return g; })();
-const padMat = new T.MeshPhysicalMaterial({ color: '#e2a6b6', roughness: .32, metalness: 0, clearcoat: 1, clearcoatRoughness: .2, emissive: '#3a0a18', emissiveIntensity: .35 });
-const padRimGeo = new T.TorusGeometry(.375, .022, 8, 48);
-const padRimMat = new T.MeshStandardMaterial({ color: '#bff6ff', emissive: '#5ad8ff', emissiveIntensity: .6, roughness: .3 });
-const ringGeo = new T.RingGeometry(.47, .56, 48);
+const padMat = new T.MeshStandardMaterial({ color: '#ddd4c4', roughness: .75, metalness: 0, flatShading: true, vertexColors: true });
+const padRimGeo = new T.RingGeometry(.22, .275, 6).rotateX(-Math.PI / 2).rotateY(Math.PI / 2);   // светящаяся шестигранная вставка
+const padRimMat = new T.MeshStandardMaterial({ color: '#bff6ff', emissive: '#5ad8ff', emissiveIntensity: .9, roughness: .4 });
+const ringGeo = new T.RingGeometry(.47, .55, 6, 1, Math.PI / 2);
 
 function updateBackdrop() {
   const b = TER.box, c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3());
@@ -1542,8 +1524,13 @@ function buildBoard(L) {
   const chosen = [];
   cands.sort((a, b) => a.pr - b.pr);
   for (const cd of cands) {
-    const dp = pathDist(cd.x, cd.z);
-    if (dp < 1.1) continue;                                                     // площадка (r 0,42) не касается стенки сосуда (0,6)
+    let dp = pathDist(cd.x, cd.z);
+    if (dp < 1.25) {                                                            // слишком близко — пробуем чуть отодвинуть от сосуда
+      let bx = cd.x, bz = cd.z;
+      for (let k = 0; k < 12; k++) for (const st of [.15, .3, .45]) { const x = cd.x + Math.cos(k * Math.PI / 6) * st, z = cd.z + Math.sin(k * Math.PI / 6) * st, d = pathDist(x, z); if (d > dp) { dp = d; bx = x; bz = z; } }
+      cd.x = bx; cd.z = bz;
+    }
+    if (dp < 1.2) continue;                                                     // плита (r 0,43) с зазором не касается стенки сосуда (0,65)
     if (cd.x + .5 > ob.min.x && cd.z > ob.min.z - .3 && cd.z < ob.max.z + .3) continue;
     if (Math.hypot(cd.x - P0.x, cd.z - P0.z) < 1.8) continue;
     if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.5)) chosen.push(cd);
@@ -1551,7 +1538,7 @@ function buildBoard(L) {
   chosen.forEach((cd, i) => {
     const cp = new T.Vector3(cd.x, 0, cd.z);
     const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, 0, cp.z); m.receiveShadow = true; m.castShadow = true; board.add(m);
-    const rim = new T.Mesh(padRimGeo, padRimMat); rim.rotation.x = Math.PI / 2; rim.position.set(cp.x, .1, cp.z); board.add(rim);
+    const rim = new T.Mesh(padRimGeo, padRimMat); rim.position.set(cp.x, .098, cp.z); board.add(rim);
     const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
     hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, .12, cp.z); board.add(hl);
     pads.set('p' + i, { pos: cp, mesh: m, hl, unit: null });
@@ -2462,6 +2449,7 @@ const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg
 if ((SET.ver || 0) < 8) { SET.theme = -1; SET.ver = 8; }
 if ((SET.ver || 0) < 9) { SET.ambVol = Math.min(SET.ambVol, 35); SET.ver = 9; }
 if ((SET.ver || 0) < 7) { SET.sfx = 'real'; SET.theme = 0; SET.amb = ({ surf: 'sea', brook: 'river', storm: 'rain', fire: 'off' })[SET.amb] || SET.amb; SET.ver = 7; }
+if ((SET.ver || 0) < 10) { SET.amb = ({ rain: 'softrain', forest: 'morning', river: 'waterfall', wind: 'wind', birds: 'morning', sea: 'beach', crickets: 'night', off: 'off' })[SET.amb] || 'off'; SET.ver = 10; }   // старые звуки заменены новыми
 const PROF = store.get('immuneProfile', { name: 'Игрок', avatar: 'neu', games: 0, kills: 0, wins: 0, liverStars: 0, lv: {} });
 PROF.lv ||= {}; if (PROF.liverStars && !PROF.lv.liver) PROF.lv.liver = PROF.liverStars;
 const totalStars = () => LEVELS.reduce((a, l) => a + (PROF.lv[l.id] || 0), 0);
@@ -2536,9 +2524,9 @@ function goMenu() {
 
 /* ---------- Панель «Фон и звуки» ---------- */
 const AMBS = [
-  { id: 'rain', name: 'Дождь' }, { id: 'forest', name: 'Лесной шелест' }, { id: 'river', name: 'Горная река' }, { id: 'wind', name: 'Ветер' },
-  { id: 'birds', name: 'Птицы в парке' }, { id: 'sea', name: 'Морской прибой' }, { id: 'crickets', name: 'Ночные сверчки' }, { id: 'cave', name: 'Капли в пещере' },
-  { id: 'under', name: 'Под водой' }, { id: 'bubbles', name: 'Пузырьки' }
+  { id: 'morning', name: 'Утро в лесу' }, { id: 'summer', name: 'Летний день' }, { id: 'swamp', name: 'Болото и лягушки' }, { id: 'cicada', name: 'Цикады в жару' },
+  { id: 'night', name: 'Ночь и сверчки' }, { id: 'thunder', name: 'Дождь и далёкий гром' }, { id: 'waterfall', name: 'Водопад' }, { id: 'beach', name: 'Морской берег' },
+  { id: 'wind', name: 'Ветер в поле' }, { id: 'softrain', name: 'Тихий дождь' }
 ];
 const SFXS = [{ id: 'real', name: 'Настоящие записи', sub: 'живые звуки' }, { id: 'juicy', name: 'Сочные', sub: 'синтез, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
 let lookTab = 'bg', lookFrom = null;

@@ -218,7 +218,7 @@ body {
 .tog input:checked + i { background: var(--blood); }
 .tog input:checked + i::after { transform: translateX(20px); }
 .tog input:focus-visible + i { outline: 2px solid var(--gold); outline-offset: 2px; }
-#mapScreen { padding: 0; display: flex; flex-direction: column; place-items: stretch; background: #e6cf9f; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; }
+#mapScreen { padding: 0; display: flex; flex-direction: column; place-items: stretch; background: #14061a; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; }
 #mapScreen[hidden] { display: none; }
 .maptop { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: linear-gradient(#3a2414, #2a180c); color: #fff3d8; box-shadow: 0 4px 14px #0006; z-index: 2; }
 .maptop b { font: 700 16px var(--display); flex: 1; }
@@ -229,11 +229,13 @@ body {
 .mnode .pulse { animation: mpulse 1.6s ease-out infinite; transform-origin: center; transform-box: fill-box; }
 @keyframes mpulse { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
 .mnode .bob { animation: mbob 1s ease-in-out infinite alternate; }
+.flow { animation: mflow 1.2s linear infinite; }
+@keyframes mflow { to { stroke-dashoffset: -18; } }
 @keyframes mbob { to { transform: translateY(-6px); } }
 #levelPop { position: absolute; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff8ea; color: #3a2414; border-radius: 18px; padding: 16px; box-shadow: 0 16px 50px #0008; display: flex; flex-direction: column; gap: 10px; border: 3px solid #8a5a2e; }
 #levelPop[hidden] { display: none; }
 #levelPop h2 { margin: 0; font: 900 22px var(--display); color: #3a2414; }
-#levelPop .reg { font: 700 20px 'Caveat', cursive; color: #8a5a2e; }
+#levelPop .reg { font: 600 14px var(--body); color: #8a5a2e; }
 #levelPop p { margin: 0; color: #6a4a2e; font-size: 13.5px; }
 #levelPop .st { font-size: 26px; letter-spacing: 4px; color: #f2a81d; }
 #levelPop .st .off { color: #d8c8a8; }
@@ -350,7 +352,7 @@ body {
       </div>
       <button class="btn big" data-look="menu">Фон и звуки</button>
       <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.11 · прототип</p>
+      <p class="ver">Версия 0.12 · прототип</p>
     </div>
   </div>
 
@@ -837,8 +839,14 @@ const AU = {
       if (this.ambId !== id) return;
       const s = this.ctx.createBufferSource(), g = this.ctx.createGain();
       s.buffer = buf; s.loop = true; s.loopStart = .06; s.loopEnd = buf.duration - .02;
-      g.gain.value = 0; g.gain.setTargetAtTime(1, this.ctx.currentTime, .4);
-      s.connect(g); g.connect(this.ambBus()); s.start(0, .06);
+      g.gain.value = 0;
+      // приглушаем верхние частоты и громкость: звук должен быть мягким, не резать слух
+      const soft = this.ctx.createBiquadFilter(), shelf = this.ctx.createBiquadFilter();
+      soft.type = 'lowpass'; soft.frequency.value = ({ rain: 1700, forest: 2200, river: 1100, wind: 700, birds: 3200, sea: 900, crickets: 4200, cave: 2000, under: 600, bubbles: 1500 })[id] || 1500; soft.Q.value = .5;
+      shelf.type = 'highshelf'; shelf.frequency.value = 800; shelf.gain.value = -6;
+      const vol = ({ rain: .7, forest: .8, river: .6, wind: .65, birds: .55, sea: .7, crickets: .35, cave: .6, under: .8, bubbles: .5 })[id] || .6;
+      g.gain.setTargetAtTime(vol, this.ctx.currentTime, 1.2);
+      s.connect(soft); soft.connect(shelf); shelf.connect(g); g.connect(this.ambBus()); s.start(0, .06);
       this.ambSrc = { s, g };
     };
     if (this.ambBufs[id]) return start(this.ambBufs[id]);
@@ -1192,7 +1200,7 @@ function applyTheme(i, rebuild = true) {
   hemi.color.set(TH.hemi[0]); hemi.groundColor.set(TH.hemi[1]); hemi.intensity = TH.hemi[2];
   sun.color.set(TH.sun[0]); sun.intensity = TH.sun[1]; rim.color.set(TH.rim[0]); rim.intensity = TH.rim[1];
   warm.color.set(TH.rim[0]); warm.intensity = TH.lava ? .8 : .15; renderer.toneMappingExposure = TH.exp;
-  padMat.color.set(TH.soil || '#8a6a4a'); padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
+  padMat.color.set('#ece6de').lerp(new T.Color(TH.soil || '#8a6a4a'), .25); padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
   drift.forEach((m, k) => { m.material.color.set(TH.motes[k % TH.motes.length]); m.visible = k < 44 * (TH.moteA > .4 ? 1 : .5); });
   // заранее подгружаем текстуры этой темы
   tex(TH.floor); tex(TH.floor, true); tex(TH.hills);
@@ -1253,44 +1261,48 @@ const portal = new T.Group();
 {
   // Ворота из камня с аркой, внутри — светящаяся закрученная мембрана; микробы выходят из неё
   const stone = new T.MeshStandardMaterial({ color: '#8a7a8a', roughness: .7, flatShading: true });
-  const trim = new T.MeshStandardMaterial({ color: '#c8a0ff', emissive: '#8a4aff', emissiveIntensity: .9, roughness: .3 });
+  const trim = new T.MeshStandardMaterial({ color: '#ffe8b8', emissive: '#ffb050', emissiveIntensity: .8, roughness: .3 });
   const pill = (z) => { const m = new T.Mesh(new T.CylinderGeometry(.11, .14, 1.05, 8), stone); m.position.set(0, .52, z); m.castShadow = true; portal.add(m);
     const cap = new T.Mesh(new T.CylinderGeometry(.16, .16, .08, 8), stone); cap.position.set(0, .06, z); portal.add(cap); };
   pill(-.52); pill(.52);
   const arch = new T.Mesh(new T.TorusGeometry(.52, .1, 10, 32, Math.PI), stone); arch.rotation.y = Math.PI / 2; arch.position.y = 1.05; arch.castShadow = true; portal.add(arch);
   const band = new T.Mesh(new T.TorusGeometry(.43, .025, 8, 40, Math.PI), trim); band.rotation.y = Math.PI / 2; band.position.y = 1.05; portal.add(band);
   for (const z of [-.43, .43]) { const b = new T.Mesh(new T.CylinderGeometry(.025, .025, .98, 6), trim); b.position.set(0, .56, z); portal.add(b); }
+  // проём: ровный яркий свет — белый в глубине, тёплый к краям, без вращения и пульса
   const mat = new T.ShaderMaterial({
-    uniforms: { t: { value: 0 }, c1: { value: new T.Color('#ff4ad8') }, c2: { value: new T.Color('#5ad8ff') } },
+    uniforms: { c1: { value: new T.Color('#fff6e0') }, c2: { value: new T.Color('#ffb070') } },
     vertexShader: 'varying vec2 vU; void main(){ vU = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform float t; uniform vec3 c1; uniform vec3 c2; varying vec2 vU;
-      void main(){ vec2 p = (vU - .5) * 2.; float r = length(p); float a = atan(p.y, p.x);
-        float sw = sin(a * 3. + r * 9. - t * 3.5) * .5 + .5; float sw2 = sin(a * 5. - r * 14. + t * 2.) * .5 + .5;
-        vec3 col = mix(c1, c2, sw) + vec3(1.) * pow(1. - r, 3.) * .9 + sw2 * .15;
-        float al = smoothstep(1., .8, r) * (.75 + .25 * sw) + smoothstep(.95, .85, r) * smoothstep(.75, .9, r) * .6;
-        gl_FragColor = vec4(col * 1.25, al); }`,
-    transparent: true, depthWrite: false, side: T.DoubleSide
+    fragmentShader: `uniform vec3 c1; uniform vec3 c2; varying vec2 vU;
+      void main(){ vec2 p = (vU - .5) * 2.; float r = length(p);
+        vec3 col = mix(c1 * 1.6, c2, smoothstep(0., .95, r));
+        float al = smoothstep(1., .82, r);
+        gl_FragColor = vec4(col, al); }`,
+    transparent: true, depthWrite: false, side: T.DoubleSide, toneMapped: false
   });
   const door = new T.Mesh(new T.CircleGeometry(.47, 48), mat); door.scale.y = 1.35; door.position.y = .66; door.rotation.y = Math.PI / 2; portal.add(door);
-  const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#c86aff', blending: T.AdditiveBlending, depthWrite: false, opacity: .55 }));
-  glow.scale.set(2.4, 2.4, 1); glow.position.y = .7; portal.add(glow);
-  const motes = [];
-  for (let i = 0; i < 10; i++) { const m = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: i % 2 ? '#ff9af0' : '#9fefff', blending: T.AdditiveBlending, depthWrite: false })); m.scale.setScalar(.12); portal.add(m); motes.push(m); }
-  portal.userData = { glow, mat, motes };
+  const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffd8a0', blending: T.AdditiveBlending, depthWrite: false, opacity: .7 }));
+  glow.scale.set(2.6, 2.6, 1); glow.position.set(.15, .7, 0); portal.add(glow);
+  // луч света падает из ворот вперёд, на сосуд
+  const beamTex = canvasTex(64, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,240,210,.9)'); gr.addColorStop(1, 'rgba(255,200,140,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); const sg = g.createLinearGradient(0, 0, w, 0); sg.addColorStop(0, 'rgba(0,0,0,1)'); sg.addColorStop(.5, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = sg; g.fillRect(0, 0, w, h); });
+  beamTex.encoding = T.LinearEncoding;
+  const beam = new T.Mesh(new T.PlaneGeometry(1.1, 2.6), new T.MeshBasicMaterial({ map: beamTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: .55, toneMapped: false }));
+  beam.rotation.x = -Math.PI / 2; beam.rotation.z = Math.PI / 2; beam.position.set(1.35, .03, 0); portal.add(beam);
+  const lamp = new T.PointLight('#ffd8a8', 1.4, 4.5, 2); lamp.position.set(.5, .8, 0); portal.add(lamp);
+  portal.userData = { glow, mat };
   scene.add(portal);
 }
 const organ = new T.Group();
 organ.rotation.y = Math.PI / 2; scene.add(organ);
 // Уровни-органы. theme — фон уровня, diff — во сколько раз крепче микробы
 const LEVELS = [
-  { id: 'liver', organ: 'Печень', region: 'Печёночный лес', theme: 1, diff: 1 },
-  { id: 'lungs', organ: 'Лёгкие', region: 'Лёгочные снега', theme: 3, diff: 1.25 },
-  { id: 'heart', organ: 'Сердце', region: 'Сердечный каньон', theme: 4, diff: 1.55 },
-  { id: 'kidney', organ: 'Почки', region: 'Почечный берег', theme: 8, diff: 1.9 },
-  { id: 'stomach', organ: 'Желудок', region: 'Желудочная пустыня', theme: 9, diff: 2.3 },
-  { id: 'spleen', organ: 'Селезёнка', region: 'Селезёночная мостовая', theme: 5, diff: 2.8 },
-  { id: 'eye', organ: 'Глаз', region: 'Глазной дворец', theme: 6, diff: 3.4 },
-  { id: 'brain', organ: 'Мозг', region: 'Мозговой вулкан', theme: 7, diff: 4.2 }
+  { id: 'liver', organ: 'Печень', region: 'Пищеварительная система', theme: 1, diff: 1 },
+  { id: 'lungs', organ: 'Лёгкие', region: 'Дыхательная система', theme: 3, diff: 1.25 },
+  { id: 'heart', organ: 'Сердце', region: 'Сердечно-сосудистая система', theme: 4, diff: 1.55 },
+  { id: 'kidney', organ: 'Почки', region: 'Мочевыделительная система', theme: 8, diff: 1.9 },
+  { id: 'stomach', organ: 'Желудок', region: 'Пищеварительная система', theme: 9, diff: 2.3 },
+  { id: 'spleen', organ: 'Селезёнка', region: 'Иммунная система', theme: 5, diff: 2.8 },
+  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 6, diff: 3.4 },
+  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 7, diff: 4.2 }
 ];
 function organTex(base, spots) {
   return canvasTex(512, 512, (g, W, H) => {
@@ -1357,14 +1369,14 @@ function setOrgan(lv) {
 setOrgan(LEVELS[0]);
 function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
 
-const padGeo = new T.CylinderGeometry(.4, .42, .06, 32);
+const padGeo = new T.LatheGeometry([[0, 0], [.44, 0], [.46, .03], [.45, .07], [.41, .1], [.34, .1], [.31, .075], [0, .075]].map(([x, y]) => new T.Vector2(x, y)), 48);   // невысокий постамент с чашей
 const stoneGeo = new T.DodecahedronGeometry(1, 0), stoneMat = new T.MeshStandardMaterial({ roughness: .85, flatShading: true });
 const poleGeo = new T.CylinderGeometry(.015, .015, .56, 6), poleMat = new T.MeshStandardMaterial({ color: '#6a4a2e', roughness: .8 });
 const flagGeo = (() => { const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute([0, .1, 0, 0, -.1, 0, .24, 0, 0], 3)); g.computeVertexNormals(); return g; })();
 const padMat = new T.MeshPhysicalMaterial({ color: '#e2a6b6', roughness: .32, metalness: 0, clearcoat: 1, clearcoatRoughness: .2, emissive: '#3a0a18', emissiveIntensity: .35 });
-const padRimGeo = new T.TorusGeometry(.4, .035, 8, 40);
+const padRimGeo = new T.TorusGeometry(.375, .022, 8, 48);
 const padRimMat = new T.MeshStandardMaterial({ color: '#bff6ff', emissive: '#5ad8ff', emissiveIntensity: .6, roughness: .3 });
-const ringGeo = new T.RingGeometry(.4, .52, 40);
+const ringGeo = new T.RingGeometry(.47, .56, 48);
 
 function updateBackdrop() {
   const b = TER.box, c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3());
@@ -1484,25 +1496,14 @@ function buildBoard(L) {
     if (Math.hypot(cd.x - P0.x, cd.z - P0.z) < 1.8) continue;
     if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.5)) chosen.push(cd);
   }
-  const stones = new T.InstancedMesh(stoneGeo, stoneMat, chosen.length * 11), dm = new T.Object3D(), sc2 = new T.Color();
   chosen.forEach((cd, i) => {
     const cp = new T.Vector3(cd.x, 0, cd.z);
-    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, .03, cp.z); m.receiveShadow = true; board.add(m);
-    for (let k = 0; k < 11; k++) {
-      const a = k / 11 * Math.PI * 2 + hash2(i, k) * .3, r = .42;
-      dm.position.set(cp.x + Math.cos(a) * r, .06, cp.z + Math.sin(a) * r); dm.rotation.set(hash2(k, i) * 3, a, hash2(i + 3, k) * 3);
-      const s = .07 + hash2(i * 7, k) * .04; dm.scale.set(s * 1.3, s, s); dm.updateMatrix(); stones.setMatrixAt(i * 11 + k, dm.matrix);
-      stones.setColorAt(i * 11 + k, sc2.set(TH.stone || '#b8aa9a').multiplyScalar(.8 + hash2(k, i * 5) * .35));
-    }
-    const flag = new T.Group();
-    const pole = new T.Mesh(poleGeo, poleMat); pole.position.y = .28; flag.add(pole);
-    const cloth = new T.Mesh(flagGeo, new T.MeshStandardMaterial({ color: TH.rim2, side: T.DoubleSide, roughness: .6 })); cloth.position.set(.12, .48, 0); flag.add(cloth);
-    flag.position.set(cp.x + .18, 0, cp.z - .1); flag.castShadow = true; board.add(flag);
+    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, 0, cp.z); m.receiveShadow = true; m.castShadow = true; board.add(m);
+    const rim = new T.Mesh(padRimGeo, padRimMat); rim.rotation.x = Math.PI / 2; rim.position.set(cp.x, .1, cp.z); board.add(rim);
     const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
-    hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, .1, cp.z); board.add(hl);
-    pads.set('p' + i, { pos: cp, mesh: m, hl, flag, unit: null });
+    hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, .12, cp.z); board.add(hl);
+    pads.set('p' + i, { pos: cp, mesh: m, hl, unit: null });
   });
-  stones.castShadow = true; stones.receiveShadow = true; board.add(stones);
   buildTerrain();
 }
 const stageAspect = () => Math.max(.3, stage.clientWidth / Math.max(1, stage.clientHeight));
@@ -1966,9 +1967,6 @@ function update(dt) {
   const now = performance.now() / 1000;
   bloodTex.offset.y -= dt * .45;
   animateBackdrop(dt, now);
-  portal.userData.glow.material.opacity = .45 + Math.sin(now * 3) * .15;
-  portal.userData.mat.uniforms.t.value = now;
-  portal.userData.motes.forEach((m, i) => { const a = now * 1.6 + i / 10 * Math.PI * 2; m.position.set(Math.sin(a * .7) * .12, .66 + Math.sin(a) * .62, Math.cos(a) * .52); });
   organ.scale.setScalar(1 + Math.sin(now * 2.2) * .015);
   organ.userData.mat.emissiveIntensity = Math.max(1, organ.userData.mat.emissiveIntensity - dt * 6);
 
@@ -2408,8 +2406,9 @@ const store = {
   get(k, d) { try { return Object.assign({}, d, JSON.parse(localStorage.getItem(k)) || {}); } catch (e) { return Object.assign({}, d); } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
-const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high', theme: 0, amb: 'off', ambVol: 50, sfx: 'real' });
+const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg: true, quality: 'high', theme: 0, amb: 'off', ambVol: 35, sfx: 'real' });
 if ((SET.ver || 0) < 8) { SET.theme = -1; SET.ver = 8; }
+if ((SET.ver || 0) < 9) { SET.ambVol = Math.min(SET.ambVol, 35); SET.ver = 9; }
 if ((SET.ver || 0) < 7) { SET.sfx = 'real'; SET.theme = 0; SET.amb = ({ surf: 'sea', brook: 'river', storm: 'rain', fire: 'off' })[SET.amb] || SET.amb; SET.ver = 7; }
 const PROF = store.get('immuneProfile', { name: 'Игрок', avatar: 'neu', games: 0, kills: 0, wins: 0, liverStars: 0, lv: {} });
 PROF.lv ||= {}; if (PROF.liverStars && !PROF.lv.liver) PROF.lv.liver = PROF.liverStars;
@@ -2532,75 +2531,85 @@ $('lookDone').onclick = () => { AU.play('ui'); closeLook(); };
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-look]'); if (b) openLook(b.dataset.look); });
 
 /* ---------- Карта организма: выбор уровня ---------- */
-const ORGAN_ICON = {
-  liver: '<path d="M2.5 10c3-4.5 11-5.5 18-3 1.2.5 1.4 1.8.6 2.7C18 13 13 17 7 17c-3.3 0-5.3-3-4.5-7z" fill="#fff"/>',
-  lungs: '<path d="M12 2.5v7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><path d="M10.5 9c-1.5-1.8-4.5-2.4-6.3.6-2 3.3-2 8.4.3 10.4 2 1.4 5.5.5 6-2.6zM13.5 9c1.5-1.8 4.5-2.4 6.3.6 2 3.3 2 8.4-.3 10.4-2 1.4-5.5.5-6-2.6z" fill="#fff"/>',
-  heart: '<path d="M12 21s-8-5-8-11a4.4 4.4 0 0 1 8-2.6A4.4 4.4 0 0 1 20 10c0 6-8 11-8 11z" fill="#fff"/>',
-  kidney: '<path d="M14.5 3.5c4.5.8 7 6.2 4.6 11.6-2.2 5-7.4 6.1-9.6 3.4-1.5-1.9.8-3.6-.2-5.6-1-1.8-4.2-2.6-3.6-5.6.7-3.3 4.6-4.4 8.8-3.8z" fill="#fff"/>',
-  stomach: '<path d="M9 2.5v4.5c0 2.5-3.5 4-3.5 8.5 0 4.2 3.2 6.5 7.2 6.5 4.3 0 7.3-3 7.3-7 0-3.8-3.2-5.6-6-4.6-2.4.9-2.6 3.2-2.6 3.2" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>',
-  spleen: '<path d="M6.5 19c-2.6-5.3.6-12.6 7-14.8 3.1-1 6.4-.3 6.4 1.9-4.2 1.1-7.3 5.4-7.3 9.6 0 3 2 4.3 1 5.4-2.3 1.4-5.9 1-7.1-2.1z" fill="#fff"/>',
-  eye: '<path d="M1.5 12s4-7 10.5-7 10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12z" fill="#fff"/><circle cx="12" cy="12" r="3.6" fill="#3a7ad8"/><circle cx="12" cy="12" r="1.6" fill="#0a0a12"/>',
-  brain: '<path d="M8.3 4.2A3.3 3.3 0 0 0 4.7 7.6 3.3 3.3 0 0 0 3.6 13a3.3 3.3 0 0 0 3.2 4.4 3.3 3.3 0 0 0 5.2 1.4 3.3 3.3 0 0 0 5.2-1.4 3.3 3.3 0 0 0 3.2-4.4 3.3 3.3 0 0 0-1.1-5.4 3.3 3.3 0 0 0-3.6-3.4 3.3 3.3 0 0 0-4.7 0 3.3 3.3 0 0 0-4.7 0z" fill="#fff"/><path d="M12 4.5v14" stroke="#e8a0a8" stroke-width="1.6"/>'
+// Рисунки органов в плоском стиле с объёмом (viewBox 100×100)
+const ORGAN_ART = {
+  liver: `<path d="M8 54c3-19 27-31 54-29 15 1 28 6 30 15 1 7-4 11-11 15-15 9-32 19-51 19C15 74 6 66 8 54z" fill="#8e3324"/>
+    <path d="M46 29c15-2 31 0 41 7 3 2 3 7-1 10-11 8-25 13-38 13" fill="#b4513d"/><path d="M14 47c8-8 21-13 34-13" stroke="#6e2216" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="57" cy="66" rx="8" ry="6" fill="#5aa042"/><ellipse cx="55" cy="64" rx="3" ry="2" fill="#a8e090"/>
+    <path d="M22 41c9-7 22-10 33-10" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round" fill="none"/>`,
+  lungs: `<rect x="46" y="6" width="8" height="28" rx="4" fill="#f4d6d6"/><path d="M50 30l-10 12M50 30l10 12" stroke="#f4d6d6" stroke-width="6" stroke-linecap="round"/>
+    <path d="M42 30c-9-7-25-3-31 13-6 17-6 36 4 42 11 6 26 0 28-13z" fill="#e8798c"/><path d="M58 30c9-7 25-3 31 13 6 17 6 36-4 42-11 6-26 0-28-13z" fill="#f08c9e"/>
+    <path d="M40 44l-12 10m12 2l-14 12M60 44l12 10m-12 2l14 12" stroke="#fbd2da" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M18 46c3-8 9-12 15-13" stroke="#fff" stroke-opacity=".45" stroke-width="3.5" stroke-linecap="round" fill="none"/>`,
+  heart: `<path d="M34 18v12M42 14v14" stroke="#4a68d8" stroke-width="7" stroke-linecap="round"/><path d="M48 28c0-12 9-19 18-16 7 2 9 9 6 14" stroke="#e44a5a" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M50 90C29 75 12 58 14 39c2-15 17-22 30-15 3 2 5 4 6 7 1-3 3-5 6-7 13-7 28 0 30 15 2 19-15 36-36 51z" fill="#c8202f"/>
+    <path d="M50 90c21-15 38-32 36-51-1-9-7-15-14-17 4 4 6 10 5 17-2 19-15 35-27 51z" fill="#9c1624"/><path d="M24 36c3-6 9-8 14-6" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round" fill="none"/>`,
+  kidney: `${[0, 1].map(k => `<g transform="${k ? 'translate(100 0) scale(-1 1)' : ''}"><path d="M30 16c-13 2-20 17-18 34 2 18 13 29 24 27 9-2 7-11 2-15-5-6-5-11 0-16 6-6 7-13 4-20-2-7-6-10-12-10z" fill="#a52c36"/>
+    <path d="M38 46c6 2 10 6 12 14 1 6 2 14 2 30" stroke="#e8c070" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M18 34c2-7 6-12 11-14" stroke="#fff" stroke-opacity=".4" stroke-width="3.5" stroke-linecap="round" fill="none"/></g>`).join('')}`,
+  stomach: `<path d="M36 6c0 9 0 15-6 21-8 9-15 19-13 34 2 19 19 29 38 27 21-2 33-17 31-34-2-15-15-21-27-17-9 3-11 10-13 15" fill="none" stroke="#c96a78" stroke-width="20" stroke-linecap="round"/>
+    <path d="M36 6c0 9 0 15-6 21-8 9-15 19-13 34 2 19 19 29 38 27 21-2 33-17 31-34-2-15-15-21-27-17-9 3-11 10-13 15" fill="none" stroke="#ec98a4" stroke-width="13" stroke-linecap="round"/>
+    <path d="M28 54c6 4 14 6 22 6M30 66c8 3 16 4 26 3" stroke="#d07888" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+  spleen: `<path d="M18 72c-9-21 4-48 31-57 15-4 30 0 30 9-17 4-29 19-29 36 0 12 8 17 4 21-11 7-30 5-36-9z" fill="#7a2a5e"/>
+    <path d="M30 34c6-9 14-14 22-16" stroke="#fff" stroke-opacity=".4" stroke-width="4" stroke-linecap="round" fill="none"/>`,
+  eye: `<path d="M6 50s19-28 44-28 44 28 44 28-19 28-44 28S6 50 6 50z" fill="#fbf8f4" stroke="#c8b0a8" stroke-width="2.5"/>
+    <path d="M14 46l10 3M80 44l-9 4M18 58l9-2" stroke="#e05a5a" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="17" fill="#2f74d0"/><circle cx="50" cy="50" r="12" fill="#5ab0ff" opacity=".5"/><circle cx="50" cy="50" r="7.5" fill="#0c0c16"/><circle cx="44" cy="44" r="4" fill="#fff"/>`,
+  brain: `<path d="M27 25c-10 0-16 8-14 16-7 4-7 15 0 19 0 10 10 16 18 14 4 7 13 9 19 4 6 5 15 3 19-4 8 2 18-4 18-14 7-4 7-15 0-19 2-8-4-16-14-16-4-7-14-9-20-2-6-7-16-5-20 2z" fill="#ef9cad"/>
+    <path d="M50 22v56" stroke="#c86880" stroke-width="2.5"/><path d="M22 40c6-2 10 2 14 0m-18 14c6 0 10 4 16 2m-10 12c4-2 8 0 12-2M64 38c6 2 10-2 14 0m-16 16c6 0 10-4 16-2m-16 12c4 2 8 0 12 2" stroke="#c86880" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M24 30c4-4 9-5 14-4" stroke="#fff" stroke-opacity=".5" stroke-width="3.5" stroke-linecap="round" fill="none"/>`
 };
+const ISLE = ['#9ad57a', '#8ed0f0', '#f4a07a', '#7ad0d8', '#f4d080', '#a8c48a', '#efe2c8', '#9a7a74'];   // верх островка в цвете фона уровня
 const LOCK_ICON = '<path d="M7.5 11V8a4.5 4.5 0 0 1 9 0v3" fill="none" stroke="#fff" stroke-width="2.4"/><rect x="5.5" y="11" width="13" height="10" rx="2" fill="#fff"/>';
-const REGION = [
-  { fill: '#8cc56a', deco: 'tree' }, { fill: '#e8f0f8', deco: 'peak' }, { fill: '#e89a5a', deco: 'mesa' }, { fill: '#7cc0d8', deco: 'wave' },
-  { fill: '#f0d08a', deco: 'cactus' }, { fill: '#a8b89a', deco: 'wall' }, { fill: '#f4ece0', deco: 'column' }, { fill: '#6a4a44', deco: 'volcano' }
-];
-const ACCENT = ['#3e9a3a', '#4aa8e8', '#e0602a', '#2a9ab8', '#d8a03a', '#6a8a5a', '#c8a050', '#d8402a'];
 function isUnlocked(i) { return i === 0 || (PROF.lv[LEVELS[i - 1].id] || 0) > 0; }
 function drawMap() {
-  const W = 400, step = 185, H = LEVELS.length * step + 170;
-  const rnd = (() => { let a = 7; return () => (a = (a * 16807) % 2147483647) / 2147483647; })();
-  const XS = [118, 282, 150, 270, 112, 268, 146, 250];
-  const pts = LEVELS.map((l, i) => ({ x: XS[i], y: H - 120 - i * step }));
+  const W = 400, step = 210, H = (LEVELS.length - 1) * step + 300;
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const XS = [130, 270, 135, 268, 128, 272, 140, 260];
+  const pts = LEVELS.map((l, i) => ({ x: XS[i], y: H - 150 - i * step }));
   const cur = LEVELS.findIndex((l, i) => isUnlocked(i) && !PROF.lv[l.id]);
+  const done = (i) => (PROF.lv[LEVELS[i].id] || 0) > 0;
   let o = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <filter id="paper"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="4"/><feColorMatrix values="0 0 0 0 .45  0 0 0 0 .3  0 0 0 0 .15  0 0 0 .18 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
-    <filter id="sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".45"/></filter>
-    <linearGradient id="bgg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9d3a2"/><stop offset="1" stop-color="#dcbd84"/></linearGradient>
+    <radialGradient id="mbg" cx="50%" cy="40%" r="80%"><stop offset="0" stop-color="#4a1a3a"/><stop offset="1" stop-color="#14061a"/></radialGradient>
+    <filter id="blur6"><feGaussianBlur stdDeviation="6"/></filter><filter id="blur2"><feGaussianBlur stdDeviation="1.5"/></filter>
+    <filter id="sh" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".55"/></filter>
+    <filter id="gray"><feColorMatrix type="saturate" values=".15"/><feComponentTransfer><feFuncR type="linear" slope=".7"/><feFuncG type="linear" slope=".7"/><feFuncB type="linear" slope=".75"/></feComponentTransfer></filter>
+    <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
   </defs>
-  <rect width="${W}" height="${H}" fill="url(#bgg)"/>`;
-  // области органов: мягкие пятна своего цвета с рисунками местности
+  <rect width="${W}" height="${H}" fill="url(#mbg)"/>`;
+  // фон: размытые клетки-«боке» и тонкие капилляры
+  for (let k = 0; k < 40; k++) { const r = 6 + rnd() * 26; o += `<circle cx="${(rnd() * W).toFixed(0)}" cy="${(rnd() * H).toFixed(0)}" r="${r.toFixed(0)}" fill="${['#ff6a9a', '#6ad8ff', '#ffb06a', '#b48aff'][k % 4]}" opacity="${(.06 + rnd() * .1).toFixed(2)}" filter="url(#blur6)"/>`; }
+  const vein = (x, y, a, w, d, col) => { if (d <= 0) return ''; let p = `M${x.toFixed(0)} ${y.toFixed(0)}`; for (let i = 0; i < 6; i++) { a += (rnd() - .5) * .7; x += Math.cos(a) * 14; y += Math.sin(a) * 14; p += `L${x.toFixed(0)} ${y.toFixed(0)}`; }
+    return `<path d="${p}" stroke="${col}" stroke-width="${w}" fill="none" stroke-linecap="round" opacity=".22"/>` + vein(x, y, a + .5, w * .7, d - 1, col) + (rnd() < .7 ? vein(x, y, a - .5, w * .7, d - 1, col) : ''); };
+  for (let k = 0; k < 14; k++) o += vein(rnd() * W, rnd() * H, rnd() * 7, 3, 4, k % 2 ? '#ff5a6a' : '#6a8aff');
+  // сосуд между органами (начинается с печени)
+  const seg = (a, b) => { const my = (a.y + b.y) / 2; return `M${a.x} ${a.y}C${a.x} ${my} ${b.x} ${my} ${b.x} ${b.y}`; };
+  for (let i = 1; i < pts.length; i++) {
+    const d = seg(pts[i - 1], pts[i]), open = isUnlocked(i);
+    o += `<path d="${d}" stroke="${open ? '#5a0a14' : '#3a2a34'}" stroke-width="20" fill="none" stroke-linecap="round"/>`;
+    o += `<path d="${d}" stroke="${open ? '#d42a3a' : '#5a4a54'}" stroke-width="13" fill="none" stroke-linecap="round"/>`;
+    if (open) o += `<path class="flow" d="${d}" stroke="#ff9aa8" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="4 14" opacity=".8"/>`;
+  }
+  // островки с органами
   LEVELS.forEach((l, i) => {
-    const R = REGION[i], c = pts[i], cx = c.x < 200 ? c.x + 70 : c.x - 70;
-    let d = ''; for (let k = 0; k <= 12; k++) { const a = k / 12 * Math.PI * 2, r = 120 + rnd() * 40; d += (k ? 'L' : 'M') + (cx + Math.cos(a) * r * 1.1).toFixed(0) + ' ' + (c.y + Math.sin(a) * r * .62).toFixed(0); }
-    o += `<path d="${d}Z" fill="${R.fill}" opacity=".85" filter="url(#soft)"/>`;
-    for (let k = 0; k < 9; k++) {
-      const x = cx + (rnd() - .5) * 250, y = c.y + (rnd() - .5) * 120;
-      if (Math.hypot(x - c.x, y - c.y) < 60) continue;
-      const s = .8 + rnd() * .5;
-      o += `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${s.toFixed(2)})">` + ({
-        tree: '<rect x="-2" y="2" width="4" height="10" fill="#6a4a2e"/><circle cy="-2" r="10" fill="#4a9a3a"/><circle cx="-5" cy="-6" r="4" fill="#7ac85a" opacity=".7"/>',
-        peak: '<path d="M-16 10 0-14 16 10z" fill="#9ab0c8"/><path d="M-6 -5 0-14 6-5 2-3-2-6z" fill="#fff"/>',
-        mesa: '<path d="M-16 10-10-6h20l6 16z" fill="#c05a2a"/><path d="M-10-6h20l-2 4h-16z" fill="#e88a4a"/>',
-        wave: '<path d="M-14 0q4-5 7 0t7 0 7 0" fill="none" stroke="#2a7aa8" stroke-width="2.4" stroke-linecap="round"/>',
-        cactus: '<path d="M-2 12V-10h4v22zM-2 0h-5v-6M2 2h5v-6" fill="none" stroke="#4a8a3e" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>',
-        wall: '<path d="M-14 8h28V-2h-4v-4h-4v4h-4v-4h-4v4h-4v-4h-4v4h-4z" fill="#8a8a7a"/>',
-        column: '<rect x="-4" y="-10" width="8" height="20" fill="#fff"/><rect x="-7" y="-13" width="14" height="4" fill="#d8b46a"/><rect x="-7" y="9" width="14" height="4" fill="#d8b46a"/>',
-        volcano: '<path d="M-18 12-6-10h12l12 22z" fill="#3a2a26"/><path d="M-6-10h12l-3 6-3-2-3 3z" fill="#ff7a1a"/>'
-      })[R.deco] + '</g>';
-    }
-    const lx = c.x < 200 ? 285 : 115, ly = c.y + 8;
-    o += `<text x="${lx}" y="${ly}" text-anchor="middle" font-family="Caveat, cursive" font-weight="700" font-size="25" fill="#5a3a1e" opacity=".85" transform="rotate(${(rnd() * 8 - 4).toFixed(1)} ${lx} ${ly})">${l.region.split(' ').map((w, k) => `<tspan x="${lx}" dy="${k ? 24 : 0}">${w}</tspan>`).join('')}</text>`;
-  });
-  o += `<rect width="${W}" height="${H}" filter="url(#paper)" opacity=".9"/>`;
-  // тропа между органами
-  let path = `M${pts[0].x} ${pts[0].y + 90}L${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], my = (a.y + b.y) / 2; path += `C${a.x} ${my} ${b.x} ${my} ${b.x} ${b.y}`; }
-  o += `<path d="${path}" fill="none" stroke="#6a4424" stroke-width="5" stroke-dasharray="11 9" stroke-linecap="round" opacity=".8"/>`;
-  // точки уровней
-  LEVELS.forEach((l, i) => {
-    const c = pts[i], open = isUnlocked(i), st = PROF.lv[l.id] || 0, col = open ? ACCENT[i] : '#9a8f84';
-    o += `<g class="mnode" data-lv="${i}" filter="url(#sh)">`;
-    if (i === cur) o += `<circle class="pulse" cx="${c.x}" cy="${c.y}" r="36" fill="none" stroke="#fff6c8" stroke-width="4"/>`;
-    o += `<circle cx="${c.x}" cy="${c.y}" r="34" fill="#fff8e4"/><circle cx="${c.x}" cy="${c.y}" r="29" fill="${col}"/><circle cx="${c.x - 8}" cy="${c.y - 10}" r="12" fill="#fff" opacity=".22"/>`;
-    o += `<g transform="translate(${c.x - 17} ${c.y - 17}) scale(1.42)">${open ? ORGAN_ICON[l.id] : LOCK_ICON}</g>`;
-    for (let k = 0; k < 3; k++) { const sx = c.x - 24 + k * 24, sy = c.y - 50 - (k === 1 ? 6 : 0); o += `<path transform="translate(${sx} ${sy}) scale(.9)" d="M0-11 3.2-3.6 11-3.4 4.9 1.6 7 9.2 0 4.8-7 9.2-4.9 1.6-11-3.4-3.2-3.6z" fill="${k < st ? '#ffc61a' : '#d8c8a8'}" stroke="#6a4424" stroke-width="1.6"/>`; }
-    o += `<rect x="${c.x - 52}" y="${c.y + 40}" width="104" height="26" rx="13" fill="#3a2414" opacity=".88"/><text x="${c.x}" y="${c.y + 58}" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="700" font-size="13" fill="#fff3d8">${l.organ}</text>`;
-    if (i === cur) o += `<g class="bob"><path d="M${c.x - 10} ${c.y - 82}h20l-10 13z" fill="#ffc61a" stroke="#6a4424" stroke-width="2"/></g>`;
+    const c = pts[i], open = isUnlocked(i), st = PROF.lv[l.id] || 0, top = ISLE[i];
+    const ip = []; for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2, r = 1 + (rnd() - .5) * .12; ip.push([c.x + Math.cos(a) * 78 * r, c.y + 24 + Math.sin(a) * 34 * r]); }
+    const mp = (A, B) => [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];   // плавный контур: кривые через середины сторон
+    let isl = 'M' + mp(ip[13], ip[0]).map(v => v.toFixed(1)).join(' ');
+    for (let k = 0; k < 14; k++) { const P = ip[k], N = mp(P, ip[(k + 1) % 14]); isl += `Q${P[0].toFixed(1)} ${P[1].toFixed(1)} ${N[0].toFixed(1)} ${N[1].toFixed(1)}`; }
+    o += `<g class="mnode" data-lv="${i}"${open ? '' : ' filter="url(#gray)"'}>`;
+    if (i === cur) o += `<ellipse class="pulse" cx="${c.x}" cy="${c.y + 24}" rx="86" ry="40" fill="none" stroke="#fff3b0" stroke-width="4"/>`;
+    o += `<g filter="url(#sh)"><path d="${isl}Z" transform="translate(0 16)" fill="${top}"/><path d="${isl}Z" transform="translate(0 16)" fill="url(#side)"/><path d="${isl}Z" fill="${top}"/></g>`;
+    o += `<path d="${isl}Z" fill="#ffffff" opacity=".18" transform="translate(${c.x} ${c.y + 18}) scale(.8 .6) translate(${-c.x} ${-c.y - 24})"/>`;
+    for (let k = 0; k < 5; k++) { const a = rnd() * Math.PI * 2, x = c.x + Math.cos(a) * 58, y = c.y + 24 + Math.sin(a) * 20; o += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="5" fill="#fff" opacity=".55"/><circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="2" fill="${['#c8202f', '#3a7ad8', '#7a3aa8'][k % 3]}" opacity=".7"/>`; }
+    o += `<ellipse cx="${c.x}" cy="${c.y + 30}" rx="40" ry="10" fill="#000" opacity=".22" filter="url(#blur2)"/>`;
+    o += `<g transform="translate(${c.x - 46} ${c.y - 52}) scale(.92)">${ORGAN_ART[l.id]}</g>`;
+    if (!open) o += `<circle cx="${c.x}" cy="${c.y - 6}" r="20" fill="#2a1a24" stroke="#fff" stroke-width="3"/><g transform="translate(${c.x - 12} ${c.y - 18})">${LOCK_ICON}</g>`;
+    for (let k = 0; k < 3; k++) { const sx = c.x - 26 + k * 26, sy = c.y - 70 - (k === 1 ? 8 : 0); o += `<path transform="translate(${sx} ${sy})" d="M0-12 3.5-3.9 12-3.7 5.4 1.8 7.7 10 0 5.3-7.7 10-5.4 1.8-12-3.7-3.5-3.9z" fill="${k < st ? '#ffc61a' : '#5a4a54'}" stroke="${k < st ? '#7a4a00' : '#2a1a24'}" stroke-width="1.8"/>`; }
+    o += `<g transform="translate(${c.x} ${c.y + 82})"><rect x="-74" y="-17" width="148" height="40" rx="12" fill="#1a0c14" opacity=".88" stroke="${open ? '#ffd36b' : '#6a5a64'}" stroke-width="1.5"/>
+      <text y="1" text-anchor="middle" font-family="Unbounded, sans-serif" font-weight="700" font-size="14" fill="#fff4e0">${l.organ}</text>
+      <text y="16" text-anchor="middle" font-family="Golos Text, sans-serif" font-size="9.5" fill="#d8b8c4">${l.region}</text></g>`;
+    if (i === cur) o += `<g class="bob"><path d="M${c.x - 11} ${c.y - 104}h22l-11 14z" fill="#ffc61a" stroke="#7a4a00" stroke-width="2"/></g>`;
     o += `</g>`;
   });
   o += '</svg>';

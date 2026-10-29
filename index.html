@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Иммунитет">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<title>Иммунная защита</title>
+<title>Клеточный рубеж</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Golos+Text:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap">
@@ -218,6 +218,62 @@ body {
 .tog input:checked + i { background: var(--blood); }
 .tog input:checked + i::after { transform: translateX(20px); }
 .tog input:focus-visible + i { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* ---------- Титульный экран ---------- */
+#menu.title { padding: 0; display: flex; flex-direction: column; justify-content: space-between; place-items: stretch; background: radial-gradient(ellipse 120% 80% at 50% 35%, #5a1838 0%, #2a0a22 45%, #0e0412 100%); -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; }
+#menu.title[hidden] { display: none; }
+.tbg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.tbg i { position: absolute; border-radius: 50%; filter: blur(8px); opacity: .25; animation: tdrift linear infinite; }
+.tbg img { position: absolute; animation: tfloat ease-in-out infinite alternate; filter: drop-shadow(0 10px 20px rgba(0,0,0,.5)); }
+.tbg svg.mic { position: absolute; animation: tfloat ease-in-out infinite alternate; filter: drop-shadow(0 8px 14px rgba(0,0,0,.5)); }
+.tbg .vessel { position: absolute; left: -10%; right: -10%; bottom: 12%; height: 120px; opacity: .55; }
+@keyframes tfloat { from { transform: translate(0, 0) rotate(-6deg); } to { transform: translate(8px, -18px) rotate(6deg); } }
+@keyframes tdrift { from { transform: translateY(0); } to { transform: translateY(-120vh); } }
+.ttop { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 14px max(14px, env(safe-area-inset-left, 0px)) 0; }
+.ttop .who { background: #1a0a14cc; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); max-width: 64%; }
+.tbtns { display: flex; gap: 8px; }
+.round { width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid #ffffff2a; background: #1a0a14cc; color: #ffe9ef; display: grid; place-items: center; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.round:active { transform: scale(.94); }
+.tlogo { position: relative; z-index: 2; text-align: center; padding: 0 18px; }
+.tkick { display: inline-block; font: 700 11px var(--display); letter-spacing: .18em; text-transform: uppercase; color: #ffd36b; background: #00000055; padding: 6px 12px; border-radius: 999px; border: 1px solid #ffd36b55; }
+.tlogo h1 { margin: 12px 0 10px; font: 900 clamp(44px, 14.5vw, 72px)/.92 var(--display); letter-spacing: -.02em; }
+.tlogo h1 span { display: block; }
+.tlogo .l1 { background: linear-gradient(180deg, #ffffff 0%, #ffd6e0 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #6a0a20) drop-shadow(0 0 22px #ff4d6a88); }
+.tlogo .l2 { background: linear-gradient(180deg, #ff8a9a 0%, #e0203a 60%, #a80a24 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 4px 0 #3a0410) drop-shadow(0 0 26px #ff2a4a99); }
+.tlogo p { margin: 0 auto; max-width: 300px; color: #f0c8d4; font-size: 14px; line-height: 1.4; }
+.tbottom { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 22px calc(18px + env(safe-area-inset-bottom, 0px)); }
+.btn.huge { width: 100%; max-width: 360px; padding: 18px; font: 900 22px var(--display); letter-spacing: .03em; border-radius: 18px; box-shadow: 0 6px 0 #6d0c1b, 0 0 34px #ff4d5e77; animation: tpulse 2.4s ease-in-out infinite; }
+@keyframes tpulse { 50% { box-shadow: 0 6px 0 #6d0c1b, 0 0 50px #ff4d5eaa; } }
+.btn.ghost { background: #1a0a14aa; border-color: #ffffff30; color: #ffe9ef; padding: 11px 20px; border-radius: 999px; font-weight: 700; }
+.btn.ghost .q { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #ffd36b; color: #2a0a14; font: 900 13px var(--display); }
+@media (prefers-reduced-motion: reduce) { .tbg *, .btn.huge { animation: none !important; } }
+
+/* ---------- Руководство ---------- */
+#howto.guide { padding: 0; display: flex; flex-direction: column; place-items: stretch; background: #14061a; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#howto.guide[hidden] { display: none; }
+.gtop { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: linear-gradient(#3a1428, #2a0c1c); box-shadow: 0 4px 14px #0006; z-index: 2; }
+.gtop b { font: 700 16px var(--display); }
+.gtabs { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; scrollbar-width: none; background: #1a0a14; border-bottom: 1px solid var(--line); }
+.gtabs button { flex: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 999px; padding: 7px 12px; font: 600 12.5px var(--body); cursor: pointer; }
+.gtabs button.on { background: var(--blood); color: #fff; border-color: var(--blood); }
+.gbody { flex: 1; overflow-y: auto; padding: 14px 14px calc(24px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.gcard { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.gcard h3 { margin: 0; font: 700 15px var(--display); display: flex; align-items: center; gap: 8px; }
+.gcard p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.gcard p b { color: var(--ink); }
+.gstep { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+.gstep i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--blood); color: #fff; font: 800 14px var(--display); font-style: normal; }
+.gfac { border-left: 4px solid var(--tc); }
+.gfac .tl { display: flex; flex-direction: column; gap: 4px; }
+.gfac .tl div { font-size: 12.5px; color: var(--muted); background: var(--panel-2); border-radius: 8px; padding: 6px 9px; }
+.gfac .tl b { color: var(--tc); font-family: var(--display); }
+.gmem { display: flex; flex-wrap: wrap; gap: 6px; }
+.gmem span { display: flex; align-items: center; gap: 4px; background: var(--panel-2); border-radius: 999px; padding: 3px 9px 3px 3px; font-size: 12px; }
+.gmem img { width: 24px; height: 24px; }
+.gcombo { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+.gcombo .pair { display: flex; align-items: center; gap: 2px; font: 900 14px var(--display); color: var(--gold); }
+.gfoe { display: grid; grid-template-columns: 14px 1fr; gap: 8px; align-items: start; font-size: 13px; color: var(--muted); }
+.gfoe i { width: 14px; height: 14px; border-radius: 50%; margin-top: 2px; box-shadow: inset 0 -2px 3px #0006; }
+.gfoe b { color: var(--ink); }
 #mapScreen { padding: 0; display: flex; flex-direction: column; place-items: stretch; background: #14061a; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; }
 #mapScreen[hidden] { display: none; }
 .maptop { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: linear-gradient(#3a2414, #2a180c); color: #fff3d8; box-shadow: 0 4px 14px #0006; z-index: 2; }
@@ -335,24 +391,27 @@ body {
   <div class="overlay" id="loading">
     <div class="load">
       <div class="loadcell"><i></i><i></i><i></i></div>
-      <h1>Иммунная <span>защита</span></h1>
+      <h1>Клеточный <span>рубеж</span></h1>
       <div class="bar"><i id="loadBar"></i></div>
       <p id="loadTip"></p>
     </div>
   </div>
 
-  <div class="overlay" id="menu" hidden>
-    <div class="sheet">
-      <button class="who" data-go="profile"><img id="menuAva" alt=""><span><b id="menuName">Игрок</b><small id="menuStats"></small></span></button>
-      <h1 class="logo">Иммунная <span>защита</span></h1>
-      <button class="btn go big" data-go="mapScreen">Играть</button>
-      <div class="grid2">
-        <button class="btn big" data-go="profile">Профиль</button>
-        <button class="btn big" data-go="settings">Настройки</button>
-      </div>
-      <button class="btn big" data-look="menu">Фон и звуки</button>
-      <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.12 · прототип</p>
+  <div class="overlay title" id="menu" hidden>
+    <div class="tbg" id="titleBg" aria-hidden="true"></div>
+    <div class="ttop">
+      <button class="who" data-go="profile" aria-label="Профиль"><img id="menuAva" alt=""><span><b id="menuName">Игрок</b><small id="menuStats"></small></span></button>
+      <div class="tbtns"><button class="round" data-look="menu" aria-label="Фон и звуки"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button><button class="round" data-go="settings" aria-label="Настройки"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.6 3.5c0-.6-.1-1.1-.2-1.6l2-1.6-2-3.4-2.4 1a8 8 0 0 0-2.8-1.6L14.8 2h-4l-.4 2.6a8 8 0 0 0-2.8 1.6l-2.4-1-2 3.4 2 1.6a8 8 0 0 0 0 3.2l-2 1.6 2 3.4 2.4-1a8 8 0 0 0 2.8 1.6l.4 2.6h4l.4-2.6a8 8 0 0 0 2.8-1.6l2.4 1 2-3.4-2-1.6c.1-.5.2-1 .2-1.6z" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="#1a0c14"/></svg></button></div>
+    </div>
+    <div class="tlogo">
+      <div class="tkick">Иммунная оборона</div>
+      <h1><span class="l1">Клеточный</span><span class="l2">рубеж</span></h1>
+      <p>Собери отряд иммунных клеток и не пропусти микробов к органам</p>
+    </div>
+    <div class="tbottom">
+      <button class="btn go huge" data-go="mapScreen">Играть</button>
+      <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
+      <p class="ver">Версия 0.13 · прототип</p>
     </div>
   </div>
 
@@ -398,19 +457,12 @@ body {
     </div>
   </div>
 
-  <div class="overlay" id="howto" hidden>
-    <div class="sheet">
-      <h2>Как играть</h2>
-      <div class="howto">
-        <div><b>1.</b> Микробы идут по сосуду к органу. Не дай им дойти.</div>
-        <div><b>2.</b> Выбери карту клетки внизу и нажми на свободную площадку у сосуда (кружок из камней с флажком).</div>
-        <div><b>3.</b> Нажми на поставленную клетку, чтобы <b>улучшить</b> её прямо на месте. Уровней пять: от ★ до ★★★★★.</div>
-        <div><b>4.</b> Плашка сверху на карточке — это <b>отряд</b> клетки: <i data-emb="guard"></i> Стражи замедляют, <i data-emb="dissolve"></i> Токсины травят, <i data-emb="hunt"></i> Клинки бьют сильно, <i data-emb="snipe"></i> Стрелки бьют далеко, <i data-emb="bomb"></i> Мортиры взрывают толпу, <i data-emb="pierce"></i> Иглы прошивают насквозь, <i data-emb="ig"></i> Антитела (иммуноглобулины) — легенды. Поставь 2 клетки одного отряда — получишь бонус, 4 — ещё больше. Эмблемы отрядов видны над полем, нажми на любую, чтобы узнать бонус.</div>
-        <div><b>5.</b> Иммуноглобулины дорогие, но вместе очень сильные. Копи на них монеты.</div>
-        <div><b>6.</b> Ненужную клетку можно разрушить и вернуть половину монет.</div>
-      </div>
-      <button class="btn" data-back>Назад</button>
+  <div class="overlay guide" id="howto" hidden>
+    <div class="gtop"><button class="iconbtn" data-back aria-label="Назад">←</button><b>Как играть</b></div>
+    <div class="gtabs" id="gtabs">
+      <button data-gt="basics" class="on">Основы</button><button data-gt="squads">Отряды</button><button data-gt="combos">Сочетания</button><button data-gt="foes">Микробы</button>
     </div>
+    <div class="gbody" id="gbody"></div>
   </div>
 
   <div class="overlay" id="pause" hidden>
@@ -2432,7 +2484,9 @@ document.addEventListener('click', (e) => {
 });
 function starsHtml(n) { return [1, 2, 3].map(i => `<span class="${i <= n ? '' : 'off'}">★</span>`).join(''); }
 function renderScreen(id) {
+  if (id === 'howto') renderGuide();
   if (id === 'menu') {
+    buildTitleBg();
     $('menuAva').src = cellIcon(ALL[PROF.avatar] || ALL.neu); $('menuName').textContent = PROF.name || 'Игрок';
     $('menuStats').innerHTML = `★ ${totalStars()} из ${LEVELS.length * 3} · рекорд ${G.best} волн`;
   }
@@ -2632,6 +2686,73 @@ $('mapSvg').onclick = (e) => {
 };
 
 document.querySelectorAll('[data-emb]').forEach(el => { el.outerHTML = plate(el.dataset.emb, 18); });
+/* ---------- Руководство «Как играть» ---------- */
+const FOE_COL = { coccus: '#b8d94a', rod: '#8bc34a', virus: '#c06cff', spiro: '#ffa53a', capsule: '#3fbfa0', strep: '#ff5a7a', fungus: '#efe3b0', amoeba: '#5ab8ff', phage: '#b8c4d8', spore: '#e8c04a', worm: '#e8c2a8' };
+const FOE_TIP = {
+  coccus: 'мелкие, ходят кучками — хорошо бьют Мортиры', rod: 'обычные, без особенностей', virus: 'быстрые стаи по четыре — Стражи тормозят, Мортиры добивают',
+  spiro: 'очень быстрые — нужны Стражи', capsule: 'броня 40% — Токсины снимают броню', strep: 'цепочки, крепче обычных — Иглы прошивают насквозь',
+  fungus: 'медленные и толстые — Клинки', amoeba: 'восстанавливают здоровье — бей быстро и сильно', phage: 'броня 25%, крепкие', spore: 'броня 50% — Токсины обязательны',
+  worm: 'босс на 10, 20 и 30-й волне — Клинки, IgE, Токсины'
+};
+const COMBOS = [
+  ['guard', 'bomb', 'Стражи тормозят толпу, Мортиры накрывают её взрывом — против стай вирусов и кокков.'],
+  ['dissolve', 'hunt', 'Токсины снимают броню, Клинки добивают сильных — против капсульных, спор и боссов.'],
+  ['snipe', 'pierce', 'Стрелки склеивают колонну антителами, Иглы прошивают её насквозь — против цепочек.'],
+  ['guard', 'pierce', 'Пока Стражи держат микробов в куче, каждый выстрел Игл попадает в нескольких.'],
+  ['ig', 'ig', 'IgA шипами тормозит участок сосуда, IgD бьёт замедленных вдвое сильнее. IgG даёт всем +50% урона по врагам рядом.']
+];
+let guideTab = 'basics';
+function renderGuide() {
+  document.querySelectorAll('#gtabs button').forEach(b => b.classList.toggle('on', b.dataset.gt === guideTab));
+  let h = '';
+  if (guideTab === 'basics') {
+    const steps = [
+      ['Цель', 'Микробы выходят из <b>светящихся ворот</b> и идут по сосуду к органу. Если микроб дошёл — орган теряет здоровье. Продержись <b>30 волн</b>.'],
+      ['Поставь клетку', 'Выбери карточку внизу и нажми на <b>свободный постамент</b> у сосуда. Лучшие места — <b>в центре петель</b>: оттуда клетка бьёт сразу по трём сторонам.'],
+      ['Монеты', 'Монеты дают за каждого микроба и за каждую отбитую волну. «Обновить» меняет карточки за 5 монет.'],
+      ['Улучшай', 'Нажми на поставленную клетку → <b>«Улучшить»</b>. Уровней пять: от ★ до ★★★★★, урон растёт почти вчетверо. Ненужную клетку можно разрушить и вернуть половину монет.'],
+      ['Собирай отряды', 'Плашка сверху карточки — это <b>отряд</b>. Две клетки одного отряда на поле дают бонус всем клеткам отряда, четыре — бонус больше. Значки отрядов светятся над полем.'],
+      ['Легенды', 'Во вкладке «Легендарные» — <b>Антитела</b> (иммуноглобулины). Дорогие, но очень сильные, а вместе ещё сильнее: 2, 3 и 5 штук дают огромный бонус.'],
+      ['Звёзды', 'Ни один микроб не дошёл — <b>★★★</b>. Потерял меньше половины здоровья — ★★. Больше — ★. Победа открывает следующий орган на карте.']
+    ];
+    h = steps.map(([t, d], k) => `<div class="gcard"><div class="gstep"><i>${k + 1}</i><div><h3>${t}</h3><p>${d}</p></div></div></div>`).join('');
+  } else if (guideTab === 'squads') {
+    h = Object.keys(FAC).map(k => {
+      const f = FAC[k], mem = [...UNITS, ...IGS].filter(u => u.fac === k);
+      return `<div class="gcard gfac" style="--tc:${f.color}"><h3>${plate(k, 34)} ${f.name}</h3><p>${f.what[0].toUpperCase() + f.what.slice(1)}.</p>
+        <div class="tl">${f.tiers.map((v, i) => `<div><b>${v} на поле:</b> ${f.text[i]}</div>`).join('')}</div>
+        <div class="gmem">${mem.map(u => `<span><img alt="" src="${cellIcon(u)}">${u.name}</span>`).join('')}</div>
+        <p>${mem.map(u => `<b>${u.name}</b> — ${u.role.toLowerCase()}${u.ult ? '; ульта: ' + u.ult.toLowerCase() : ''}`).join('. ')}.</p></div>`;
+    }).join('');
+  } else if (guideTab === 'combos') {
+    h = `<div class="gcard"><p>Отряды сильнее всего <b>вместе</b>. Вот проверенные связки:</p></div>` + COMBOS.map(([a, b, t]) => `<div class="gcard"><div class="gcombo"><div class="pair">${plate(a, 30)}+${plate(b, 30)}</div><div><h3>${FAC[a].name}${a === b ? '' : ' + ' + FAC[b].name}</h3><p>${t}</p></div></div></div>`).join('')
+      + `<div class="gcard"><h3>Совет</h3><p>Начни с <b>двух клеток одного отряда</b> — бонус включится сразу. Потом улучшай их, а не ставь много разных по одной.</p></div>`;
+  } else {
+    h = `<div class="gcard"><p>Каждая волна приводит <b>свой вид</b> микробов. С 11-й волны — по два вида, с 21-й — по три. Баннер в начале волны говорит, кто идёт.</p></div>`
+      + `<div class="gcard">${Object.keys(FOES).map(k => `<div class="gfoe"><i style="background:${FOE_COL[k]}"></i><div><b>${FOES[k].many}</b> — ${FOE_TIP[k]}</div></div>`).join('')}</div>`;
+  }
+  $('gbody').innerHTML = h; $('gbody').scrollTop = 0;
+}
+$('gtabs').onclick = (e) => { const b = e.target.closest('[data-gt]'); if (!b) return; guideTab = b.dataset.gt; renderGuide(); AU.play('ui'); };
+
+/* ---------- Живой фон титульного экрана ---------- */
+function buildTitleBg() {
+  const bg = $('titleBg'); if (bg.dataset.ready) return; bg.dataset.ready = '1';
+  let h = '';
+  for (let k = 0; k < 18; k++) { const sz = 30 + Math.random() * 90; h += `<i style="left:${(Math.random() * 100).toFixed(0)}%;top:${(60 + Math.random() * 80).toFixed(0)}%;width:${sz.toFixed(0)}px;height:${sz.toFixed(0)}px;background:${['#ff6a9a', '#6ad8ff', '#ffb06a', '#b48aff'][k % 4]};animation-duration:${(18 + Math.random() * 20).toFixed(0)}s;animation-delay:-${(Math.random() * 20).toFixed(0)}s"></i>`; }
+  h += `<svg class="vessel" viewBox="0 0 400 120" preserveAspectRatio="none"><path d="M-10 70C60 20 120 110 200 60S330 20 410 70" stroke="#5a0a14" stroke-width="44" fill="none"/><path d="M-10 70C60 20 120 110 200 60S330 20 410 70" stroke="#d42a3a" stroke-width="32" fill="none"/><path class="flow" d="M-10 70C60 20 120 110 200 60S330 20 410 70" stroke="#ff9aa8" stroke-width="8" fill="none" stroke-dasharray="6 22" stroke-linecap="round"/></svg>`;
+  const hero = [['neu', 6, 18, 92], ['mac', 70, 14, 104], ['tk', 74, 47, 84], ['igg', 4, 50, 96], ['den', 40, 70, 74], ['b', 82, 72, 66]];
+  hero.forEach(([id, x, y, sz], k) => { h += `<img alt="" src="${cellIcon(ALL[id])}" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;animation-duration:${3 + k * .6}s"/>`; });
+  const mic = [
+    [`<circle cx="20" cy="20" r="11" fill="#c06cff" stroke="#3a0a5a" stroke-width="2"/>${[...Array(10)].map((_, i) => { const a = i / 10 * 6.283; return `<path d="M${(20 + Math.cos(a) * 11).toFixed(1)} ${(20 + Math.sin(a) * 11).toFixed(1)}L${(20 + Math.cos(a) * 17).toFixed(1)} ${(20 + Math.sin(a) * 17).toFixed(1)}" stroke="#c06cff" stroke-width="2.5" stroke-linecap="round"/>`; }).join('')}`, 38, 22, 44],
+    [`<rect x="4" y="13" width="32" height="14" rx="7" fill="#8bc34a" stroke="#2a4a0a" stroke-width="2"/>`, 26, 62, 50],
+    [`<circle cx="12" cy="20" r="7" fill="#b8d94a" stroke="#3a4a0a" stroke-width="2"/><circle cx="25" cy="18" r="7" fill="#b8d94a" stroke="#3a4a0a" stroke-width="2"/><circle cx="19" cy="29" r="6" fill="#b8d94a" stroke="#3a4a0a" stroke-width="2"/>`, 62, 64, 40],
+    [`<path d="M4 20c4-8 8 8 12 0s8 8 12 0 8 8 8 0" stroke="#ffa53a" stroke-width="4" fill="none" stroke-linecap="round"/>`, 50, 30, 46]
+  ];
+  mic.forEach(([svgc, x, y, sz], k) => { h += `<svg class="mic" viewBox="0 0 40 40" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;animation-duration:${2.6 + k * .7}s">${svgc}</svg>`; });
+  bg.innerHTML = h;
+}
+
 const TIPS = [
   'Совет: Стражи замедляют микробов, а Бомбардиры бьют по скоплению.',
   'Совет: IgA тормозит шипами, IgD добивает замедленных вдвое сильнее.',

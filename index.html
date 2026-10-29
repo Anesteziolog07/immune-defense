@@ -121,7 +121,7 @@ body {
   display: flex; flex-direction: column; gap: 6px; position: relative; z-index: 3;
   box-shadow: 0 -10px 30px #0008;
 }
-#info { min-height: 32px; font-size: 12px; line-height: 1.33; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+#info { height: calc(12px * 1.33 * 3); flex: none; font-size: 12px; line-height: 1.33; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 #info b { color: var(--ink); }
 #info .tag { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px 1px 3px; border-radius: 6px; background: var(--panel-2); color: var(--ink); font-size: 11px; font-weight: 700; vertical-align: middle; }
 #cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
@@ -350,7 +350,7 @@ body {
       </div>
       <button class="btn big" data-look="menu">Фон и звуки</button>
       <button class="btn" data-go="howto">Как играть</button>
-      <p class="ver">Версия 0.10 · прототип</p>
+      <p class="ver">Версия 0.11 · прототип</p>
     </div>
   </div>
 
@@ -403,7 +403,7 @@ body {
         <div><b>1.</b> Микробы идут по сосуду к органу. Не дай им дойти.</div>
         <div><b>2.</b> Выбери карту клетки внизу и нажми на свободную площадку у сосуда (кружок из камней с флажком).</div>
         <div><b>3.</b> Нажми на поставленную клетку, чтобы <b>улучшить</b> её прямо на месте. Уровней пять: от ★ до ★★★★★.</div>
-        <div><b>4.</b> Плашка сверху на карточке — это <b>отряд</b> клетки: <i data-emb="guard"></i> Стражи замедляют, <i data-emb="dissolve"></i> Отравители травят, <i data-emb="hunt"></i> Убийцы бьют сильно, <i data-emb="snipe"></i> Снайперы бьют далеко, <i data-emb="bomb"></i> Подрывники взрывают толпу, <i data-emb="pierce"></i> Пронзатели стреляют насквозь, <i data-emb="ig"></i> Иммуноглобулины — легенды. Поставь 2 клетки одного отряда — получишь бонус, 4 — ещё больше. Эмблемы отрядов видны над полем, нажми на любую, чтобы узнать бонус.</div>
+        <div><b>4.</b> Плашка сверху на карточке — это <b>отряд</b> клетки: <i data-emb="guard"></i> Стражи замедляют, <i data-emb="dissolve"></i> Токсины травят, <i data-emb="hunt"></i> Клинки бьют сильно, <i data-emb="snipe"></i> Стрелки бьют далеко, <i data-emb="bomb"></i> Мортиры взрывают толпу, <i data-emb="pierce"></i> Иглы прошивают насквозь, <i data-emb="ig"></i> Антитела (иммуноглобулины) — легенды. Поставь 2 клетки одного отряда — получишь бонус, 4 — ещё больше. Эмблемы отрядов видны над полем, нажми на любую, чтобы узнать бонус.</div>
         <div><b>5.</b> Иммуноглобулины дорогие, но вместе очень сильные. Копи на них монеты.</div>
         <div><b>6.</b> Ненужную клетку можно разрушить и вернуть половину монет.</div>
       </div>
@@ -492,14 +492,30 @@ function emblemBody(k, id) {
       <circle cx="21" cy="28.5" r="14" fill="url(#${id})" stroke="#050508" stroke-width="2.2"/><ellipse cx="15.5" cy="22.5" rx="4.5" ry="3" fill="#ffffff" opacity=".35" transform="rotate(-30 15.5 22.5)"/>
       <path d="M33.5 12.5q3-7 8.5-5.5" stroke="#c8a070" stroke-width="2.4" fill="none" stroke-linecap="round"/>
       <path d="M42 2.5l1.6 3.8 3.9 1.5-3.9 1.6L42 13.2l-1.6-3.8-3.9-1.6 3.9-1.5z" fill="#ffd21a" stroke="#ff7a1a" stroke-width="1"/>`;
-    case 'pierce': return `<circle cx="17.5" cy="30.5" r="6" fill="none" stroke="#ff8ac8" stroke-width="3.4"/><circle cx="27.5" cy="20.5" r="6" fill="none" stroke="#ff8ac8" stroke-width="3.4"/>
-      <path d="M7 41L37 11" stroke="#5a3a00" stroke-width="5" stroke-linecap="round"/><path d="M7 41L37 11" stroke="#ffd34a" stroke-width="3" stroke-linecap="round"/>
-      <path d="M43 5l-14.5 3 11.5 11.5z" fill="#ffd34a" stroke="#5a3a00" stroke-width="1.8" stroke-linejoin="round"/>
-      <path d="M8 40l-1.5-8.5 5.5 3zM8 40l8.5 1.5-3-5.5z" fill="#22c8b0" stroke="#0a4a40" stroke-width="1.4" stroke-linejoin="round"/>`;
+    case 'pierce': return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9aa8b8"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#8a98a8"/></linearGradient></defs>
+      ${[-24, 0, 24].map(a => `<g transform="rotate(${a} 24 40)"><path d="M24 4l2.6 30h-5.2z" fill="url(#${id})" stroke="#1e3a40" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="24" cy="30.5" rx="1" ry="2.2" fill="#1e3a40"/><circle cx="24" cy="5.5" r="1.3" fill="#7ff7ea"/></g>`).join('')}
+      <path d="M14 38q10 6 20 0l-2 6q-8 3-16 0z" fill="#22c8b0" stroke="#0a4a40" stroke-width="1.6" stroke-linejoin="round"/>`;
     case 'ig': return `<circle cx="24" cy="24" r="21" fill="#ffd21a" stroke="#1a1a1a" stroke-width="2.6"/><path d="${TREFOIL}" fill="#1a1a1a"/><circle cx="24" cy="24" r="4.2" fill="#1a1a1a"/>
       <circle cx="24" cy="24" r="21" fill="none" stroke="#fff6a0" stroke-width="1" opacity=".6" transform="translate(24 24) scale(.88) translate(-24 -24)"/>`;
   }
   return '';
+}
+// Форма подложки значка у каждого отряда своя: щит, капля-шестиугольник, ромб, круг, восьмиугольник, треугольник, круг-радиация
+const PLATE = {
+  guard: 'M32 4l24 9v17c0 15-10 26-24 31C18 56 8 45 8 30V13z',
+  dissolve: 'M32 3l25 14.5v29L32 61 7 46.5v-29z',
+  hunt: 'M32 2l30 30-30 30L2 32z',
+  snipe: 'M32 4a28 28 0 1 1 0 56 28 28 0 0 1 0-56z',
+  bomb: 'M21 4h22l15 15v26L43 60H21L6 45V19z',
+  pierce: 'M32 3l30 52H2z',
+  ig: 'M32 4a28 28 0 1 1 0 56 28 28 0 0 1 0-56z'
+};
+function plate(k, size = 20) {
+  const f = FAC[k], id = 'pl' + (crestId++);
+  return `<svg class="emb" width="${size}" height="${size}" viewBox="0 0 64 64" style="filter:drop-shadow(0 1px 2px rgba(0,0,0,.65))">
+    <defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset="1" stop-color="${f.color}"/></linearGradient></defs>
+    <path d="${PLATE[k]}" fill="#1a0c12" stroke="url(#${id}g)" stroke-width="4" stroke-linejoin="round"/>
+    <g transform="translate(${k === 'pierce' ? 15 : 12} ${k === 'pierce' ? 20 : 12}) scale(${k === 'pierce' ? .7 : .83})">${emblemBody(k, id)}</g></svg>`;
 }
 // Эмблема сама по себе (на карточке, в подсказке)
 function emblem(k, size = 20) { return `<svg class="emb" width="${size}" height="${size}" viewBox="0 0 48 48" style="filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.6))">${emblemBody(k, 'em' + (crestId++))}</svg>`; }
@@ -519,19 +535,19 @@ function crest(k, n, size = 48) {
     ring += `<path d="M${p(a0)} A${R} ${R} 0 0 1 ${p(a1)}" stroke="${i < n ? f.color : '#ffffff26'}" stroke-width="4.4" fill="none" stroke-linecap="round"/>`;
   }
   return `<svg class="crest${on ? ' on' : ''}" width="${size}" height="${size}" viewBox="0 0 64 64" style="--tc:${f.color}">
-    ${ring}<circle cx="32" cy="32" r="23.5" fill="#1a0c12" stroke="${f.color}" stroke-width="2" stroke-opacity=".7"/>
-    <g transform="translate(14.5 14.5) scale(.73)">${emblemBody(k, id)}</g></svg>`;
+    ${ring}<g transform="translate(32 32) scale(.74) translate(-32 -32)"><path d="${PLATE[k]}" fill="#1a0c12" stroke="${f.color}" stroke-width="3.5" stroke-linejoin="round"/></g>
+    <g transform="translate(${k === 'pierce' ? 18 : 16} ${k === 'pierce' ? 20 : 16}) scale(${k === 'pierce' ? .58 : .67})">${emblemBody(k, id)}</g></svg>`;
 }
 
 // Фракции: бонус за 2/4 клетки (иммуноглобулины — 2/3/5)
 const FAC = {
   guard:    { name: 'Стражи', what: 'замедляют и держат врагов', color: '#4a8cff', tiers: [2, 4], text: ['враги замедляются сильнее', 'замедление очень сильное и долгое'] },
-  dissolve: { name: 'Отравители', what: 'травят ядом и разъедают броню', color: '#35c85a', tiers: [2, 4], text: ['яд и разъедание брони в 1,5 раза сильнее', 'яд и разъедание брони в 2,2 раза сильнее'] },
-  hunt:     { name: 'Убийцы', what: 'мощный удар в одного', color: '#ff4a5a', tiers: [2, 4], text: ['чаще бьют критом (+15%)', 'ещё чаще бьют критом (+30%)'] },
-  snipe:    { name: 'Снайперы', what: 'бьют очень далеко', color: '#ff9a2a', tiers: [2, 4], text: ['дальность +0,6', 'дальность +1,2'] },
-  bomb:     { name: 'Подрывники', what: 'взрывы по толпе', color: '#9a6aff', tiers: [2, 4], text: ['взрывы шире на 25%', 'взрывы шире на 50%'] },
-  pierce:   { name: 'Пронзатели', what: 'выстрел прошивает насквозь', color: '#22c8b0', tiers: [2, 4], text: ['каждый следующий пробитый получает +20%', 'каждый следующий пробитый получает +40%'] },
-  ig:       { name: 'Иммуноглобулины', short: 'Антитела', what: 'легенды: очень сильные вместе', color: '#ffd21a', tiers: [2, 3, 5], text: ['урон иммуноглобулинов +30%', 'урон иммуноглобулинов +70%', 'урон иммуноглобулинов +150%'] }
+  dissolve: { name: 'Токсины', what: 'травят ядом и разъедают броню', color: '#35c85a', tiers: [2, 4], text: ['яд и разъедание брони в 1,5 раза сильнее', 'яд и разъедание брони в 2,2 раза сильнее'] },
+  hunt:     { name: 'Клинки', what: 'мощный удар в одного', color: '#ff4a5a', tiers: [2, 4], text: ['чаще бьют критом (+15%)', 'ещё чаще бьют критом (+30%)'] },
+  snipe:    { name: 'Стрелки', what: 'бьют очень далеко', color: '#ff9a2a', tiers: [2, 4], text: ['дальность +0,6', 'дальность +1,2'] },
+  bomb:     { name: 'Мортиры', what: 'взрывы по толпе', color: '#9a6aff', tiers: [2, 4], text: ['взрывы шире на 25%', 'взрывы шире на 50%'] },
+  pierce:   { name: 'Иглы', what: 'выстрел прошивает насквозь', color: '#22c8b0', tiers: [2, 4], text: ['каждый следующий пробитый получает +20%', 'каждый следующий пробитый получает +40%'] },
+  ig:       { name: 'Антитела', what: 'легенды: очень сильные вместе', color: '#ffd21a', tiers: [2, 3, 5], text: ['урон иммуноглобулинов +30%', 'урон иммуноглобулинов +70%', 'урон иммуноглобулинов +150%'] }
 };
 
 const UNITS = [
@@ -1003,8 +1019,8 @@ function heightAt(x, z) {
   const db = boxDist(x, z), dp = pathDist(x, z);
   let h = (fbm(x * .5 + 3, z * .5) - .5) * .05;
   h += smooth(0, 3.5, db) * (.5 + 2.2 * fbm(x * TH.freq, z * TH.freq)) * TH.amp + db * .09 * TH.amp;
-  const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.4, .78, dp);
-  return Math.min(h, trench + Math.max(0, h) * smooth(.4, 1.2, dp));
+  const trench = PATH_Y - .05 + (0 - PATH_Y + .05) * smooth(.56, .95, dp);
+  return Math.min(h, trench + Math.max(0, h) * smooth(.56, 1.35, dp));
 }
 
 // Земля: две текстуры (поле и холмы) смешиваются по атрибуту blend
@@ -1046,8 +1062,8 @@ function buildTerrain() {
     blend[i] = smooth(.2, 2.4, db);
     // мягкие пятна света и тени разбивают повтор текстуры, берега и русло темнее
     col.copy(base).multiplyScalar(.86 + .28 * fbm(x * .35 + 7, z * .35));
-    col.lerp(bank, (1 - smooth(.42, .95, dp)) * .45);
-    col.lerp(dark, (1 - smooth(.3, .52, dp)) * .8);
+    col.lerp(bank, (1 - smooth(.56, 1.08, dp)) * .45);
+    col.lerp(dark, (1 - smooth(.42, .66, dp)) * .8);
     if (db > 0) col.multiplyScalar(.82 + .3 * smooth(-.2, 2.2, h));
     cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
   }
@@ -1192,20 +1208,22 @@ const cellPos = (c, r) => new T.Vector3(c - OX, 0, r - OZ);
 // Змейка слева направо: вход слева посередине, вертикальные участки по очереди вверх и вниз, печень справа
 function makeLayout(aspect) {
   const portrait = aspect < 1.4;
-  const rows = aspect < .9 ? 13 : aspect < 1.4 ? 11 : 9, gap = portrait ? 2 : 3;
+  const rows = aspect < .9 ? 13 : aspect < 1.4 ? 11 : 9, gap = portrait ? 2.6 : 3.4;
   const width = Math.round(rows * aspect * .92 - 2.6);
-  const runs = Math.max(2, Math.floor((width - 2) / gap) + 1);
-  const mid = Math.floor(rows / 2), wp = [[-0.45, mid]], R = [];
-  let y = mid;
+  const runs = Math.max(3, Math.floor((width - 1.4) / gap) + 1);
+  // вход — ворота наверху первого участка: сосуд выходит из них вниз, прямо к игроку
+  const mid = Math.floor(rows / 2), wp = [[1, -1.3]], R = [];
+  let y = -1.3;
   for (let k = 0; k < runs; k++) {
-    const c = 1 + k * gap, to = k === runs - 1 ? mid : (k % 2 === 0 ? 1 : rows - 2);
-    wp.push([c, y], [c, to]); R.push({ c, z0: y, z1: to }); y = to;
+    const c = 1 + k * gap, to = k === runs - 1 ? mid : (k % 2 === 0 ? rows - 2 : 1);
+    if (k) wp.push([c, y]);
+    wp.push([c, to]); R.push({ c, z0: y, z1: to }); y = to;
   }
   const last = 1 + (runs - 1) * gap;
   wp.push([last + 2.3, mid]);   // конец сосуда спрятан внутри органа
   // петли: между соседними участками, «залив» открыт в сторону начала участка
   const turns = R.slice(0, -1).map((r, k) => ({ x: r.c + gap / 2, z: r.z1, dir: Math.sign(r.z0 - r.z1) || 1, a: r, b: R[k + 1] }));
-  return { rows, cols: last + 2, wp, portrait, runs: R, turns, gap, mid };
+  return { rows, cols: Math.ceil(last + 2), wp, portrait, runs: R, turns, gap, mid };
 }
 
 function pathAt(d, v = new T.Vector3()) {
@@ -1386,7 +1404,7 @@ function buildBoard(L) {
     }
   }
   // Плавные петли вместо прямых углов, сосуд слегка извивается
-  const P = WP.map(([c, r]) => cellPos(c, r)), raw = [P[0].clone()], rad = L.portrait ? .95 : 1.2;
+  const P = WP.map(([c, r]) => cellPos(c, r)), raw = [P[0].clone()], rad = L.gap / 2 - .02;
   for (let i = 1; i < P.length - 1; i++) {
     const a = P[i - 1], b = P[i], n = P[i + 1];
     const d1 = b.clone().sub(a).normalize(), d2 = n.clone().sub(b).normalize();
@@ -1408,7 +1426,7 @@ function buildBoard(L) {
   PATH = { pts: out, cum, len: cum[cum.length - 1] };
   SPEEDK = PATH.len / 30;   // на длинном сосуде микробы быстрее — сложность одинаковая на любом экране
 
-  const W = .38, step = .06, pos = [], uv = [], idx = [];
+  const W = .52, step = .06, pos = [], uv = [], idx = [];   // сосуд шире
   const p = new T.Vector3(), q = new T.Vector3(), dir = new T.Vector3(), side = new T.Vector3();
   let n = 0;
   for (let d = 0; d <= PATH.len + 1e-6; d += step) {
@@ -1433,11 +1451,11 @@ function buildBoard(L) {
       dir.normalize(); side.set(-dir.z, 0, dir.x);
       pts.push(new T.Vector3(p.x + side.x * (W + .04) * sgn, PATH_Y + .05, p.z + side.z * (W + .04) * sgn));
     }
-    const wall = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), pts.length * 3, .07, 8), wallMat);
+    const wall = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), pts.length * 3, .085, 8), wallMat);
     wall.castShadow = true; wall.receiveShadow = true; board.add(wall);
   }
 
-  portal.position.copy(PATH.pts[0]).setY(0); { const d = PATH.pts[3].clone().sub(PATH.pts[0]); portal.rotation.y = -Math.atan2(d.z, d.x) - .8; portal.scale.setScalar(1.25); }   // ворота развёрнуты к игроку, чтобы был виден светящийся проход
+  { const g0 = pathAt(.75), g1 = pathAt(1.2); portal.position.set(g0.x, 0, g0.z); portal.rotation.y = -Math.atan2(g1.z - g0.z, g1.x - g0.x); portal.scale.setScalar(1.3); }   // ворота стоят ровно поперёк сосуда, микробы выходят из проёма
   const sc = L.portrait ? 1.15 : 1.5, end = PATH.pts[PATH.pts.length - 1];
   organ.scale.setScalar(sc); organ.position.set(end.x - .25 * sc, 0, end.z);  // последний отрезок сосуда уходит под орган
   organ.updateMatrixWorld(true);
@@ -1446,31 +1464,25 @@ function buildBoard(L) {
   // Площадки — «островки» в выгодных местах: там, где в радиусе выстрела больше всего сосуда (петли, промежутки между участками)
   TER.hash.clear();
   for (let d = 0; d <= PATH.len; d += .12) { const pp = pathAt(d); const kk = Math.floor(pp.x) + ',' + Math.floor(pp.z); if (!TER.hash.has(kk)) TER.hash.set(kk, []); TER.hash.get(kk).push(pp.x, pp.z); }
-  const wob = (wz) => Math.sin(wz * 1.25 + L.ph) * .2, P0 = PATH.pts[0], rr = L.portrait ? .95 : 1.2;
-  const cands = [];   // { x, z, pr } — чем меньше pr, тем важнее место
+  // Порядок как в классических защитах: одна площадка в центре каждой петли, ещё две ровно по оси «залива»,
+  // и пара вдоль открытой стороны первого участка. Ни одна не касается сосуда.
+  const wob = (wz) => Math.sin(wz * 1.25 + L.ph) * .2, P0 = PATH.pts[0], rr = L.gap / 2;
+  const cands = [];
   const add = (gx, gz, pr) => { const c = cellPos(gx, gz); cands.push({ x: c.x + wob(c.z), z: c.z, pr }); };
   L.turns.forEach(t => {
-    add(t.x, t.z + t.dir * (rr + .15), 0);                                                 // центр петли — бьёт по дуге с трёх сторон
+    add(t.x, t.z + t.dir * (rr + .1), 0);
     const zEnd = t.dir > 0 ? Math.min(Math.max(t.a.z0, t.a.z1), Math.max(t.b.z0, t.b.z1)) : Math.max(Math.min(t.a.z0, t.a.z1), Math.min(t.b.z0, t.b.z1));
-    for (let z = t.z + t.dir * (rr + 1.55); (z - zEnd) * t.dir < -.4; z += t.dir * 1.45) add(t.x, z, 1);   // вглубь «залива»
+    for (let n = 1, z = t.z + t.dir * (rr + .1 + 1.8); n <= 3 && (z - zEnd) * t.dir < -.6; n++, z += t.dir * 1.8) add(t.x, z, n);
   });
-  L.runs.forEach((r, k) => {
-    const lo = Math.min(r.z0, r.z1) + .7, hi = Math.max(r.z0, r.z1) - .7;
-    for (const side of [-1, 1]) {
-      if (k === 0 && side < 0) continue;            // слева от первого участка — у входа, не нужно
-      for (let z = lo; z <= hi; z += 1.5) add(r.c + side * 1.12, z, 2);   // в узком «заливе» отсеется по расстоянию до сосуда
-    }
-  });
+  { const r = L.runs[0], lo = Math.min(r.z0, r.z1), hi = Math.max(r.z0, r.z1); for (const f of [.45, .78]) add(r.c - 1.35, lo + (hi - lo) * f, 3); }
   const chosen = [];
   cands.sort((a, b) => a.pr - b.pr);
-  const K = Math.max(12, Math.min(20, Math.round(PATH.len * .62)));
   for (const cd of cands) {
-    if (chosen.length >= K) break;
     const dp = pathDist(cd.x, cd.z);
-    if (dp < .93 || dp > 1.6) continue;                                            // не заходит на сосуд и не слишком далеко
+    if (dp < 1.1) continue;                                                     // площадка (r 0,42) не касается стенки сосуда (0,6)
     if (cd.x + .5 > ob.min.x && cd.z > ob.min.z - .3 && cd.z < ob.max.z + .3) continue;
     if (Math.hypot(cd.x - P0.x, cd.z - P0.z) < 1.8) continue;
-    if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.45)) chosen.push(cd);
+    if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.5)) chosen.push(cd);
   }
   const stones = new T.InstancedMesh(stoneGeo, stoneMat, chosen.length * 11), dm = new T.Object3D(), sc2 = new T.Color();
   chosen.forEach((cd, i) => {
@@ -1737,7 +1749,7 @@ const G = {
 };
 try { G.best = +localStorage.getItem('immuneBest') || 0; } catch (e) {}
 
-const maxUnits = () => Math.min(12, 5 + Math.floor(G.wave / 4));
+const maxUnits = () => Math.min(12, pads.size || 12, 5 + Math.floor(G.wave / 4));
 
 function computeBonus() {
   const cnt = {};
@@ -2224,7 +2236,7 @@ function renderCards() {
     const have = G.units.filter(u => u.def.id === d.id).length;
     el.className = 'card' + (card.leg ? ' leg' : '') + (card.sold ? ' sold' : '') + (G.coins < d.cost ? ' poor' : '') + (G.sel && G.sel.card === card && G.sel.idx === i ? ' sel' : '');
     el.style.setProperty('--tc', FAC[d.fac].color);
-    el.innerHTML = `<span class="fhead">${emblem(d.fac, 14)}<span class="${(FAC[d.fac].short || FAC[d.fac].name).length > 9 ? 'long' : ''}">${FAC[d.fac].short || FAC[d.fac].name}</span></span>${have ? `<span class="have">×${have}</span>` : ''}<img alt="" src="${cellIcon(d)}"><span class="nm">${d.name}</span><span class="cost"><i></i>${d.cost}</span>`;
+    el.innerHTML = `<span class="fhead">${plate(d.fac, 18)}<span class="${(FAC[d.fac].short || FAC[d.fac].name).length > 9 ? 'long' : ''}">${FAC[d.fac].short || FAC[d.fac].name}</span></span>${have ? `<span class="have">×${have}</span>` : ''}<img alt="" src="${cellIcon(d)}"><span class="nm">${d.name}</span><span class="cost"><i></i>${d.cost}</span>`;
     el.onclick = () => selectCard(card, i);
     box.appendChild(el);
   });
@@ -2241,7 +2253,7 @@ function selectCard(card, idx) {
   if (G.sel && G.sel.card === card && G.sel.idx === idx) { G.sel = null; highlight(); renderCards(); setInfo(); return; }
   G.sel = { card, idx };
   const d = card.def, f = FAC[d.fac];
-  setInfo(`<b>${d.name}</b> — ${d.role.toLowerCase()}${d.ult ? `. Ульта: ${d.ult}` : ''}.<br><span class="tag">${emblem(d.fac, 14)} ${f.name}</span> ${f.what}; поставь ${f.tiers[0]} — ${f.text[0]}. ${G.coins < d.cost ? `<b style="color:#ff8a8a">Не хватает ${d.cost - G.coins} монет.</b>` : 'Нажми на площадку.'}`);
+  setInfo(`<b>${d.name}</b> — ${d.role.toLowerCase()}${d.ult ? `. Ульта: ${d.ult}` : ''}.<br><span class="tag">${plate(d.fac, 16)} ${f.name}</span> ${f.what}; поставь ${f.tiers[0]} — ${f.text[0]}. ${G.coins < d.cost ? `<b style="color:#ff8a8a">Не хватает ${d.cost - G.coins} монет.</b>` : 'Нажми на площадку.'}`);
   highlight(); renderCards();
 }
 
@@ -2284,7 +2296,7 @@ function openUnit(u) {
   const arrow = (a, b, f = (v) => Math.round(v)) => next ? `${f(a)} <i class="up">→ ${f(b)}</i>` : f(a);
   el.innerHTML = `
     <div class="head"><img alt="" src="${cellIcon(d)}"><div><div class="t">${d.name} <span class="lv">Ур. ${u.level}</span></div>
-    <div class="s" style="display:flex;align-items:center;gap:4px">${emblem(d.fac, 16)} ${FAC[d.fac].name} · <span style="color:var(--gold)">${'★'.repeat(u.level)}</span><span style="opacity:.3">${'★'.repeat(MAX_LV - u.level)}</span></div></div></div>
+    <div class="s" style="display:flex;align-items:center;gap:4px">${plate(d.fac, 18)} ${FAC[d.fac].name} · <span style="color:var(--gold)">${'★'.repeat(u.level)}</span><span style="opacity:.3">${'★'.repeat(MAX_LV - u.level)}</span></div></div></div>
     <div class="s">${d.role}${d.ult ? '. Ульта — ' + d.ult : ''}</div>
     <div class="stats"><div>Урон<b>${arrow(s.dmg, next?.dmg)}</b></div><div>Атак в сек.<b>${arrow(1 / s.rate, next && 1 / next.rate, (v) => v.toFixed(1))}</b></div><div>Дальность<b>${arrow(s.range, next?.range, (v) => v.toFixed(1))}</b></div></div>
     <button class="btn go" id="upBtn" ${max || G.coins < cost ? 'disabled' : ''}>${max ? 'Максимальный уровень' : G.coins < cost ? `Улучшить: не хватает ${cost - G.coins}` : `Улучшить до ур. ${u.level + 1} · ${cost}`}</button>
@@ -2610,7 +2622,7 @@ $('mapSvg').onclick = (e) => {
   if (open) { $('lvPlay').onclick = () => startGame('campaign', i); $('lvEndless').onclick = () => startGame('endless', i); }
 };
 
-document.querySelectorAll('[data-emb]').forEach(el => { el.outerHTML = emblem(el.dataset.emb, 16); });
+document.querySelectorAll('[data-emb]').forEach(el => { el.outerHTML = plate(el.dataset.emb, 18); });
 const TIPS = [
   'Совет: Стражи замедляют микробов, а Бомбардиры бьют по скоплению.',
   'Совет: IgA тормозит шипами, IgD добивает замедленных вдвое сильнее.',
@@ -2647,6 +2659,8 @@ function fit() {
   const ob = new T.Box3().setFromObject(organ);
   for (const x of [ob.min.x, ob.max.x]) for (const z of [ob.min.z, ob.max.z]) pts.push(new T.Vector3(x, ob.max.y, z), new T.Vector3(x, 0, z));
   const ps = PATH.pts[0]; for (const dx of [-.8, .8]) for (const dz of [-.8, .8]) pts.push(new T.Vector3(ps.x + dx, 0, ps.z + dz));
+  pts.push(portal.position.clone().setY(1.6));
+  for (let d = 0; d <= PATH.len; d += .5) { const q = pathAt(d); for (const o of [-.75, .75]) pts.push(new T.Vector3(q.x + o, 0, q.z + o)); }   // сосуд целиком в кадре
   const center = new T.Box3().setFromPoints(pts).getCenter(new T.Vector3()).setY(0);
   const place = (tilt, d, tgt) => { camera.position.set(tgt.x, Math.sin(tilt) * d, tgt.z + Math.cos(tilt) * d); camera.lookAt(tgt); camera.updateMatrixWorld(); };
   const extent = () => { let x0 = 9, x1 = -9, y0 = 9, y1 = -9; for (const p of pts) { const v = p.clone().project(camera); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); } return { x0, x1, y0, y1 }; };

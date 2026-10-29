@@ -161,7 +161,7 @@ body {
 
 /* ---------- Окна ---------- */
 .overlay {
-  position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; overflow-y: auto;
+  position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px)); overflow-y: auto;
   background: radial-gradient(ellipse at 50% 30%, #3a0e18c8, #0c0306ee); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
 #loading { background: radial-gradient(ellipse at 50% 40%, #4a0f1c, #0c0306); z-index: 20; transition: opacity .5s; }
@@ -227,7 +227,7 @@ body {
 .tbg .vessel { position: absolute; left: -10%; right: -10%; bottom: 12%; height: 120px; opacity: .55; }
 @keyframes tfloat { from { transform: translate(0, 0) rotate(-6deg); } to { transform: translate(8px, -18px) rotate(6deg); } }
 @keyframes tdrift { from { transform: translateY(0); } to { transform: translateY(-120vh); } }
-.ttop { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 14px max(14px, env(safe-area-inset-left, 0px)) 0; }
+.ttop { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: calc(14px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-left, 0px)) 0; }   /* ниже часов и значков телефона */
 .ttop .who { background: #1a0a14cc; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); max-width: 64%; }
 .tbtns { display: flex; gap: 8px; }
 .round { width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid #ffffff2a; background: #1a0a14cc; color: #ffe9ef; display: grid; place-items: center; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
@@ -249,7 +249,7 @@ body {
 /* ---------- Руководство ---------- */
 #howto.guide { padding: 0; display: flex; flex-direction: column; place-items: stretch; background: #14061a; -webkit-backdrop-filter: none; backdrop-filter: none; }
 #howto.guide[hidden] { display: none; }
-.gtop { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: linear-gradient(#3a1428, #2a0c1c); box-shadow: 0 4px 14px #0006; z-index: 2; }
+.gtop { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: linear-gradient(#3a1428, #2a0c1c); box-shadow: 0 4px 14px #0006; z-index: 2; }
 .gtop b { font: 700 16px var(--display); }
 .gtabs { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; scrollbar-width: none; background: #1a0a14; border-bottom: 1px solid var(--line); }
 .gtabs button { flex: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); border-radius: 999px; padding: 7px 12px; font: 600 12.5px var(--body); cursor: pointer; }
@@ -275,7 +275,7 @@ body {
 .gfoe b { color: var(--ink); }
 #mapScreen { padding: 0; display: flex; flex-direction: column; place-items: stretch; background: #14061a; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; }
 #mapScreen[hidden] { display: none; }
-.maptop { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: linear-gradient(#3a2414, #2a180c); color: #fff3d8; box-shadow: 0 4px 14px #0006; z-index: 2; }
+.maptop { display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: linear-gradient(#3a2414, #2a180c); color: #fff3d8; box-shadow: 0 4px 14px #0006; z-index: 2; }
 .maptop b { font: 700 16px var(--display); flex: 1; }
 .mapstars { font: 700 15px var(--display); color: var(--gold); background: #0005; padding: 5px 10px; border-radius: 999px; }
 .mapscroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
@@ -405,12 +405,11 @@ body {
     <div class="tlogo">
       <div class="tkick">Иммунная оборона</div>
       <h1><span class="l1">Клеточный</span><span class="l2">рубеж</span></h1>
-      <p>Собери отряд иммунных клеток и не пропусти микробов к органам</p>
     </div>
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.14 · прототип</p>
+      <p class="ver">Версия 0.15 · прототип</p>
     </div>
   </div>
 
@@ -1234,7 +1233,7 @@ function applyTheme(i, rebuild = true) {
   hemi.color.set(TH.hemi[0]); hemi.groundColor.set(TH.hemi[1]); hemi.intensity = TH.hemi[2];
   sun.color.set(TH.sun[0]); sun.intensity = TH.sun[1]; rim.color.set(TH.rim[0]); rim.intensity = TH.rim[1];
   warm.color.set(TH.rim[0]); warm.intensity = TH.lava ? .8 : .15; renderer.toneMappingExposure = TH.exp;
-  padMat.color.set(TH.padc || '#ddd4c4'); padMat.map = tex(TH.padt || 'mt_stone'); padMat.needsUpdate = true; padRimMat.color.set(TH.rim2); padRimMat.emissive.set(TH.rim2);
+  padMat.color.set(TH.padc || '#ddd4c4'); padMat.map = tex(TH.padt || 'mt_stone'); padMat.needsUpdate = true; stoneMat.color.set(TH.soil || '#6a5a3a').multiplyScalar(.85); padRimMat.uniforms.col.value.set(TH.rim2);
   drift.forEach((m, k) => { m.material.color.set(TH.motes[k % TH.motes.length]); m.visible = k < 44 * (TH.moteA > .4 ? 1 : .5); });
   // заранее подгружаем текстуры этой темы
   tex(TH.floor); tex(TH.hills);
@@ -1253,9 +1252,10 @@ function makeLayout(aspect) {
   const rows = aspect < .9 ? 13 : aspect < 1.4 ? 11 : 9, gap = portrait ? 2.6 : 3.4;
   const width = Math.round(rows * aspect * .92 - 2.6);
   const runs = Math.max(3, Math.floor((width - 1.4) / gap) + 1);
-  // вход — ворота наверху первого участка: сосуд выходит из них вниз, прямо к игроку
-  const mid = Math.floor(rows / 2), wp = [[1, -1.3]], R = [];
-  let y = -1.3;
+  // вход сбоку: ворота слева сверху, развёрнуты наискосок к игроку; сосуд выходит из них и поворачивает вниз
+  const mid = Math.floor(rows / 2), wp = [[-.5, -.8]], R = [];
+  let y = 1.5;
+  wp.push([1, y]);
   for (let k = 0; k < runs; k++) {
     const c = 1 + k * gap, to = k === runs - 1 ? mid : (k % 2 === 0 ? rows - 2 : 1);
     if (k) wp.push([c, y]);
@@ -1302,15 +1302,27 @@ const portal = new T.Group();
   const arch = new T.Mesh(new T.TorusGeometry(.52, .1, 10, 32, Math.PI), stone); arch.rotation.y = Math.PI / 2; arch.position.y = 1.05; arch.castShadow = true; portal.add(arch);
   const band = new T.Mesh(new T.TorusGeometry(.43, .025, 8, 40, Math.PI), trim); band.rotation.y = Math.PI / 2; band.position.y = 1.05; portal.add(band);
   for (const z of [-.43, .43]) { const b = new T.Mesh(new T.CylinderGeometry(.025, .025, .98, 6), trim); b.position.set(0, .56, z); portal.add(b); }
-  // проём: весь залит ровным мягким светом — светлее в глубине, теплее к краям, без вращения и пульса
+  // проём: живой мягкий свет — из глубины к краям бегут тёплые лучи, середина тихо «дышит» (идея — световые туннели из шейдеров на 21st.dev)
   const mat = new T.ShaderMaterial({
-    uniforms: { c1: { value: new T.Color('#fff0d6') }, c2: { value: new T.Color('#f6c48a') } },
+    uniforms: { c1: { value: new T.Color('#fff2da') }, c2: { value: new T.Color('#f2b878') }, t: { value: 0 } },
     vertexShader: 'varying vec2 vU; void main(){ vU = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform vec3 c1; uniform vec3 c2; varying vec2 vU;
-      void main(){ float r = length((vU - vec2(0., .62)) / vec2(.42, .78));
-        vec3 col = mix(c1, c2, smoothstep(.1, 1., r)) * .92;
-        float al = 1.;
-        gl_FragColor = vec4(col, al); }`,
+    fragmentShader: `uniform vec3 c1; uniform vec3 c2; uniform float t; varying vec2 vU;
+      float h1(float n){ return fract(sin(n * 127.1) * 43758.5453); }
+      void main(){
+        vec2 d = (vU - vec2(0., .72)) / vec2(.42, .78);
+        float r = length(d), a = atan(d.y, d.x) / 6.2831853 + .5;
+        vec3 col = mix(c1, c2, smoothstep(.05, 1.05, r)) * .72;
+        // лучи: в каждом узком секторе свой огонёк летит от центра к краю
+        float rays = 0.;
+        for (int k = 0; k < 2; k++) {
+          float N = k == 0 ? 22. : 13., s = floor(a * N), f = fract(a * N) - .5, ph = h1(s + float(k) * 31.);
+          float pos = fract(ph + t * (.16 + .1 * h1(s + 7.)));
+          float streak = exp(-pow((r - pos * 1.25) / (.08 + .1 * pos), 2.)) * smoothstep(.5, .05, abs(f));
+          rays += streak * (.35 + .65 * h1(s + 3.)) * smoothstep(0., .25, pos) * (1. - pos);
+        }
+        float core = exp(-r * r * 5.) * (.85 + .15 * sin(t * 1.1));
+        col += vec3(1., .9, .72) * (rays * .55 + core * .32);
+        gl_FragColor = vec4(min(col, vec3(1.)), 1.); }`,
     transparent: true, depthWrite: false, side: T.DoubleSide, toneMapped: false
   });
   const doorShape = new T.Shape(); doorShape.moveTo(-.42, .02); doorShape.lineTo(-.42, 1.05); doorShape.absarc(0, 1.05, .42, Math.PI, 0, true); doorShape.lineTo(.42, .02); doorShape.closePath();   // проём целиком, по форме арки
@@ -1318,7 +1330,13 @@ const portal = new T.Group();
   const glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffd8a0', blending: T.AdditiveBlending, depthWrite: false, opacity: .22 }));
   glow.scale.set(1.9, 2.2, 1); glow.position.set(.15, .7, 0); portal.add(glow);
   const lamp = new T.PointLight('#ffd8a8', .5, 3.5, 2); lamp.position.set(.5, .8, 0); portal.add(lamp);
-  portal.userData = { glow, mat };
+  // тёплые искорки вылетают из проёма вдоль сосуда и гаснут
+  const sparks = [];
+  for (let i = 0; i < 10; i++) {
+    const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffe2b0', blending: T.AdditiveBlending, depthWrite: false, opacity: 0 }));
+    sp.userData = { ph: i / 10, y: .25 + Math.random() * .9, z: (Math.random() - .5) * .6, s: .08 + Math.random() * .08 }; portal.add(sp); sparks.push(sp);
+  }
+  portal.userData = { glow, mat, sparks };
   scene.add(portal);
 }
 const organ = new T.Group();
@@ -1399,18 +1417,40 @@ function setOrgan(lv) {
 setOrgan(LEVELS[0]);
 function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
 
-const padGeo = new T.LatheGeometry([[0, 0], [.48, 0], [.47, .02], [.43, .025], [.44, .06], [.41, .105], [.35, .115], [.33, .095], [0, .095]].map(([x, y]) => new T.Vector2(x, y)), 6);   // шестигранная каменная плита со скошенным краем и неглубокой серединой на тёмном основании
-{ const p = padGeo.attributes.position, c = new Float32Array(p.count * 3);
-  for (let i = 0; i < p.count; i++) { const y = p.getY(i), k = y < .03 ? .4 : y < .07 ? .8 : 1; c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = k; }
-  padGeo.setAttribute('color', new T.BufferAttribute(c, 3)); }
-{ const p = padGeo.attributes.position, uv = padGeo.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) * 1.1 + .5, p.getZ(i) * 1.1 + .5); }   // рисунок камня ложится сверху ровно
-const stoneGeo = new T.DodecahedronGeometry(1, 0), stoneMat = new T.MeshStandardMaterial({ roughness: .85, flatShading: true });
-const poleGeo = new T.CylinderGeometry(.015, .015, .56, 6), poleMat = new T.MeshStandardMaterial({ color: '#6a4a2e', roughness: .8 });
-const flagGeo = (() => { const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute([0, .1, 0, 0, -.1, 0, .24, 0, 0], 3)); g.computeVertexNormals(); return g; })();
-const padMat = new T.MeshStandardMaterial({ color: '#ddd4c4', roughness: .75, metalness: 0, flatShading: true, vertexColors: true });
-const padRimGeo = new T.RingGeometry(.22, .275, 6).rotateX(-Math.PI / 2).rotateY(Math.PI / 2);   // светящаяся шестигранная вставка
-const padRimMat = new T.MeshStandardMaterial({ color: '#bff6ff', emissive: '#5ad8ff', emissiveIntensity: .9, roughness: .4 });
-const ringGeo = new T.RingGeometry(.47, .55, 6, 1, Math.PI / 2);
+// Место для клетки: круглая каменная площадка со скруглённым бортиком на пятне утоптанной земли; по светящемуся кольцу бежит огонёк — видно, куда ставить
+const padGeo = (() => {
+  const prof = [[.4, 0], [.405, .03], [.395, .065], [.37, .095], [.34, .105], [.31, .1], [.29, .085], [.27, .08], [0, .08]];
+  const g = new T.LatheGeometry(prof.map(([x, y]) => new T.Vector2(x, y)), 48);
+  const p = g.attributes.position, uv = g.attributes.uv, c = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    uv.setXY(i, p.getX(i) * 1.2 + .5, p.getZ(i) * 1.2 + .5);                       // рисунок камня ложится сверху ровно
+    const r = Math.hypot(p.getX(i), p.getZ(i)), y = p.getY(i);
+    const k = y < .06 ? .62 + y * 4 : r > .3 ? 1.08 : .9;                             // бока темнее, бортик светлее, середина чуть темнее бортика
+    c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = k;
+  }
+  g.setAttribute('color', new T.BufferAttribute(c, 3)); return g;
+})();
+const stoneGeo = new T.CircleGeometry(.62, 40).rotateX(-Math.PI / 2);   // пятно земли под площадкой
+const stoneMat = new T.MeshStandardMaterial({ color: '#6a5a3a', roughness: 1, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2,
+  map: canvasTex(128, 128, (g, W, H) => {
+    const rg = g.createRadialGradient(W / 2, H / 2, W * .22, W / 2, H / 2, W / 2);
+    rg.addColorStop(0, 'rgba(255,255,255,.85)'); rg.addColorStop(.7, 'rgba(255,255,255,.55)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 90; i++) { const a = Math.random() * 6.28, r = Math.random() * W * .42; g.fillStyle = `rgba(${Math.random() < .5 ? '60,45,30' : '255,250,235'},${.15 + Math.random() * .25})`; g.beginPath(); g.arc(W / 2 + Math.cos(a) * r, H / 2 + Math.sin(a) * r, 1 + Math.random() * 2.5, 0, 7); g.fill(); }
+  }) });
+const padMat = new T.MeshStandardMaterial({ color: '#ddd4c4', roughness: .65, metalness: 0, vertexColors: true });
+const padRimGeo = new T.RingGeometry(.2, .245, 48).rotateX(-Math.PI / 2);
+const padRimMat = new T.ShaderMaterial({
+  uniforms: { col: { value: new T.Color('#5ad8ff') }, t: { value: 0 } },
+  vertexShader: 'varying vec2 vP; void main(){ vP = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+  fragmentShader: `uniform vec3 col; uniform float t; varying vec2 vP;
+    void main(){ float a = atan(vP.y, vP.x), r = length(vP);
+      float run = pow(.5 + .5 * cos(a - t * 1.6), 10.);                    // бегущий огонёк
+      float edge = smoothstep(.2, .215, r) * smoothstep(.245, .23, r);
+      gl_FragColor = vec4(col * (.55 + 1.1 * run) + run * .35, edge * (.45 + .55 * run)); }`,
+  transparent: true, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false
+});
+const ringGeo = new T.RingGeometry(.44, .52, 48);
 
 function updateBackdrop() {
   const b = TER.box, c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3());
@@ -1422,8 +1462,17 @@ function updateBackdrop() {
     m.position.set(x, heightAt(x, z) + m.userData.y, z);
   });
 }
+function animatePortal(now) {
+  const u = portal.userData; u.mat.uniforms.t.value = now; padRimMat.uniforms.t.value = now;
+  u.glow.material.opacity = .2 + .05 * Math.sin(now * 1.1);
+  for (const sp of u.sparks) {
+    const k = (now * .22 + sp.userData.ph) % 1;
+    sp.position.set(.1 + k * 1.5, sp.userData.y + k * .25, sp.userData.z * (1 + k));
+    sp.scale.setScalar(sp.userData.s * (1 - k * .5)); sp.material.opacity = Math.sin(k * Math.PI) * .7;
+  }
+}
 function animateBackdrop(dt, now) {
-  animateDecor(now);
+  animateDecor(now); animatePortal(now);
   for (const m of drift) {
     const u = m.userData;
     const fall = TH.fall ? -1 : 1;
@@ -1437,7 +1486,7 @@ const bloodMat = new T.MeshStandardMaterial({ map: bloodTex, roughness: .18, met
 const wallMat = new T.MeshStandardMaterial({ color: '#d0566a', roughness: .22, metalness: 0, emissive: '#3a0812', emissiveIntensity: .4 });
 
 function buildBoard(L) {
-  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo && o.geometry !== padRimGeo && o.geometry !== stoneGeo) o.geometry.dispose(); if (o.material && o.material !== padMat && o.material !== padRimMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
+  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo && o.geometry !== padRimGeo && o.geometry !== stoneGeo) o.geometry.dispose(); if (o.material && o.material !== padMat && o.material !== padRimMat && o.material !== stoneMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
   pads.clear(); pathCells.clear();
   COLS = L.cols; ROWS = L.rows; OX = (COLS + 2) / 2; OZ = (ROWS - 1) / 2;
   const WP = L.wp.filter((q, i, a) => i === 0 || q[0] !== a[i - 1][0] || q[1] !== a[i - 1][1]);
@@ -1465,7 +1514,7 @@ function buildBoard(L) {
     for (let k = 0; k < n; k++) out.push(a.clone().lerp(b, k / n));
   }
   out.push(raw[raw.length - 1].clone());
-  const ph = Math.random() * 6; L.ph = ph;
+  const ph = 1; L.ph = ph;   // изгибы всегда одинаковые — дорога одна и та же в каждой игре
   out.forEach((v, i) => { const edge = Math.min(1, i / 8, (out.length - 1 - i) / 8); v.x += Math.sin(v.z * 1.25 + ph) * .2 * edge; });
   const cum = [0];
   for (let i = 1; i < out.length; i++) cum.push(cum[i - 1] + out[i].distanceTo(out[i - 1]));
@@ -1501,7 +1550,7 @@ function buildBoard(L) {
     wall.castShadow = true; wall.receiveShadow = true; board.add(wall);
   }
 
-  { const g0 = pathAt(.75), g1 = pathAt(1.2); portal.position.set(g0.x, 0, g0.z); portal.rotation.y = -Math.atan2(g1.z - g0.z, g1.x - g0.x); portal.scale.setScalar(1.3); }   // ворота стоят ровно поперёк сосуда, микробы выходят из проёма
+  { const g0 = pathAt(.75), g1 = pathAt(1.2); portal.position.set(g0.x, 0, g0.z); portal.rotation.y = -Math.atan2(g1.z - g0.z, g1.x - g0.x); portal.scale.setScalar(1.5); }   // ворота стоят ровно поперёк сосуда, микробы выходят из проёма
   const sc = L.portrait ? 1.15 : 1.5, end = PATH.pts[PATH.pts.length - 1];
   organ.scale.setScalar(sc); organ.position.set(end.x - .25 * sc, 0, end.z);  // последний отрезок сосуда уходит под орган
   organ.updateMatrixWorld(true);
@@ -1525,12 +1574,12 @@ function buildBoard(L) {
   cands.sort((a, b) => a.pr - b.pr);
   for (const cd of cands) {
     let dp = pathDist(cd.x, cd.z);
-    if (dp < 1.25) {                                                            // слишком близко — пробуем чуть отодвинуть от сосуда
+    if (dp < 1.32) {                                                            // слишком близко — пробуем чуть отодвинуть от сосуда
       let bx = cd.x, bz = cd.z;
       for (let k = 0; k < 12; k++) for (const st of [.15, .3, .45]) { const x = cd.x + Math.cos(k * Math.PI / 6) * st, z = cd.z + Math.sin(k * Math.PI / 6) * st, d = pathDist(x, z); if (d > dp) { dp = d; bx = x; bz = z; } }
       cd.x = bx; cd.z = bz;
     }
-    if (dp < 1.2) continue;                                                     // плита (r 0,43) с зазором не касается стенки сосуда (0,65)
+    if (dp < 1.24) continue;                                                    // площадка с камешками (r 0,48) с зазором не касается стенки сосуда (0,65)
     if (cd.x + .5 > ob.min.x && cd.z > ob.min.z - .3 && cd.z < ob.max.z + .3) continue;
     if (Math.hypot(cd.x - P0.x, cd.z - P0.z) < 1.8) continue;
     if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.5)) chosen.push(cd);
@@ -1538,7 +1587,8 @@ function buildBoard(L) {
   chosen.forEach((cd, i) => {
     const cp = new T.Vector3(cd.x, 0, cd.z);
     const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, 0, cp.z); m.receiveShadow = true; m.castShadow = true; board.add(m);
-    const rim = new T.Mesh(padRimGeo, padRimMat); rim.position.set(cp.x, .098, cp.z); board.add(rim);
+    const rim = new T.Mesh(padRimGeo, padRimMat); rim.position.set(cp.x, .084, cp.z); rim.rotation.y = i * 2.1; board.add(rim);
+    const st = new T.Mesh(stoneGeo, stoneMat); st.position.set(cp.x, .015, cp.z); st.rotation.y = i * 1.7; st.receiveShadow = true; board.add(st);
     const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
     hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, .12, cp.z); board.add(hl);
     pads.set('p' + i, { pos: cp, mesh: m, hl, unit: null });
@@ -2777,7 +2827,7 @@ function fit() {
   const ob = new T.Box3().setFromObject(organ);
   for (const x of [ob.min.x, ob.max.x]) for (const z of [ob.min.z, ob.max.z]) pts.push(new T.Vector3(x, ob.max.y, z), new T.Vector3(x, 0, z));
   const ps = PATH.pts[0]; for (const dx of [-.8, .8]) for (const dz of [-.8, .8]) pts.push(new T.Vector3(ps.x + dx, 0, ps.z + dz));
-  pts.push(portal.position.clone().setY(1.6));
+  pts.push(portal.position.clone().setY(1.6)); { const pb = new T.Box3().setFromObject(portal); for (const x of [pb.min.x, pb.max.x]) for (const z of [pb.min.z, pb.max.z]) pts.push(new T.Vector3(x, pb.max.y, z), new T.Vector3(x, 0, z)); }   // ворота целиком в кадре
   for (let d = 0; d <= PATH.len; d += .5) { const q = pathAt(d); for (const o of [-.75, .75]) pts.push(new T.Vector3(q.x + o, 0, q.z + o)); }   // сосуд целиком в кадре
   const center = new T.Box3().setFromPoints(pts).getCenter(new T.Vector3()).setY(0);
   const place = (tilt, d, tgt) => { camera.position.set(tgt.x, Math.sin(tilt) * d, tgt.z + Math.cos(tilt) * d); camera.lookAt(tgt); camera.updateMatrixWorld(); };

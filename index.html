@@ -70,25 +70,59 @@ body {
 #stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 75% at 50% 50%, transparent 62%, #1a061477 100%); }
 #fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .dmg {
-  position: absolute; left: 0; top: 0; font: 800 13px var(--display); color: #fff;
-  text-shadow: 0 1px 0 #000, 0 0 6px #000a; white-space: nowrap; will-change: transform, opacity;
+  position: absolute; left: 0; top: 0; font: italic 800 14px var(--display); color: #fff4dc;
+  -webkit-text-stroke: 3px #2a0a12; paint-order: stroke fill; white-space: nowrap; will-change: transform, opacity;
 }
-.dmg.crit { color: #ffd36b; font-size: 17px; }
-.dmg.ult { color: #ffe9a8; font-size: 20px; }
+.dmg.crit { color: #ff3b4e; font-size: 21px; -webkit-text-stroke: 3.5px #fff6e8; }
+.dmg.ult { color: #ffd36b; font-size: 22px; -webkit-text-stroke: 3.5px #5a2a00; }
+.dmg.word { font: italic 900 23px var(--display); color: #ffe14a; -webkit-text-stroke: 4.5px #6a1e00; letter-spacing: .02em; }
+.coinfly { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3b0, #ffc93a 55%, #c88a1a); box-shadow: 0 0 8px #ffd36baa; }
+#dim { position: absolute; inset: 0; background: #0a0310; opacity: 0; transition: opacity .25s; pointer-events: none; }
+#dim.on { opacity: .42; }
+#flash { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
 #combo {
-  position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(.8); opacity: 0;
-  font: 900 26px var(--display); letter-spacing: .02em; color: #fff; white-space: nowrap;
-  text-shadow: 0 2px 0 #7a0f1f, 0 0 18px #ff4d5e; transition: opacity .2s, transform .2s;
+  position: absolute; top: 8px; left: 50%; padding: 4px 34px; transform: translateX(-50%); opacity: 0; z-index: 2;
+  font: italic 900 19px var(--display); color: #fff; white-space: nowrap; text-shadow: 0 2px 0 #7a4a00, 0 0 10px #0006;
+  background: linear-gradient(90deg, transparent, #b87a10dd 16%, #f0b83aee 50%, #b87a10dd 84%, transparent); transition: opacity .2s;
 }
-#combo.on { opacity: 1; transform: translateX(-50%) scale(1); }
-#combo span { color: var(--gold); }
+#combo.on { opacity: 1; }
+#combo span { font-size: 23px; }
+#combo.t2 { background: linear-gradient(90deg, transparent, #c8520add 16%, #ff8a2aee 50%, #c8520add 84%, transparent); }
+#combo.t3 { background: linear-gradient(90deg, transparent, #b81a2add 16%, #ff3b4eee 50%, #b81a2add 84%, transparent); }
 #banner {
-  position: absolute; top: 38%; left: 0; right: 0; text-align: center; pointer-events: none;
-  font: 900 30px var(--display); color: #fff; text-shadow: 0 3px 0 #5c0b18, 0 0 24px #ff4d5e;
-  opacity: 0; transform: scale(.9); transition: opacity .3s, transform .3s;
+  position: absolute; top: 36%; left: 0; right: 0; padding: 12px 10px 13px; text-align: center; pointer-events: none; opacity: 0; z-index: 2;
+  background: linear-gradient(90deg, transparent, #12061cee 18%, #12061cee 82%, transparent);
+  border-top: 1px solid transparent; border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, transparent, #ffd36b, transparent) 1;
+  transition: opacity .3s;
 }
-#banner small { display: block; font: 600 14px var(--body); color: var(--muted); text-shadow: none; margin-top: 6px; }
-#banner.on { opacity: 1; transform: scale(1); }
+#banner b { display: block; font: 900 28px var(--display); color: #fff; text-shadow: 0 2px 0 #0008; }
+#banner small { display: block; font: 600 13.5px var(--body); color: #f0d8a8; margin-top: 4px; }
+#banner.on { opacity: 1; animation: stripIn .34s cubic-bezier(.2, .9, .3, 1); }
+#banner.on b { animation: textIn .4s cubic-bezier(.2, 1.3, .4, 1); }
+#banner.win b { color: #ffd36b; }
+#banner.boss { background: linear-gradient(90deg, transparent, #3a0612f2 18%, #3a0612f2 82%, transparent); }
+#banner.boss b { color: #ff6a78; }
+@keyframes stripIn { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
+@keyframes textIn { from { transform: translateX(-34px) scale(1.12); opacity: 0; } to { transform: none; opacity: 1; } }
+#bossBar { position: absolute; top: 44px; left: 14px; right: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; text-align: center; z-index: 2; }
+#bossBar.on { opacity: 1; }
+#bossBar span { font: 800 12px var(--display); color: #fff; -webkit-text-stroke: 2.5px #2a0a12; paint-order: stroke fill; }
+#bossBar .bb { position: relative; height: 11px; margin-top: 3px; border-radius: 7px; background: #1a0508e6; box-shadow: 0 0 0 1.5px #ffd36b88; overflow: hidden; }
+#bossBar i { position: absolute; inset: 0; transform-origin: left; }
+#bossLag { background: #fff4dc; }
+#bossFill { background: linear-gradient(90deg, #c81e30, #ff5a6a); }
+#skillBtn {
+  position: absolute; right: 10px; bottom: 10px; width: 60px; height: 60px; padding: 0; border: 0; border-radius: 50%; z-index: 4; color: #5a3a10;
+  background: conic-gradient(#ffd36b var(--p, 100%), #2a1420 0); box-shadow: 0 4px 14px #0009; display: grid; place-items: center;
+}
+#skillBtn[hidden] { display: none; }
+#skillBtn::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #3a1a2a; }
+#skillBtn svg { position: relative; }
+#skillBtn.ready { color: #fff; animation: skillReady 1.3s ease-in-out infinite; }
+#skillBtn.ready::before { background: radial-gradient(circle at 40% 30%, #ffb03a, #c8520a); }
+#skillBtn.aim::before { background: radial-gradient(circle at 40% 30%, #fff, #ffd36b); }
+#skillBtn.aim { color: #c8520a; }
+@keyframes skillReady { 50% { box-shadow: 0 0 0 5px #ffd36b44, 0 4px 18px #ffb03a; } }
 #traits { display: flex; gap: 10px; padding: 6px 12px 2px; min-height: 62px; overflow-x: auto; scrollbar-width: none; position: relative; z-index: 3; align-items: flex-start; }
 #traits::-webkit-scrollbar { display: none; }
 .trait { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--muted); font: inherit; }
@@ -142,6 +176,14 @@ body {
 .card .fhead i { margin-left: auto; font: 700 9px var(--display); color: var(--gold); font-style: normal; flex: none; }
 .card.leg .fhead { background: linear-gradient(90deg, #8a6a00, #3a2a00); }
 .card.sel { border-color: var(--gold); box-shadow: 0 0 0 2px #ffd36b55, 0 0 18px #ffd36b44; transform: translateY(-3px); }
+.card.r1 { border-color: #3f9a5a; box-shadow: inset 0 0 12px #3f9a5a33; }
+.card.r2 { border-color: #3f86d8; box-shadow: inset 0 0 12px #3f86d833; }
+.card.r3 { border-color: #a85ad8; box-shadow: inset 0 0 12px #a85ad83a; }
+#stage.aiming::after { box-shadow: inset 0 0 0 3px #ffd36baa, inset 0 0 40px #ffb03a55; }
+#resTitle { font-size: 24px; background: linear-gradient(180deg, #fff3c0, #ffc93a 55%, #e8901a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card.sel { border-color: var(--gold) !important; box-shadow: 0 0 0 2px #ffd36b55, 0 0 18px #ffd36b44 !important; }
+.card.deal { animation: dealIn .34s cubic-bezier(.2, 1.2, .4, 1) backwards; }
+@keyframes dealIn { from { transform: translateY(26px) scale(.82); opacity: 0; } to { transform: none; opacity: 1; } }
 .card.poor { opacity: .5; }
 .card.sold { visibility: hidden; }
 .card.leg { background: linear-gradient(180deg, #3a2a10, #1a1008); border-color: #7a5a1c; }
@@ -363,10 +405,14 @@ body {
   <div id="traits"></div>
   <div id="stage">
     <div id="fx">
+      <div id="dim"></div>
+      <div id="flash"></div>
+      <div id="bossBar"><span id="bossName"></span><div class="bb"><i id="bossLag"></i><i id="bossFill"></i></div></div>
       <div id="combo">Комбо <span>×0</span></div>
       <div id="banner"></div>
       <div id="toast"></div>
     </div>
+    <button id="skillBtn" hidden aria-label="Цитокиновый удар"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 1l2.4 7.1L21 5l-3.1 6.6L23 14l-7 1.3L17 23l-5-5.4L7 23l1-7.7L1 14l5.1-2.4L3 5l6.6 3.1z" fill="currentColor"/></svg></button>
   </div>
   <footer id="panel">
     <div id="info"></div>
@@ -409,7 +455,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.15 · прототип</p>
+      <p class="ver">Версия 0.16 · прототип</p>
     </div>
   </div>
 
@@ -1091,13 +1137,13 @@ function tex(name) {
   return texCache[name] = t;
 }
 const terrainMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: .9, metalness: 0, emissive: '#000000' });
-const terrU = { map2: { value: null }, map2Scale: { value: .7 }, map2Off: { value: new T.Vector2() } };
+const terrU = { map2: { value: null }, map2Scale: { value: .7 }, map2Off: { value: new T.Vector2() }, cloudT: { value: 0 }, cloudA: { value: .2 }, terrS: { value: 4 } };
 terrainMat.onBeforeCompile = (sh) => {
-  sh.uniforms.map2 = terrU.map2; sh.uniforms.map2Scale = terrU.map2Scale; sh.uniforms.map2Off = terrU.map2Off;
+  sh.uniforms.map2 = terrU.map2; sh.uniforms.map2Scale = terrU.map2Scale; sh.uniforms.map2Off = terrU.map2Off; sh.uniforms.cloudT = terrU.cloudT; sh.uniforms.cloudA = terrU.cloudA; sh.uniforms.terrS = terrU.terrS;
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float blend;\nvarying float vBlend;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBlend = blend;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D map2;\nuniform float map2Scale;\nuniform vec2 map2Off;\nvarying float vBlend;')
-    .replace('#include <map_fragment>', '#ifdef USE_MAP\n  vec4 tA = texture2D( map, vUv );\n  vec4 tB = texture2D( map2, vUv * map2Scale + map2Off );\n  diffuseColor *= mix( tA, tB, vBlend );\n#endif')
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D map2;\nuniform float map2Scale;\nuniform vec2 map2Off;\nuniform float cloudT;\nuniform float cloudA;\nuniform float terrS;\nvarying float vBlend;')
+    .replace('#include <map_fragment>', '#ifdef USE_MAP\n  vec4 tA = texture2D( map, vUv );\n  vec4 tB = texture2D( map2, vUv * map2Scale + map2Off );\n  diffuseColor *= mix( tA, tB, vBlend );\n  vec2 wp = vUv * terrS; float cl = sin(wp.x * .33 + cloudT * .1) * sin(wp.y * .27 - cloudT * .07) + .5 * sin(wp.x * .71 - cloudT * .16 + wp.y * .43);\n  diffuseColor.rgb *= 1. - cloudA * smoothstep(.15, 1., cl);\n#endif')
     .replace('#include <emissivemap_fragment>', '#ifdef USE_EMISSIVEMAP\n  totalEmissiveRadiance *= texture2D( emissiveMap, vUv * map2Scale + map2Off ).rgb * vBlend;\n#endif');
 };
 terrainMat.customProgramCacheKey = () => 'terrain2';
@@ -1126,6 +1172,7 @@ function buildTerrain() {
     cols[i * 3] = col.r; cols[i * 3 + 1] = col.g; cols[i * 3 + 2] = col.b;
   }
   geo.setAttribute('color', new T.BufferAttribute(cols, 3)); geo.setAttribute('blend', new T.BufferAttribute(blend, 1)); geo.computeVertexNormals();
+  terrU.terrS.value = TH.scale[0]; terrU.cloudA.value = TH.lava ? 0 : .2;
   terrainMat.map = tex(TH.floor); terrU.map2.value = tex(TH.hills); terrU.map2Scale.value = TH.scale[0] / TH.scale[1];
   terrainMat.emissiveMap = null; terrainMat.emissive.set('#000000');
   if (TH.lava) { terrainMat.emissiveMap = tex(TH.hills); terrainMat.emissive.set('#ffffff'); terrainMat.emissiveIntensity = .9; }   // светится сама лава вокруг поля
@@ -1136,10 +1183,24 @@ function buildTerrain() {
   buildDecor();
 }
 
+// Склейка нескольких фигур в одну сетку: дешевле для телефона
+function mergeG(parts) {
+  const pos = [], nor = [], v = new T.Vector3(), n3 = new T.Matrix3();
+  for (const [g0, m] of parts) {
+    const g = g0.index ? g0.toNonIndexed() : g0, p = g.attributes.position, nn = g.attributes.normal; n3.getNormalMatrix(m);
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m); pos.push(v.x, v.y, v.z); v.fromBufferAttribute(nn, i).applyMatrix3(n3).normalize(); nor.push(v.x, v.y, v.z); }
+  }
+  const o = new T.BufferGeometry(); o.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); o.setAttribute('normal', new T.Float32BufferAttribute(nor, 3)); return o;
+}
+function clumpGeo(g) {   // пышная крона: большой шар и три поменьше
+  const M = (x, y, z, k) => new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion(), new T.Vector3(k, k, k));
+  return mergeG([[g, M(0, 0, 0, .82)], [g, M(.58, -.14, .22, .6)], [g, M(-.52, -.1, -.26, .64)], [g, M(.06, .44, -.14, .56)]]);
+}
+
 // Украшения
 const DECOR = { bub: null, vil: null, tip: null, data: [], bdata: [] };
-const BLOB_GEO = { sphere: new T.SphereGeometry(1, 24, 16), octa: new T.OctahedronGeometry(1, 0), dodeca: new T.DodecahedronGeometry(1, 1) };
-const vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = new T.IcosahedronGeometry(1, 2);
+const BLOB_GEO = { sphere: clumpGeo(new T.SphereGeometry(1, 14, 10)), octa: new T.OctahedronGeometry(1, 0), dodeca: new T.DodecahedronGeometry(1, 1) };
+const vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = clumpGeo(new T.IcosahedronGeometry(1, 2));
 vilGeo.translate(0, .57, 0);
 const bubMat = new T.MeshStandardMaterial({ roughness: .6, metalness: 0 });
 const vilMat = new T.MeshStandardMaterial({ roughness: .8 });
@@ -1195,6 +1256,7 @@ function buildDecor() {
 }
 const dmy = new T.Object3D(), upV = new T.Vector3();
 function animateDecor(now) {
+  terrU.cloudT.value = now;
   if (TH.flow) terrU.map2Off.value.set(now * .012 * TH.flow, now * .007 * TH.flow);   // вода и лава медленно текут
   if (DECOR.vil) {
     const S = TH.stalk;
@@ -1304,9 +1366,9 @@ const portal = new T.Group();
   for (const z of [-.43, .43]) { const b = new T.Mesh(new T.CylinderGeometry(.025, .025, .98, 6), trim); b.position.set(0, .56, z); portal.add(b); }
   // проём: живой мягкий свет — из глубины к краям бегут тёплые лучи, середина тихо «дышит» (идея — световые туннели из шейдеров на 21st.dev)
   const mat = new T.ShaderMaterial({
-    uniforms: { c1: { value: new T.Color('#fff2da') }, c2: { value: new T.Color('#f2b878') }, t: { value: 0 } },
+    uniforms: { c1: { value: new T.Color('#fff2da') }, c2: { value: new T.Color('#f2b878') }, t: { value: 0 }, b: { value: 0 } },
     vertexShader: 'varying vec2 vU; void main(){ vU = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform vec3 c1; uniform vec3 c2; uniform float t; varying vec2 vU;
+    fragmentShader: `uniform vec3 c1; uniform vec3 c2; uniform float t; uniform float b; varying vec2 vU;
       float h1(float n){ return fract(sin(n * 127.1) * 43758.5453); }
       void main(){
         vec2 d = (vU - vec2(0., .72)) / vec2(.42, .78);
@@ -1321,7 +1383,7 @@ const portal = new T.Group();
           rays += streak * (.35 + .65 * h1(s + 3.)) * smoothstep(0., .25, pos) * (1. - pos);
         }
         float core = exp(-r * r * 5.) * (.85 + .15 * sin(t * 1.1));
-        col += vec3(1., .9, .72) * (rays * .55 + core * .32);
+        col += vec3(1., .9, .72) * (rays * .55 + core * .32) + vec3(1., .86, .62) * b * (.5 - .22 * r);
         gl_FragColor = vec4(min(col, vec3(1.)), 1.); }`,
     transparent: true, depthWrite: false, side: T.DoubleSide, toneMapped: false
   });
@@ -1336,7 +1398,7 @@ const portal = new T.Group();
     const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: '#ffe2b0', blending: T.AdditiveBlending, depthWrite: false, opacity: 0 }));
     sp.userData = { ph: i / 10, y: .25 + Math.random() * .9, z: (Math.random() - .5) * .6, s: .08 + Math.random() * .08 }; portal.add(sp); sparks.push(sp);
   }
-  portal.userData = { glow, mat, sparks };
+  portal.userData = { glow, mat, sparks, lamp, burst: 0 };
   scene.add(portal);
 }
 const organ = new T.Group();
@@ -1464,7 +1526,8 @@ function updateBackdrop() {
 }
 function animatePortal(now) {
   const u = portal.userData; u.mat.uniforms.t.value = now; padRimMat.uniforms.t.value = now;
-  u.glow.material.opacity = .2 + .05 * Math.sin(now * 1.1);
+  u.burst *= .93; u.mat.uniforms.b.value = Math.min(1.2, u.burst); u.lamp.intensity = .5 + u.burst * 1.4;
+  u.glow.material.opacity = .2 + .05 * Math.sin(now * 1.1) + Math.min(.5, u.burst * .3);
   for (const sp of u.sparks) {
     const k = (now * .22 + sp.userData.ph) % 1;
     sp.position.set(.1 + k * 1.5, sp.userData.y + k * .25, sp.userData.z * (1 + k));
@@ -1764,39 +1827,106 @@ function buildIg(def) {
 
 /* ---------- Микробы ---------- */
 const FOE_MAT = {
-  coccus: new T.MeshPhysicalMaterial({ color: '#b8d94a', roughness: .35, clearcoat: .6, emissive: '#2a3a00', emissiveIntensity: .5 }),
-  rod: new T.MeshPhysicalMaterial({ color: '#8bc34a', roughness: .4, clearcoat: .5, emissive: '#1a2a00', emissiveIntensity: .5 }),
-  virus: new T.MeshPhysicalMaterial({ color: '#c06cff', roughness: .3, metalness: .2, clearcoat: .8, emissive: '#3a0a5a', emissiveIntensity: .7 }),
-  capsule: new T.MeshPhysicalMaterial({ color: '#3fbfa0', roughness: .35, clearcoat: .7, emissive: '#06302a', emissiveIntensity: .6 }),
-  fungus: new T.MeshPhysicalMaterial({ color: '#efe3b0', roughness: .6, clearcoat: .3, emissive: '#3a3010', emissiveIntensity: .4 }),
-  spiro: new T.MeshPhysicalMaterial({ color: '#ffa53a', roughness: .3, clearcoat: .8, emissive: '#4a2000', emissiveIntensity: .5 }),
-  strep: new T.MeshPhysicalMaterial({ color: '#ff5a7a', roughness: .3, clearcoat: .8, emissive: '#4a0014', emissiveIntensity: .5 }),
-  amoeba: new T.MeshPhysicalMaterial({ color: '#5ab8ff', roughness: .15, clearcoat: 1, transparent: true, opacity: .75, emissive: '#06304a', emissiveIntensity: .6 }),
-  phage: new T.MeshPhysicalMaterial({ color: '#b8c4d8', roughness: .25, metalness: .6, clearcoat: .8, emissive: '#101828', emissiveIntensity: .4 }),
-  spore: new T.MeshPhysicalMaterial({ color: '#e8c04a', roughness: .35, clearcoat: .7, emissive: '#3a2a00', emissiveIntensity: .5 }),
-  worm: new T.MeshPhysicalMaterial({ color: '#e8c2a8', roughness: .35, clearcoat: .9, emissive: '#3a1a10', emissiveIntensity: .4 })
+  coccus: new T.MeshPhysicalMaterial({ color: '#7fbe10', roughness: .35, clearcoat: .6, emissive: '#1a2800', emissiveIntensity: 0.35 }),
+  rod: new T.MeshPhysicalMaterial({ color: '#4f9a1e', roughness: .4, clearcoat: .5, emissive: '#0e1a00', emissiveIntensity: 0.35 }),
+  virus: new T.MeshPhysicalMaterial({ color: '#a040ee', roughness: .3, metalness: .2, clearcoat: .8, emissive: '#2a0648', emissiveIntensity: 0.6 }),
+  capsule: new T.MeshPhysicalMaterial({ color: '#129a7e', roughness: .35, clearcoat: .7, emissive: '#04221e', emissiveIntensity: 0.4 }),
+  fungus: new T.MeshPhysicalMaterial({ color: '#c89a3a', roughness: .6, clearcoat: .3, emissive: '#2a1c06', emissiveIntensity: 0.3 }),
+  spiro: new T.MeshPhysicalMaterial({ color: '#f08410', roughness: .3, clearcoat: .8, emissive: '#3a1600', emissiveIntensity: 0.4 }),
+  strep: new T.MeshPhysicalMaterial({ color: '#e02a50', roughness: .3, clearcoat: .8, emissive: '#3a000e', emissiveIntensity: 0.4 }),
+  amoeba: new T.MeshPhysicalMaterial({ color: '#2a90e8', roughness: .15, clearcoat: 1, transparent: true, opacity: .75, emissive: '#04243a', emissiveIntensity: 0.5 }),
+  phage: new T.MeshPhysicalMaterial({ color: '#8a9cc0', roughness: .25, metalness: .6, clearcoat: .8, emissive: '#0a1020', emissiveIntensity: 0.35 }),
+  spore: new T.MeshPhysicalMaterial({ color: '#d8a010', roughness: .35, clearcoat: .7, emissive: '#2a1c00', emissiveIntensity: 0.4 }),
+  worm: new T.MeshPhysicalMaterial({ color: '#d88a68', roughness: .35, clearcoat: .9, emissive: '#2a100a', emissiveIntensity: 0.3 })
 };
+// Рисунок на теле: тёмные пятна и светлые крапинки, чтобы микроб выглядел нарисованным, а не гладким шаром
+const foeSpots = canvasTex(256, 128, (g, W, H) => {
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 46; i++) { const x = Math.random() * W, y = Math.random() * H, r = 5 + Math.random() * 14, rg = g.createRadialGradient(x, y, r * .25, x, y, r); rg.addColorStop(0, 'rgba(70,50,70,.5)'); rg.addColorStop(.75, 'rgba(70,50,70,.32)'); rg.addColorStop(1, 'rgba(70,50,70,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }
+  for (let i = 0; i < 70; i++) { g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.arc(Math.random() * W, Math.random() * H, .8 + Math.random() * 1.8, 0, 7); g.fill(); }
+});
+foeSpots.wrapS = foeSpots.wrapT = T.RepeatWrapping;
+for (const k in FOE_MAT) FOE_MAT[k].map = foeSpots;
 const ICO = new T.IcosahedronGeometry(1, 1);
 const CAPS = new T.CapsuleGeometry(.11, .3, 6, 12);
+const OUTLINE = new T.MeshBasicMaterial({ color: '#1c0a16', side: T.BackSide });   // тёмный контур: микробы читаются на любом фоне
+const WHITE = new T.Color('#ffffff');
+const VIS = { capsule: 1.55, amoeba: 1.6, fungus: 1.5, spore: 1.7, worm: 1.4 };     // размер на поле: микроб занимает почти всю ширину сосуда, как персонажи на дорожке в больших играх
+const FOOT = { coccus: .13, rod: .12, virus: .2, capsule: .27, spiro: .1, strep: .09, amoeba: .22, phage: .3, spore: .15, fungus: .27, worm: .34 };
+// Походка: hop — высота шага, rate — частота, rock — покачивание с боку на бок, lean — наклон вперёд
+const GAIT = {
+  coccus: { hop: .17, rate: 9 }, rod: { hop: .03, rate: 7, rock: .1 }, virus: { hop: .1, rate: 11 }, capsule: { hop: .07, rate: 6, rock: .06 },
+  spiro: { hop: .02, rate: 10, rock: .12 }, strep: { hop: .02, rate: 7 }, amoeba: { hop: .02, rate: 4 }, phage: { hop: .035, rate: 7, lean: .05 },
+  spore: { hop: .05, rate: 5 }, fungus: { hop: .06, rate: 4.5, rock: .16 }, worm: { hop: .02, rate: 3 }
+};
+const foeU = { t: { value: 0 } }, tailMats = {};
+function tailMat(color) {   // жгутики шевелятся прямо на видеокарте
+  return tailMats[color] ||= (() => {
+    const m = new T.MeshStandardMaterial({ color, roughness: .5 });
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uT = foeU.t;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uT;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nfloat tw = clamp(-transformed.z / .55, 0., 1.);\ntransformed.x += sin(transformed.z * 15. + uT * 13.) * .07 * tw;\ntransformed.y += cos(transformed.z * 12. + uT * 11.) * .035 * tw;');
+    };
+    m.customProgramCacheKey = () => 'tail';
+    return m;
+  })();
+}
+const FOE_GEO = {
+  tail: new T.TubeGeometry(new T.LineCurve3(new T.Vector3(0, 0, 0), new T.Vector3(0, 0, -.55)), 22, .017, 5),
+  spikes: (() => {
+    const parts = [], up = new T.Vector3(0, 1, 0), q = new T.Quaternion(), one = new T.Vector3(1, 1, 1), stalk = new T.CylinderGeometry(.012, .022, .1, 6), tip = new T.SphereGeometry(.036, 8, 6);
+    for (let i = 0; i < 14; i++) {
+      const y = 1 - (i + .5) / 7, r = Math.sqrt(1 - y * y), a = i * 2.4, d = new T.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+      q.setFromUnitVectors(up, d);
+      parts.push([stalk, new T.Matrix4().compose(d.clone().multiplyScalar(.17), q, one)], [tip, new T.Matrix4().compose(d.clone().multiplyScalar(.225), q, one)]);
+    }
+    return mergeG(parts);
+  })(),
+  helix: (() => { const pts = []; for (let i = 0; i <= 44; i++) { const t = i / 44, a = t * Math.PI * 7; pts.push(new T.Vector3(Math.sin(a) * .07, Math.cos(a) * .07, (t - .5) * .62)); } return new T.TubeGeometry(new T.CatmullRomCurve3(pts), 88, .034, 7); })(),
+  hooks: (() => { const parts = [], c = new T.ConeGeometry(.05, .17, 6); for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; parts.push([c, new T.Matrix4().compose(new T.Vector3(Math.cos(a) * .3, Math.sin(a) * .3, .2), new T.Quaternion().setFromEuler(new T.Euler(Math.PI / 2 - .5 * Math.sin(a), 0, -.5 * Math.cos(a))), new T.Vector3(1, 1, 1))]); } return mergeG(parts); })()
+};
 function buildFoe(type) {
-  const g = new T.Group(), m = FOE_MAT[type], add = (geo, s, x = 0, y = 0, z = 0, mat = m) => { const o = new T.Mesh(geo, mat); o.scale.setScalar(s); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+  const g = new T.Group(), m = FOE_MAT[type].clone(), U = g.userData, P = U.P = {};
+  U.mat = m; U.em = m.emissive.clone(); U.ei = m.emissiveIntensity;
+  const line = (o, k = 1.09) => { const l = new T.Mesh(o.geometry, OUTLINE); l.scale.setScalar(k); o.add(l); return o; };
+  const add = (geo, s, x = 0, y = 0, z = 0, ol = true, par = g, mat = m) => { const o = new T.Mesh(geo, mat); o.scale.setScalar(s); o.position.set(x, y, z); o.castShadow = true; if (ol) line(o, ol === true ? 1.09 : ol); par.add(o); return o; };
   switch (type) {
-    case 'coccus': { const n = 2 + (Math.random() * 3 | 0); for (let i = 0; i < n; i++) add(SPH_LO, .11, (i - (n - 1) / 2) * .19, 0, (Math.random() - .5) * .08); break; }
-    case 'rod': { const o = new T.Mesh(CAPS, m); o.rotation.x = Math.PI / 2; o.castShadow = true; g.add(o); break; }
-    case 'virus': { add(ICO, .12); for (let i = 0; i < 10; i++) { const d = new T.Vector3().randomDirection(); const s = add(CONE, 1, d.x * .14, d.y * .14, d.z * .14); s.scale.set(.025, .08, .025); s.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d); } break; }
-    case 'capsule': { add(SPH_LO, .17); const sh = new T.Mesh(SPH, new T.MeshPhysicalMaterial({ color: '#9ff5e0', roughness: .1, transparent: true, opacity: .32, clearcoat: 1, depthWrite: false })); sh.scale.setScalar(.27); g.add(sh); break; }
-    case 'fungus': { add(SPH, .26); add(SPH_LO, .14, .22, .1, .1); add(SPH_LO, .1, -.18, .15, -.12); add(SPH_LO, .08, .05, .26, -.05); break; }
-    case 'worm': { add(SPH, .34); break; }
-    case 'spiro': { const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40, a = t * Math.PI * 7; pts.push(new T.Vector3((t - .5) * .55, Math.sin(a) * .06, Math.cos(a) * .06)); }
-      const o = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts), 80, .028, 8), m); o.castShadow = true; g.add(o); g.userData.spin = 'x'; break; }
-    case 'strep': { for (let i = 0; i < 5; i++) add(SPH_LO, .075, (i - 2) * .13, 0, Math.sin(i * 1.4) * .03); g.userData.wiggle = true; break; }
-    case 'amoeba': { const b = new T.Mesh(shapedSphere('amoeba', SHAPES.amoeba), m); b.scale.setScalar(.24); b.castShadow = true; g.add(b); add(SPH_LO, .08, .03, .02, 0, new T.MeshStandardMaterial({ color: '#1a3a6a' })); g.userData.blob = b; break; }
-    case 'phage': { add(new T.IcosahedronGeometry(1, 0), .12, 0, .2, 0); const tail = add(CYL, 1, 0, .04, 0); tail.scale.set(.025, .2, .025);
-      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, leg = add(CYL, 1, Math.cos(a) * .08, -.08, Math.sin(a) * .08); leg.scale.set(.01, .16, .01); leg.rotation.set(Math.sin(a) * .7, 0, -Math.cos(a) * .7); } g.userData.spin = 'y'; break; }
-    case 'spore': { add(SPH_LO, 1).scale.set(.2, .14, .14); for (const x of [-.08, .08]) { const r = add(new T.TorusGeometry(1, .12, 8, 24), 1, x, 0, 0); r.scale.set(.14, .14, .14); r.rotation.y = Math.PI / 2; } break; }
+    case 'coccus': { const spots = [[0, 0, 0], [.16, .02, .07], [-.15, .03, .08], [.02, .03, -.17], [.03, .17, .02]], n = 3 + (Math.random() * 3 | 0);
+      P.balls = spots.slice(0, n).map(([x, y, z]) => { const b = add(SPH_LO, .125, x, y, z); b.userData.y = y; return b; }); break; }
+    case 'rod': { const o = new T.Mesh(CAPS, m); o.rotation.x = Math.PI / 2; o.castShadow = true; line(o, 1.08); g.add(o); P.body = o;
+      for (const [x, ry] of [[-.05, -.16], [.05, .16], [0, 0]]) { const t = new T.Mesh(FOE_GEO.tail, tailMat('#6aa83a')); t.position.set(x, .02, -.2); t.rotation.y = ry; g.add(t); } break; }
+    case 'virus': { P.ball = new T.Group(); g.add(P.ball); add(ICO, .14, 0, 0, 0, true, P.ball); P.sp = new T.Mesh(FOE_GEO.spikes, m); P.sp.castShadow = true; P.ball.add(P.sp); break; }
+    case 'capsule': { add(SPH_LO, .17); P.nuc = add(SPH_LO, .07, 0, 0, 0, false, g, new T.MeshStandardMaterial({ color: '#0a4a3e' }));
+      const sh = new T.Mesh(SPH, new T.MeshPhysicalMaterial({ color: '#9ff5e0', roughness: .1, transparent: true, opacity: .32, clearcoat: 1, depthWrite: false })); sh.scale.setScalar(.27); g.add(sh); P.shell = sh; break; }
+    case 'fungus': { add(SPH, .26); P.buds = [add(SPH_LO, .14, .22, .1, .1), add(SPH_LO, .1, -.18, .15, -.12), add(SPH_LO, .08, .05, .26, -.05)]; P.buds.forEach(b => b.userData.s = b.scale.x); break; }
+    case 'worm': { P.head = add(SPH, .34); const h = new T.Mesh(FOE_GEO.hooks, new T.MeshStandardMaterial({ color: '#fff0dc', roughness: .4 })); g.add(h); P.hooks = h; break; }
+    case 'spiro': { const o = new T.Mesh(FOE_GEO.helix, m); o.castShadow = true; g.add(o); P.coil = o; break; }
+    case 'strep': { P.chain = []; for (let i = 0; i < 6; i++) P.chain.push(add(SPH_LO, .085, 0, 0, (2.5 - i) * .14)); break; }
+    case 'amoeba': { const b = new T.Mesh(shapedSphere('amoeba', SHAPES.amoeba), m); b.scale.setScalar(.24); b.castShadow = true; line(b, 1.06); g.add(b); P.blob = b;
+      add(SPH_LO, .08, .03, .02, 0, false, g, new T.MeshStandardMaterial({ color: '#1a3a6a' }));
+      P.pods = [0, 2.1, 4.2].map(a => { const o = add(SPH_LO, .09, 0, -.03, 0, 1.08); o.userData.a = a; return o; }); break; }
+    case 'phage': { add(new T.IcosahedronGeometry(1, 1), .15, 0, .24, 0, 1.08); const tail = add(CYL, 1, 0, .03, 0, false); tail.scale.set(.03, .24, .03); add(new T.CylinderGeometry(.09, .09, .03, 8), 1, 0, -.09, 0, false);
+      P.legs = []; for (let i = 0; i < 6; i++) { const hip = new T.Group(); hip.position.set(0, -.09, 0); hip.rotation.y = i / 6 * Math.PI * 2; const th = new T.Group(); th.position.x = .07; hip.add(th); g.add(hip);
+        const leg = new T.Mesh(CYL, m); leg.scale.set(.016, .28, .016); leg.position.y = -.12; leg.castShadow = true; th.add(leg); th.userData.ph = (i % 2) * Math.PI; P.legs.push(th); } break; }
+    case 'spore': { P.ball = new T.Group(); g.add(P.ball); const b = add(SPH_LO, 1, 0, 0, 0, 1.07, P.ball); b.scale.set(.2, .15, .15); for (const x of [-.08, .08]) { const r = add(new T.TorusGeometry(1, .12, 8, 24), .15, x, 0, 0, false, P.ball, FOE_MAT.fungus); r.rotation.y = Math.PI / 2; } break; }
   }
   return g;
 }
+// Движения каждого вида: w — фаза шага
+const FOE_ANIM = {
+  coccus: (P, w) => P.balls.forEach((b, i) => { b.position.y = b.userData.y + Math.sin(w * 1.5 + i * 1.7) * .03; }),
+  rod: (P, w) => { const k = 1 + .1 * Math.sin(w * 2); P.body.scale.set(1 / k, k, 1 / k); },
+  virus: (P, w) => { P.ball.rotation.x = w * .9; P.sp.scale.setScalar(1 + .08 * Math.sin(w * 2)); },
+  capsule: (P, w) => { P.nuc.position.set(Math.cos(w) * .08, Math.sin(w * .7) * .05, Math.sin(w) * .08); const k = 1 + .05 * Math.sin(w * 1.5); P.shell.scale.set(.27 * k, .27 / k, .27 * k); },
+  fungus: (P, w) => P.buds.forEach((b, i) => b.scale.setScalar(b.userData.s * (1 + .14 * Math.sin(w * 1.4 + i * 2)))),
+  spiro: (P, w, now) => { P.coil.rotation.z = now * 11; },
+  strep: (P, w) => P.chain.forEach((c, i) => { c.position.x = Math.sin(w * 1.2 - i * .85) * .085 * (.4 + i * .14); }),
+  amoeba: (P, w) => { const k = Math.sin(w * 1.1); P.blob.scale.set(.24 * (1 - .08 * k), .24 * (1 - .1 * k), .24 * (1 + .15 * k)); P.pods.forEach(o => { const r = .2 + .1 * Math.sin(w * 1.3 + o.userData.a * 2); o.position.x = Math.cos(o.userData.a + w * .15) * r; o.position.z = Math.sin(o.userData.a + w * .15) * r; }); },
+  phage: (P, w) => P.legs.forEach(th => { const s = Math.sin(w + th.userData.ph); th.rotation.z = .85 + s * .32; th.rotation.y = Math.cos(w + th.userData.ph) * .28; }),
+  spore: (P, w) => { P.ball.rotation.x = w * .85; },
+  worm: (P, w) => { P.head.scale.setScalar(.34 * (1 + .04 * Math.sin(w * 2))); P.hooks.rotation.z = Math.sin(w) * .25; }
+};
 
 /* ---------- Эффекты ---------- */
 const FX = { parts: [], rings: [] };
@@ -1818,16 +1948,92 @@ function ring(pos, color, radius, life = .45, y = .12) {
   FX.rings.push({ m, life, max: life, radius });
 }
 
-// Плавающие цифры урона (DOM)
+// Заготовки вспышек. Порядок как в больших играх: короткий замах → яркая вспышка → медленно тающий след
+const FLASH = {
+  star: canvasTex(128, 128, (g, W) => { const c = W / 2; const rg = g.createRadialGradient(c, c, 0, c, c, c * .5); rg.addColorStop(0, '#fff'); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, W); g.fillStyle = '#fff'; for (let k = 0; k < 4; k++) { g.save(); g.translate(c, c); g.rotate(k * Math.PI / 2 + (k % 2 ? 0 : 0)); g.beginPath(); g.moveTo(0, -c); g.quadraticCurveTo(4, -6, c * (k % 2 ? .62 : 1) * 0 + 7, 0); g.quadraticCurveTo(4, 6, 0, 0); g.quadraticCurveTo(-4, -6, 0, -c); g.fill(); g.restore(); } }),
+  slash: canvasTex(128, 128, (g, W) => { const c = W / 2; g.translate(c, c); for (let i = 0; i < 12; i++) { g.strokeStyle = `rgba(255,255,255,${.1 + i * .07})`; g.lineWidth = 15 - i * 1.1; g.lineCap = 'round'; g.beginPath(); g.arc(-14, 0, 48, -1.15 + i * .03, 1.15 - i * .03); g.stroke(); } }),
+  halo: canvasTex(128, 128, (g, W) => { const c = W / 2, rg = g.createRadialGradient(c, c, 0, c, c, c); rg.addColorStop(0, 'rgba(255,255,255,.95)'); rg.addColorStop(.45, 'rgba(255,255,255,.5)'); rg.addColorStop(.82, 'rgba(255,255,255,.28)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, W); }),
+  swirl: canvasTex(256, 256, (g, W) => { const c = W / 2; g.translate(c, c); g.lineCap = 'round'; for (let k = 0; k < 5; k++) { g.save(); g.rotate(k * 1.2566); for (let i = 0; i < 40; i++) { const t = i / 40, a = t * 2.6, r = 26 + t * 96; g.strokeStyle = `rgba(255,255,255,${.85 * (1 - t) + .12})`; g.lineWidth = 9 * (1 - t * .75); g.beginPath(); g.arc(0, 0, r, a, a + .13); g.stroke(); } g.restore(); } g.lineWidth = 5; g.strokeStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.arc(0, 0, 121, 0, 7); g.stroke(); }),
+  aim: canvasTex(128, 128, (g, W) => { const c = W / 2; g.translate(c, c); g.strokeStyle = '#fff'; g.lineWidth = 5; g.beginPath(); g.arc(0, 0, 58, 0, 7); g.stroke(); g.lineWidth = 3; g.setLineDash([12, 10]); g.beginPath(); g.arc(0, 0, 44, 0, 7); g.stroke(); }),
+  smoke: canvasTex(64, 64, (g, W) => { const c = W / 2, rg = g.createRadialGradient(c, c, 2, c, c, c); rg.addColorStop(0, 'rgba(255,255,255,.75)'); rg.addColorStop(.6, 'rgba(255,255,255,.35)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, W); }),
+  blob: canvasTex(32, 32, (g, W) => { const c = W / 2; g.fillStyle = 'rgba(0,0,0,.55)'; g.beginPath(); g.arc(c, c, c - 1, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(c, c, c - 4, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,1)'; g.beginPath(); g.arc(c - 4, c - 4, 3, 0, 7); g.fill(); }),
+  splat: canvasTex(128, 128, (g, W) => { const c = W / 2; g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i <= 26; i++) { const a = i / 26 * 6.283, r = 30 + (i % 2 ? 18 : 0) * Math.random() + 6 * Math.sin(i * 3.1); g[i ? 'lineTo' : 'moveTo'](c + Math.cos(a) * r, c + Math.sin(a) * r); } g.closePath(); g.fill(); for (let i = 0; i < 12; i++) { const a = Math.random() * 6.28, r = 42 + Math.random() * 18; g.beginPath(); g.arc(c + Math.cos(a) * r, c + Math.sin(a) * r, 2 + Math.random() * 5, 0, 7); g.fill(); } })
+};
+FX.fl = []; FX.gr = []; FX.drops = []; FX.splats = []; FX.pillars = []; FX.dead = [];
+const flPool = { a: [], n: [] }, grPool = [], dropPool = [];
+function flash(pos, name, color, s0, s1, life, o = {}) {
+  const pool = o.solid ? flPool.n : flPool.a;
+  let s = pool.pop();
+  if (!s) s = new T.Sprite(new T.SpriteMaterial({ map: FLASH[name], blending: o.solid ? T.NormalBlending : T.AdditiveBlending, depthWrite: false, transparent: true }));
+  s.material.map = FLASH[name]; s.material.color.set(color); s.material.opacity = o.op ?? 1; s.material.rotation = o.rot ?? Math.random() * 6.28;
+  s.position.copy(pos); s.scale.setScalar(s0);
+  s.userData = { s0, s1, life, max: life, spin: o.spin || 0, op: o.op ?? 1, vy: o.vy || 0, pool };
+  scene.add(s); FX.fl.push(s); return s;
+}
+const grGeo = new T.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
+function gfx(pos, name, color, r0, r1, life, o = {}) {   // вспышка, лежащая на земле
+  let m = grPool.pop();
+  if (!m) m = new T.Mesh(grGeo, new T.MeshBasicMaterial({ transparent: true, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false }));
+  m.material.map = FLASH[name]; m.material.color.set(color); m.material.opacity = o.op ?? .95; m.material.needsUpdate = true;
+  m.position.set(pos.x, o.y ?? .1, pos.z); m.scale.setScalar(r0); m.rotation.y = Math.random() * 6.28;
+  m.userData = { r0, r1, life, max: life, spin: o.spin || 0, op: o.op ?? .95, hold: o.hold || 0 };
+  scene.add(m); FX.gr.push(m); return m;
+}
+function chunk(pos, color, n = 7, speed = 2.2, size = .13) {   // плотные капли разлетаются и падают
+  for (let i = 0; i < n; i++) {
+    let s = dropPool.pop();
+    if (!s) s = new T.Sprite(new T.SpriteMaterial({ map: FLASH.blob, depthWrite: false, transparent: true }));
+    s.material.color.set(color); s.position.copy(pos);
+    const a = Math.random() * 6.28, v = speed * (.45 + Math.random() * .7);
+    s.userData = { vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: 1.4 + Math.random() * 2.2, size: size * (.6 + Math.random() * .8), life: .75 };
+    s.scale.setScalar(s.userData.size); scene.add(s); FX.drops.push(s);
+  }
+}
+const splatMesh = [];
+for (let i = 0; i < 22; i++) { const m = new T.Mesh(grGeo, new T.MeshBasicMaterial({ map: FLASH.splat, transparent: true, depthWrite: false, opacity: 0 })); m.visible = false; m.userData.life = 0; scene.add(m); splatMesh.push(m); }
+let splatI = 0;
+function splat(pos, color, r = .3) {   // пятно на сосуде после гибели микроба, медленно тает
+  const m = splatMesh[splatI++ % splatMesh.length];
+  m.material.color.set(color); m.position.set(pos.x, PATH_Y + .02, pos.z); m.rotation.y = Math.random() * 6.28; m.scale.setScalar(r); m.visible = true; m.userData.life = 2.4; m.material.opacity = .8;
+}
+const pillarTex = canvasTex(8, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.75, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,.95)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+const pillarGeo = new T.CylinderGeometry(1, 1, 1, 20, 1, true);
+function pillar(pos, color, r = .45, h = 3, life = .7) {   // столб света при установке и улучшении
+  const m = new T.Mesh(pillarGeo, new T.MeshBasicMaterial({ map: pillarTex, color, transparent: true, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, toneMapped: false }));
+  m.position.set(pos.x, h / 2, pos.z); m.scale.set(r, h, r); scene.add(m); FX.pillars.push({ m, life, max: life, r });
+}
+function hitFx(pos, color, big = false) {
+  flash(pos, 'star', '#ffffff', .15, big ? .95 : .6, .14);
+  flash(pos, 'star', color, .2, big ? 1.2 : .78, .2);
+  spark(pos, color, big ? 6 : 3, 1.4, .18, .28);
+}
+function shake(a) { G.shakeA = Math.max(G.shakeA, a); }
+const flashEl = document.getElementById('flash');
+function screenFlash(color, op = .3, ms = 320) { flashEl.style.background = color; flashEl.animate([{ opacity: op }, { opacity: 0 }], { duration: ms, easing: 'ease-out' }); }
+
+// Плавающие цифры урона и «комиксные» слова (DOM)
 const fxEl = document.getElementById('fx'), nums = [];
-for (let i = 0; i < 36; i++) { const d = document.createElement('div'); d.className = 'dmg'; d.style.opacity = 0; fxEl.appendChild(d); nums.push({ el: d, life: 0, pos: new T.Vector3() }); }
+for (let i = 0; i < 36; i++) { const d = document.createElement('div'); d.className = 'dmg'; d.style.opacity = 0; fxEl.appendChild(d); nums.push({ el: d, life: 0, max: 1, vx: 0, rot: 0, pos: new T.Vector3() }); }
 let numIdx = 0;
 function popNum(pos, text, cls = '') {
   if (!SET.dmg && cls !== 'ult') return;
-  const n = nums[numIdx++ % nums.length];
-  n.el.className = 'dmg ' + cls; n.el.textContent = text; n.life = .8; n.pos.copy(pos); n.pos.y += .5;
-  n.pos.x += (Math.random() - .5) * .3;
+  const n = nums[numIdx++ % nums.length], w = cls === 'word';
+  n.el.className = 'dmg ' + cls; n.el.textContent = text; n.life = n.max = w ? 1 : .9; n.pos.copy(pos); n.pos.y += .55;
+  n.pos.x += (Math.random() - .5) * .3; n.vx = (Math.random() - .5) * .5; n.rot = w ? (Math.random() - .5) * 22 : -4;
 }
+const WORDS = ['ХЛОП!', 'БАМ!', 'ШМЯК!', 'ХРЯСЬ!', 'ПЛЮХ!'];
+function word(pos, text) { if (G.wordT > 0) return; G.wordT = 1.1; popNum(pos, text || WORDS[Math.random() * WORDS.length | 0], 'word'); }
+// Монета летит от микроба к счётчику
+const coinsEl = document.getElementById('coins');
+function coinFly(pos) {
+  if (G.coinT > 0) return; G.coinT = .07;
+  tmpC.copy(pos).setY(.5).project(camera);
+  const r = stage.getBoundingClientRect(), to = coinsEl.getBoundingClientRect();
+  const x = (tmpC.x * .5 + .5) * r.width, y = (-tmpC.y * .5 + .5) * r.height, dx = to.left - r.left - x, dy = to.top - r.top - y;
+  const c = document.createElement('i'); c.className = 'coinfly'; c.style.left = x + 'px'; c.style.top = y + 'px'; fxEl.appendChild(c);
+  c.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 }, { transform: `translate(calc(-50% + ${dx * .12}px),calc(-50% - 34px)) scale(1.15)`, opacity: 1, offset: .28 }, { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.6)`, opacity: .9 }], { duration: 620, easing: 'ease-in' }).onfinish = () => { c.remove(); coinsEl.parentElement.animate([{ transform: 'scale(1.16)' }, { transform: 'scale(1)' }], { duration: 160 }); };
+}
+const tmpC = new T.Vector3();
 
 /* =========================================================
    СОСТОЯНИЕ И ЛОГИКА
@@ -1835,7 +2041,8 @@ function popNum(pos, text, cls = '') {
 const G = {
   mode: 'campaign', phase: 'menu', paused: false, coins: 0, hp: MAX_HP, wave: 0, speed: 1,
   units: [], foes: [], shots: [], spikes: [], queue: [], spawnT: 0,
-  shop: [], legTab: false, sel: null, kills: {}, combo: 0, comboT: 0, bonus: {}, best: 0
+  shop: [], legTab: false, sel: null, kills: {}, combo: 0, comboT: 0, bonus: {}, best: 0,
+  shakeA: 0, slow: 0, wordT: 0, coinT: 0, skillT: 0, aim: false, pend: [], boss: null
 };
 try { G.best = +localStorage.getItem('immuneBest') || 0; } catch (e) {}
 
@@ -1869,47 +2076,58 @@ function waveTypes(n) {
   if (n < 20) return [a, WAVE_ORDER[(k + 4) % 10]];
   return [a, WAVE_ORDER[(k + 3) % 10], WAVE_ORDER[(k + 6) % 10]];
 }
+const isSwarm = (n) => n % 5 === 0 && n % 10 !== 0;   // нашествие: микробов вдвое больше, но они вдвое слабее — тут решают удары по площади
 function makeWave(n) {
   const q = [], boss = n % 10 === 0;
   const types = boss ? waveTypes(n - 1) : waveTypes(n), budget = (7 + n * 1.15) * (boss ? .45 : 1);
   if (boss) q.push({ type: 'worm', t: 1.5 });
   types.forEach((type, ti) => {
-    let t = (boss ? 4 : 0) + ti * 1.1, count = Math.max(3, Math.round(budget / types.length / WEIGHT[type]));
+    const swarm = isSwarm(n);
+    let t = (boss ? 4 : 0) + ti * 1.1, count = Math.max(3, Math.round(budget / types.length / WEIGHT[type])) * (swarm ? 2 : 1);
     for (let i = 0; i < count; i++) {
-      q.push({ type, t });
-      t += type === 'virus' ? (i % 4 === 3 ? 1.2 : .22) : type === 'coccus' ? (i % 3 === 2 ? 1 : .35) : .45 + WEIGHT[type] * .3;
+      q.push({ type, t, swarm });
+      t += (type === 'virus' ? (i % 4 === 3 ? 1.2 : .22) : type === 'coccus' ? (i % 3 === 2 ? 1 : .35) : .45 + WEIGHT[type] * .3) * (swarm ? .5 : 1);
     }
   });
-  return q.sort((a, b) => a.t - b.t);
+  return q.sort((a, b) => a.t - b.t).slice(0, 56);   // потолок: чтобы телефон не тормозил
 }
 const hpScale = (n) => Math.pow(1.13, n - 1) * (1 + n * .03) * (LEVELS[G.level || 0].diff || 1);
 
-function spawn(type) {
+const barTex = canvasTex(64, 16, (g, W, H) => { g.fillStyle = '#fff'; g.beginPath(); g.roundRect(0, 0, W, H, 7); g.fill(); });
+function spawn(type, swarm = false) {
   const f = FOES[type], mesh = buildFoe(type), n = G.wave;
-  let hp = f.hp * hpScale(n);
+  let hp = f.hp * hpScale(n) * (swarm ? .5 : 1);
   if (type === 'worm' && G.mode === 'campaign' && n === CAMPAIGN_WAVES) hp *= 1.6;
-  const bg = new T.Sprite(new T.SpriteMaterial({ color: '#1a0508', depthWrite: false, transparent: true, opacity: .85 }));
-  const fill = new T.Sprite(new T.SpriteMaterial({ color: '#7be0b0', depthWrite: false, transparent: true }));
-  bg.center.set(0, .5); fill.center.set(0, .5);
-  const w = f.boss ? 1.2 : .6; bg.scale.set(w, .09, 1); fill.scale.set(w, .065, 1);
-  mesh.scale.setScalar(1.4); mesh.userData.bs = 1.4;
-  scene.add(mesh, bg, fill);
+  const spr = (color, op = 1) => { const m = new T.Sprite(new T.SpriteMaterial({ map: barTex, color, depthWrite: false, transparent: true, opacity: op })); m.center.set(0, .5); m.renderOrder = 5; m.visible = false; return m; };
+  const bg = spr('#1a0508', .9), lag = spr('#fff4dc'), fill = spr('#ff4d5e');
+  const w = f.boss ? 1.2 : .62; bg.scale.set(w + .05, .13, 1); lag.scale.set(w, .085, 1); fill.scale.set(w, .085, 1);
+  const bs = (VIS[type] || 1.85) * (swarm ? .82 : 1);
+  mesh.scale.setScalar(.01); mesh.userData.bs = bs;
+  scene.add(mesh, bg, lag, fill);
   const e = {
-    type, f, mesh, bg, fill, barW: w, hp, maxHp: hp, d: 0, pos: new T.Vector3(), armor: f.armor,
+    type, f, mesh, bg, lag, fill, barW: w, hp, maxHp: hp, d: .75, pos: new T.Vector3(), armor: f.armor, age: 0, rk: swarm ? .5 : 1,
     slow: 0, slowT: 0, stunT: 0, burn: 0, burnT: 0, shredT: 0, shredAmp: 0, weak: 0, weakT: 0, opsT: 0,
-    squash: 0, dead: false, segs: null, wob: Math.random() * 6
+    squash: 0, flash: 0, jolt: 0, lagP: 1, dead: false, segs: null, wob: Math.random() * 6,
+    lane: f.boss ? 0 : (Math.random() - .5) * (f.big ? .2 : .42), ly: PATH_Y + FOOT[type] * bs, barY: FOOT[type] * bs * 2 + .2
   };
+  // ворота вспыхивают, микроб выскакивает из проёма
+  const door = pathAt(.75); portal.userData.burst = Math.min(1.6, portal.userData.burst + .55);
+  spark(door.clone().setY(.6), '#ffe2b0', 4, 1.1, .2, .35, .8);
   if (type === 'worm') {
     e.segs = [];
-    for (let i = 1; i <= 9; i++) { const s = new T.Mesh(SPH, FOE_MAT.worm); s.scale.setScalar(.3 - i * .018); s.castShadow = true; scene.add(s); e.segs.push(s); }
-    showBanner(G.mode === 'campaign' && n === CAMPAIGN_WAVES ? 'Финальный босс' : 'Босс: гельминт', 'Защити: ' + LEVELS[G.level || 0].organ.toLowerCase());
+    for (let i = 1; i <= 10; i++) { const s = new T.Mesh(SPH, FOE_MAT.worm); s.scale.setScalar(.34 - i * .018); s.castShadow = true; const l = new T.Mesh(SPH, OUTLINE); l.scale.setScalar(1.06); s.add(l); s.visible = false; scene.add(s); e.segs.push(s); }
+    G.boss = e; $('bossName').textContent = f.name; $('bossBar').classList.add('on');
+    showBanner(G.mode === 'campaign' && n === CAMPAIGN_WAVES ? 'Финальный босс' : 'Босс: гельминт', 'Защити: ' + LEVELS[G.level || 0].organ.toLowerCase(), 'boss');
+    portal.userData.burst = 3; shake(.16); screenFlash('#3a0010', .45, 700);
     AU.play('siren', 0, .9);
   }
   G.foes.push(e);
 }
 
 function removeFoe(e) {
-  scene.remove(e.mesh, e.bg, e.fill); e.fill.material.dispose(); e.bg.material.dispose();
+  scene.remove(e.bg, e.lag, e.fill); e.fill.material.dispose(); e.bg.material.dispose(); e.lag.material.dispose();
+  if (e.corpse) return;
+  scene.remove(e.mesh); e.mesh.userData.mat.dispose();
   if (e.segs) e.segs.forEach(s => scene.remove(s));
 }
 
@@ -1924,23 +2142,33 @@ function hurt(e, dmg, u, opt = {}) {
   if (cc && Math.random() < cc) { mult *= 2.2; crit = true; }
   const armor = e.shredT > 0 ? 0 : e.armor;
   const val = dmg * mult * (1 - armor);
-  e.hp -= val; e.squash = 1;
-  if (val >= 12 || crit || opt.ult) popNum(e.pos, Math.round(val), opt.ult ? 'ult' : crit ? 'crit' : '');
+  e.hp -= val; if (u) { u.dealt = (u.dealt || 0) + val; if (!opt.dot) { e.squash = 1; e.flash = 1; e.jolt = 1; } }
+  if (val >= 10 || crit || opt.ult) popNum(e.pos, Math.round(val), opt.ult ? 'ult' : crit ? 'crit' : '');
+  if (crit) { flash(e.pos.clone().setY(.45), 'halo', '#ffc93a', .3, 1.25, .3, { op: .85 }); if (Math.random() < .3) word(e.pos); }
   if (e.hp <= 0) kill(e);
 }
 
 function kill(e) {
-  e.dead = true;
-  const reward = Math.round(e.f.reward * (1 + G.wave * .04));
-  G.coins += reward; updateHUD();
+  e.dead = true; e.corpse = true;
+  const reward = Math.max(1, Math.round(e.f.reward * (1 + G.wave * .04) * e.rk));
+  G.coins += reward; updateHUD(); coinFly(e.pos);
   G.kills[e.type] = (G.kills[e.type] || 0) + 1; PROF.kills++;
   const col = '#' + FOE_MAT[e.type].color.getHexString();
-  spark(e.pos, col, e.f.boss ? 40 : 10, e.f.boss ? 3 : 1.8, e.f.boss ? .5 : .25, .55);
-  spark(e.pos, '#ffffff', 3, 1, .3, .25);
+  FX.dead.push({ mesh: e.mesh, t: 0, dur: e.f.boss ? .55 : .16, bs: e.mesh.userData.bs, col, pos: e.pos.clone(), y: e.mesh.position.y, segs: e.segs, popped: 0, boss: e.f.boss });
   AU.play(e.f.boss ? 'boom' : 'die', e.pos.x, e.f.boss ? 1 : .8);
-  if (e.f.boss) ring(e.pos, '#ffd36b', 3, .8);
+  if (e.f.boss) { G.slow = 1.2; shake(.3); screenFlash('#ffffff', .55, 500); ring(e.pos, '#ffd36b', 3, .8); word(e.pos, 'ПОБЕДА!'); }
   G.combo = G.comboT > 0 ? G.combo + 1 : 1; G.comboT = 1.4;
-  if (G.combo >= 5) { comboEl.innerHTML = 'Комбо <span>×' + G.combo + '</span>'; comboEl.classList.add('on'); }
+  if (G.combo >= 5) {
+    comboEl.innerHTML = 'Комбо <span>×' + G.combo + '</span>'; comboEl.classList.add('on'); comboEl.classList.toggle('t2', G.combo >= 20 && G.combo < 50); comboEl.classList.toggle('t3', G.combo >= 50);
+    comboEl.animate([{ transform: 'translateX(-50%) scale(1.22)' }, { transform: 'translateX(-50%) scale(1)' }], { duration: 170, easing: 'ease-out' });
+  }
+}
+// Микроб раздувается и лопается: капли, вспышка, пятно на сосуде
+function popFoe(pos, col, big) {
+  const p = pos.clone().setY(.15);
+  flash(p, 'star', '#ffffff', .2, big ? 2 : 1, .16); flash(p, 'halo', col, .25, big ? 1.8 : .9, .24, { op: .8 });
+  chunk(p, col, big ? 14 : 7, big ? 3 : 2.1, big ? .2 : .13); spark(p, col, big ? 10 : 4, 1.5, .22, .34);
+  splat(pos, col, big ? .75 : .38);
 }
 
 function applyHit(e, u, s, opt = {}) {
@@ -1971,25 +2199,33 @@ function pickTarget(u, range) {
 
 /* ---------- Снаряды ---------- */
 const projMats = {};
+function projGlow(o, color, sz) {   // светящийся шлейф вокруг снаряда
+  const sp = new T.Sprite(projMats['g' + color] ||= new T.SpriteMaterial({ map: glowTex, color, blending: T.AdditiveBlending, depthWrite: false, opacity: .85 }));
+  sp.scale.setScalar(sz / o.scale.x); o.add(sp); return o;
+}
 function projMesh(kind, color) {
-  if (kind === 'y') { const y = buildY(color, .45); return y; }
-  if (kind === 'needle') { const m = new T.Mesh(CYL, projMats['n' + color] ||= new T.MeshBasicMaterial({ color })); m.scale.set(.025, .34, .025); const g = new T.Group(); m.rotation.x = Math.PI / 2; g.add(m); return g; }
-  if (kind === 'streak') { const m = new T.Mesh(CYL, projMats['s' + color] ||= new T.MeshBasicMaterial({ color, transparent: true, opacity: .9, blending: T.AdditiveBlending })); m.scale.set(.04, .7, .04); const g = new T.Group(); m.rotation.x = Math.PI / 2; g.add(m); return g; }
+  if (kind === 'y') { const y = buildY(color, .45); return projGlow(y, color, .6); }
+  if (kind === 'needle') { const m = new T.Mesh(CYL, projMats['n' + color] ||= new T.MeshBasicMaterial({ color })); m.scale.set(.03, .4, .03); const g = new T.Group(); m.rotation.x = Math.PI / 2; g.add(m); return projGlow(g, color, .34); }
+  if (kind === 'streak') { const m = new T.Mesh(CYL, projMats['s' + color] ||= new T.MeshBasicMaterial({ color, transparent: true, opacity: .9, blending: T.AdditiveBlending })); m.scale.set(.05, .85, .05); const g = new T.Group(); m.rotation.x = Math.PI / 2; g.add(m); return projGlow(g, color, .55); }
   const s = new T.Mesh(SPH_LO, projMats['b' + color] ||= new T.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: .9, roughness: .2 }));
-  s.scale.setScalar(kind === 'granule' ? .1 : .08); return s;
+  s.scale.setScalar(kind === 'granule' ? .12 : .09); return projGlow(s, color, kind === 'granule' ? .6 : .46);
 }
 function fire(u, e, s) {
   const d = u.def, from = u.pos.clone().setY(.45), col = d.col;
   u.kick = 1;
+  if (d.kind !== 'melee' && d.kind !== 'pulse') flash(from, 'star', col, .12, .55, .13);
   if (d.kind === 'melee') {
-    applyHit(e, u, s); spark(e.pos, col, 5, 1.4, .2, .3);
+    applyHit(e, u, s);
+    // дуга удара от клетки к микробу
+    const sa = Math.atan2(-(e.pos.z - u.pos.z), e.pos.x - u.pos.x), at = e.pos.clone().setY(.42);
+    flash(at, 'slash', col, .5, 1.15, .16, { rot: sa }); flash(at, 'slash', '#ffffff', .4, .9, .1, { rot: sa }); hitFx(at, col);
     if (d.slow) ring(e.pos, '#d9c8ff', .45, .3);
     u.lunge = e.pos.clone().sub(u.pos).setY(0).normalize();
     AU.play(d.snd, u.pos.x, .8); return;
   }
   if (d.kind === 'pulse') {
     for (const t of inRange(u, s.range)) applyHit(t, u, s);
-    ring(u.pos, col, s.range, .45); spark(u.pos.clone().setY(.4), col, 10, 2.5, .22, .35, .3);
+    ring(u.pos, col, s.range, .45); gfx(u.pos, 'halo', col, .3, s.range, .4, { op: .35 }); spark(u.pos.clone().setY(.4), col, 8, 2.5, .22, .35, .3);
     AU.play(d.snd, u.pos.x, .8); return;
   }
   if (d.kind === 'fan') {
@@ -2000,6 +2236,7 @@ function fire(u, e, s) {
   if (d.kind === 'lob') {
     const lead = e.pos.clone(); const tgt = pathAt(Math.min(PATH.len, e.d + e.f.speed * SPEEDK * .55 * (1 - (e.slowT > 0 ? e.slow : 0))));
     G.shots.push({ kind: 'lob', mesh: addMesh(projMesh('granule', d.gran || col), from), from, to: tgt.clone(), t: 0, dur: .55, u, s, trail: d.gran || col });
+    gfx(tgt, 'aim', d.gran || col, d.aoe * 1.25, d.aoe * .8, .55, { op: .7, spin: 3, y: PATH_Y + .06 });
     AU.play('lob', u.pos.x, .6); return;
   }
   if (d.kind === 'pierce') {
@@ -2015,9 +2252,12 @@ function addMesh(m, p) { m.position.copy(p); scene.add(m); return m; }
 function explode(pos, u, s, radius, opt = {}) {
   const r = radius * (u.def.fac === 'bomb' ? [1, 1.25, 1.5][tier('bomb')] : 1);
   for (const e of G.foes) if (!e.dead && e.pos.distanceTo(pos) <= r) applyHit(e, u, s, opt);
-  ring(pos, u.def.gran || u.def.col, r, .4);
-  spark(pos.clone().setY(.2), u.def.gran || u.def.col, 14, 2.6, .3, .45, 1.6);
-  spark(pos.clone().setY(.2), '#fff2d0', 5, 1.4, .45, .25, .6);
+  const c = u.def.gran || u.def.col, p = pos.clone().setY(.2);
+  ring(pos, c, r, .4); gfx(pos, 'halo', c, r * .5, r * 1.15, .3, { op: .6 });
+  flash(p, 'star', '#ffffff', .4, 1.9, .16); flash(p, 'halo', '#fff2d0', .4, 1.5, .22, { op: .9 });
+  chunk(p, c, 8, 2.8, .13); spark(p, c, 8, 2.6, .3, .42, 1.6);
+  for (let i = 0; i < 3; i++) flash(p.clone().add(new T.Vector3((Math.random() - .5) * .5, .1, (Math.random() - .5) * .5)), 'smoke', '#d8cfc4', .3, .95, .55, { solid: true, op: .5, vy: .6 });
+  shake(.05); word(pos, 'БАХ!');
   AU.play('boom', pos.x, .55);
 }
 
@@ -2027,6 +2267,7 @@ function ult(u, s) {
   if (!near.length) return false;
   AU.play('ult', u.pos.x, .9);
   ring(u.pos, d.col, s.range * 1.25, .7); ring(u.pos, '#ffffff', s.range * .8, .5);
+  gfx(u.pos, 'swirl', d.col, s.range * .4, s.range * 1.25, .85, { spin: 3.2 }); pillar(u.pos, d.col, .5, 3.6, .7); flash(u.pos.clone().setY(.6), 'star', '#ffffff', .4, 2.2, .2); shake(.06);
   popNum(u.pos.clone().setY(.6), d.ult.split(':')[0], 'ult');
   if (d.id === 'igg') near.forEach(e => { e.opsT = 4; spark(e.pos, '#ffd36b', 3, 1, .25, .4); });
   if (d.id === 'igm') near.forEach(e => { e.stunT = Math.max(e.stunT, 1.5); spark(e.pos, '#ff8fb1', 4, 1, .25, .5); });
@@ -2050,10 +2291,42 @@ function ult(u, s) {
   return true;
 }
 
+/* ---------- Цитокиновый удар: игрок сам бьёт по скоплению микробов ---------- */
+const SKILL = { cd: 18, r: 1.7 }, skillBtn = document.getElementById('skillBtn');
+const skillPower = () => 42 * hpScale(Math.max(1, G.wave));
+function skillUI() { skillBtn.hidden = G.phase !== 'wave'; skillBtn.classList.toggle('aim', G.aim); stage.classList.toggle('aiming', G.aim); }
+let skillShown = -1;
+function updateSkill(dt) {
+  if (G.skillT > 0) G.skillT = Math.max(0, G.skillT - dt);
+  const p = Math.round((1 - G.skillT / SKILL.cd) * 100);
+  if (p !== skillShown) { skillShown = p; skillBtn.style.setProperty('--p', p + '%'); skillBtn.classList.toggle('ready', p >= 100); }
+  for (let i = G.pend.length - 1; i >= 0; i--) { const z = G.pend[i]; z.t -= dt; if (z.t <= 0) { G.pend.splice(i, 1); skillBlast(z.p); } }
+}
+function castSkill(p) {
+  G.aim = false; G.skillT = SKILL.cd; skillUI();
+  const q = new T.Vector3(p.x, 0, p.z);
+  // замах: круг сжимается к цели, потом вспышка
+  gfx(q, 'aim', '#ffd36b', SKILL.r * 1.5, SKILL.r * .75, .4, { op: .95, spin: -4, hold: .75, y: .14 });
+  flash(q.clone().setY(2.6), 'star', '#fff0c0', .3, .9, .38, { vy: -5.8, spin: 8 });
+  AU.play('lob', q.x, .8); G.pend.push({ t: .38, p: q });
+}
+function skillBlast(q) {
+  const p = q.clone().setY(.3), dmg = skillPower();
+  for (const e of G.foes) if (!e.dead && Math.hypot(e.pos.x - q.x, e.pos.z - q.z) <= SKILL.r) { hurt(e, dmg, null, { ult: true }); if (!e.dead) { e.squash = 1; e.flash = 1; e.jolt = 1; e.slow = Math.max(e.slow, .5); e.slowT = Math.max(e.slowT, 1.8); } }
+  flash(p, 'star', '#ffffff', .6, 3.6, .2); flash(p, 'halo', '#ffd36b', .6, 3.2, .34, { op: .95 });
+  gfx(q, 'swirl', '#ffc93a', SKILL.r * .5, SKILL.r * 1.2, .95, { spin: 4.2, hold: .15, y: .16 }); gfx(q, 'halo', '#ff9a3a', .5, SKILL.r * 1.3, .55, { op: .55 });
+  ring(q, '#ffffff', SKILL.r * 1.25, .4); ring(q, '#ffd36b', SKILL.r * 1.6, .6);
+  pillar(q, '#ffd36b', .7, 4.2, .55); chunk(p, '#ffd36b', 16, 3.6, .15); spark(p, '#ffe9a8', 16, 3.2, .3, .55, 1.8);
+  for (let i = 0; i < 5; i++) flash(p.clone().add(new T.Vector3((Math.random() - .5) * 1.4, .1, (Math.random() - .5) * 1.4)), 'smoke', '#e8d8c0', .4, 1.3, .7, { solid: true, op: .45, vy: .7 });
+  shake(.2); screenFlash('#fff2c8', .3, 260); G.wordT = 0; word(q, 'БА-БАХ!'); AU.play('boom', q.x, 1); AU.play('ult', q.x, .7); buzz(50);
+}
+skillBtn.onclick = () => { if (G.phase !== 'wave' || G.skillT > 0) { if (G.skillT > 0) toast('Удар ещё заряжается'); return; } G.aim = !G.aim; if (G.aim) toast('Нажми на скопление микробов'); skillUI(); };
+
 /* ---------- Главный цикл ---------- */
 const tmpV = new T.Vector3(), tmpQ = new T.Vector3();
 function update(dt) {
   const now = performance.now() / 1000;
+  foeU.t.value = now;
   bloodTex.offset.y -= dt * .45;
   animateBackdrop(dt, now);
   organ.scale.setScalar(1 + Math.sin(now * 2.2) * .015);
@@ -2061,7 +2334,7 @@ function update(dt) {
 
   if (G.phase === 'wave') {
     G.spawnT += dt;
-    while (G.queue.length && G.queue[0].t <= G.spawnT) spawn(G.queue.shift().type);
+    while (G.queue.length && G.queue[0].t <= G.spawnT) { const q = G.queue.shift(); spawn(q.type, q.swarm); }
   }
 
   // Шипы IgA
@@ -2082,38 +2355,52 @@ function update(dt) {
     for (const z of G.spikes) if (e.d >= z.from && e.d <= z.to) sp *= .45;
     if (e.stunT > 0) sp = 0;
     e.d += sp * dt * SPEEDK;
+    e.age += dt;
     pathAt(e.d, e.pos);
     pathAt(e.d + .1, tmpQ);
-    e.wob += dt * (3 + sp * 3);
-    const lift = PATH_Y + e.f.size * 1.4 + .05 + Math.sin(e.wob) * .025;
+    // идут не гуськом, а небольшой толпой: у каждого своя полоса в сосуде
+    { const lk = Math.max(0, Math.min(1, (e.d - .75) / 1.4, (PATH.len - e.d) / 1.2)) * e.lane; tmpV.subVectors(tmpQ, e.pos).normalize(); const sx = -tmpV.z * lk, sz = tmpV.x * lk; e.pos.x += sx; e.pos.z += sz; tmpQ.x += sx; tmpQ.z += sz; }
+    const gt = GAIT[e.type];
+    if (e.stunT <= 0) e.wob += dt * gt.rate * (.45 + sp * .8);
+    const stepS = Math.abs(Math.sin(e.wob));
+    // выход из ворот: подскок с лёгким перерастянием
+    const out = Math.min(1, e.age / .42), pop = out < 1 ? 1 + 2.7 * Math.pow(out - 1, 3) + 1.7 * Math.pow(out - 1, 2) : 1;
+    const lift = e.ly + stepS * gt.hop + (out < 1 ? Math.sin(out * Math.PI) * .4 : 0);
     e.mesh.position.set(e.pos.x, lift, e.pos.z);
     e.mesh.lookAt(tmpQ.x, lift, tmpQ.z);
-    if (e.type === 'virus' || e.type === 'coccus') e.mesh.rotateY(now * 3);
-    if (e.mesh.userData.spin === 'x') e.mesh.rotateX(now * 9);
-    if (e.mesh.userData.spin === 'y') e.mesh.rotateY(now * 1.5);
-    if (e.mesh.userData.wiggle) e.mesh.children.forEach((c, i) => c.position.z = Math.sin(now * 8 + i * 1.2) * .04);
-    if (e.mesh.userData.blob) { const w = Math.sin(now * 4 + e.wob); e.mesh.userData.blob.scale.set(.24 * (1 + .12 * w), .24 * (1 - .08 * w), .24 * (1 - .1 * w)); }
+    e.mesh.rotateX(gt.lean ?? .12);
+    if (gt.rock) e.mesh.rotateZ(Math.cos(e.wob) * gt.rock);
+    if (e.jolt > 0) { e.jolt = Math.max(0, e.jolt - dt * 7); e.mesh.translateZ(-e.jolt * .1); }
+    FOE_ANIM[e.type]?.(e.mesh.userData.P, e.wob, now);
     if (e.f.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.f.regen * dt);
     e.squash = Math.max(0, e.squash - dt * 6);
-    const sq = 1 + e.squash * .25, bs = e.mesh.userData.bs; e.mesh.scale.set(sq * bs, bs / sq, sq * bs);
-    if (e.segs) e.segs.forEach((s, i) => { pathAt(Math.max(0, e.d - (i + 1) * .27), tmpV); s.position.set(tmpV.x, PATH_Y + .28 - i * .012 + Math.sin(e.wob - i * .7) * .04, tmpV.z); });
-    const barY = e.f.boss ? 1.1 : e.f.size * 2.8 + .25;
-    e.bg.position.set(e.pos.x - e.barW / 2, barY, e.pos.z); e.fill.position.copy(e.bg.position);
-    const pct = Math.max(0, e.hp / e.maxHp);
-    e.fill.scale.x = e.barW * pct;
-    e.fill.material.color.set(e.shredT > 0 ? '#8ff0b4' : e.opsT > 0 ? '#ffd36b' : pct > .5 ? '#7be0b0' : pct > .25 ? '#ffc65c' : '#ff5a6a');
-    if (e.burnT > 0) { hurt(e, e.burn * dt, null); if (Math.random() < dt * 8) spark(e.pos.clone().setY(lift + .1), '#ff9a3c', 1, .4, .18, .5, 1.5); }
+    const st = gt.hop >= .05 ? 1 + (stepS - .45) * .24 : 1, sq = 1 + e.squash * .28, bs = e.mesh.userData.bs * Math.max(.01, pop);
+    e.mesh.scale.set(sq * bs / st, bs * st / sq, sq * bs / st);
+    if (e.flash > 0) { e.flash = Math.max(0, e.flash - dt * 7); const U = e.mesh.userData; U.mat.emissive.copy(U.em).lerp(WHITE, e.flash); U.mat.emissiveIntensity = U.ei + e.flash * 1.5; }
+    if (e.segs) e.segs.forEach((s, i) => { const sd = e.d - (i + 1) * .3; s.visible = sd > .75; pathAt(Math.max(0, sd), tmpV); const u2 = Math.sin(e.wob * 1.4 - i * .7); s.position.set(tmpV.x + u2 * .06, PATH_Y + .3 - i * .012 + Math.abs(u2) * .05, tmpV.z - u2 * .04); });
+    const pct = Math.max(0, e.hp / e.maxHp), hurtNow = pct < 1;
+    if (e.f.boss) { $('bossFill').style.transform = `scaleX(${pct})`; $('bossLag').style.transform = `scaleX(${e.lagP})`; }
+    e.lagP += (pct - e.lagP) * Math.min(1, dt * 3.2);
+    e.bg.visible = e.lag.visible = e.fill.visible = hurtNow && !e.f.boss;
+    if (hurtNow) {
+      const barY = e.ly + e.barY;
+      e.bg.position.set(e.pos.x - e.barW / 2 - .025, barY, e.pos.z); e.lag.position.set(e.pos.x - e.barW / 2, barY, e.pos.z); e.fill.position.copy(e.lag.position);
+      e.fill.scale.x = Math.max(.001, e.barW * pct); e.lag.scale.x = Math.max(.001, e.barW * e.lagP);
+      e.fill.material.color.set(e.shredT > 0 ? '#8ff0b4' : e.opsT > 0 ? '#ffd36b' : '#ff4d5e');
+    }
+    if (e.burnT > 0) { hurt(e, e.burn * dt, null, { dot: true }); if (Math.random() < dt * 8) spark(e.pos.clone().setY(lift + .1), '#ff9a3c', 1, .4, .18, .5, 1.5); }
     if (e.slowT > 0 && Math.random() < dt * 4) spark(e.pos.clone().setY(lift), '#c9a6ff', 1, .2, .15, .4, .3);
     if (!e.dead && e.d >= PATH.len) {
       e.dead = true; e.leaked = true;
       G.hp = Math.max(0, G.hp - e.f.leak); updateHUD();
       organ.userData.mat.emissiveIntensity = 6;
       spark(organ.position.clone().setY(.6), '#ff3d55', 16, 2.5, .35, .5);
-      AU.play('leak', organ.position.x, 1); buzz(120);
-      toast(e.f.name + ' дошёл до печени: −' + e.f.leak);
+      AU.play('leak', organ.position.x, 1); buzz(120); shake(.1); screenFlash('#ff1a30', .32, 420);
+      toast(e.f.name + ': −' + e.f.leak + ' здоровья органа');
     }
   }
   for (let i = G.foes.length - 1; i >= 0; i--) if (G.foes[i].dead) { removeFoe(G.foes[i]); G.foes.splice(i, 1); }
+  if (G.boss && G.boss.dead) { G.boss = null; $('bossBar').classList.remove('on'); }
 
   // Клетки
   for (const u of G.units) {
@@ -2129,6 +2416,10 @@ function update(dt) {
     const m = u.mesh;
     const bs = u.def.leg ? 1.3 : 1.5;
     m.position.set(u.pos.x, (u.def.leg ? .45 : .18 + u.def.r * bs) + bob, u.pos.z);
+    if (u.drop > 0) {
+      u.drop = Math.max(0, u.drop - dt * 3.4); m.position.y += u.drop * u.drop * 2.6;
+      if (u.drop === 0) { ring(u.pos, u.def.col, 1, .45); gfx(u.pos, 'halo', u.def.col, .3, 1.05, .35, { op: .5 }); for (let k = 0; k < 4; k++) flash(u.pos.clone().add(new T.Vector3((Math.random() - .5) * .8, .12, (Math.random() - .5) * .8)), 'smoke', '#e8e0d4', .2, .6, .45, { solid: true, op: .45 }); spark(u.pos.clone().setY(.3), u.def.col, 8, 1.6, .22, .4, 1.4); shake(.04); u.kick = 1; AU.play('place', u.pos.x, 1); }
+    }
     if (u.lunge && u.kick > 0) m.position.addScaledVector(u.lunge, u.kick * .22);
     const pulse = 1 + u.kick * .12 + Math.sin(now * 3 + u.phase) * .02;
     m.scale.set(pulse * bs, bs / pulse * (1 + Math.sin(now * 3 + u.phase) * .02), pulse * bs);
@@ -2147,16 +2438,16 @@ function update(dt) {
     if (p.kind === 'homing') {
       if (p.target.dead) { done = true; }
       else {
-        tmpV.copy(p.target.pos).setY(p.target.f.size + .05);
+        tmpV.copy(p.target.pos).setY(p.target.mesh.position.y);
         const dir = tmpV.clone().sub(p.mesh.position), dist = dir.length(), stepLen = p.speed * dt;
         p.mesh.lookAt(tmpV); if (p.u.def.proj === 'y' || p.u.def.kind === 'fan') p.mesh.rotateZ(now * 10);
         if (dist <= stepLen + .05) {
           applyHit(p.target, p.u, p.s);
-          spark(tmpV, p.u.def.proj === 'drop' ? (p.u.def.id === 'mac' ? '#ffb347' : '#7dff9e') : p.u.def.col, 4, 1.2, .2, .3);
+          hitFx(tmpV, p.u.def.proj === 'drop' ? (p.u.def.id === 'mac' ? '#ffb347' : '#7dff9e') : p.u.def.col);
           if (p.u.def.slow && p.u.def.proj === 'y') ring(tmpV, '#7fe7ff', .35, .3);
           AU.play('hit', tmpV.x, .4); done = true;
         } else p.mesh.position.addScaledVector(dir.normalize(), stepLen);
-        if (Math.random() < dt * 30) spark(p.mesh.position, p.u.def.col, 1, .1, .12, .18, 0);
+        if (Math.random() < dt * 34) spark(p.mesh.position, p.u.def.col, 1, .1, .16, .24, 0);
       }
     } else if (p.kind === 'lob') {
       p.t += dt / p.dur; const t = Math.min(1, p.t);
@@ -2170,7 +2461,7 @@ function update(dt) {
         if (e.dead || p.hit.has(e)) continue;
         if (Math.hypot(e.pos.x - p.mesh.position.x, e.pos.z - p.mesh.position.z) < .32) {
           const bonus = 1 + p.hit.size * [0, .2, .4][tier('pierce')];
-          p.hit.add(e); applyHit(e, p.u, p.s, { mul: bonus }); spark(e.pos, p.u.def.col, 4, 1.4, .2, .3);
+          p.hit.add(e); applyHit(e, p.u, p.s, { mul: bonus }); hitFx(e.pos.clone().setY(e.mesh.position.y), p.u.def.col);
         }
       }
       if (Math.random() < dt * 50) spark(p.mesh.position, p.u.def.col, 1, .05, .2, .2, 0);
@@ -2192,8 +2483,41 @@ function update(dt) {
     if (r.life <= 0) { scene.remove(r.m); r.m.material.dispose(); FX.rings.splice(i, 1); }
   }
 
+  for (let i = FX.fl.length - 1; i >= 0; i--) {
+    const s = FX.fl[i], u = s.userData; u.life -= dt;
+    if (u.life <= 0) { scene.remove(s); FX.fl.splice(i, 1); if (u.pool.length < 120) u.pool.push(s); continue; }
+    const k = 1 - u.life / u.max, e3 = 1 - Math.pow(1 - k, 3);
+    s.scale.setScalar(u.s0 + (u.s1 - u.s0) * e3); s.material.opacity = u.op * Math.pow(1 - k, 1.3); s.material.rotation += u.spin * dt; s.position.y += u.vy * dt;
+  }
+  for (let i = FX.gr.length - 1; i >= 0; i--) {
+    const m = FX.gr[i], u = m.userData; u.life -= dt;
+    if (u.life <= 0) { scene.remove(m); FX.gr.splice(i, 1); if (grPool.length < 40) grPool.push(m); continue; }
+    const k = 1 - u.life / u.max, e3 = 1 - Math.pow(1 - k, 3);
+    m.scale.setScalar(u.r0 + (u.r1 - u.r0) * e3); m.material.opacity = u.op * (k < u.hold ? 1 : Math.pow(1 - (k - u.hold) / (1 - u.hold), 1.2)); m.rotation.y += u.spin * dt;
+  }
+  for (let i = FX.drops.length - 1; i >= 0; i--) {
+    const s = FX.drops[i], u = s.userData; u.life -= dt; u.vy -= dt * 8.5;
+    s.position.x += u.vx * dt; s.position.y += u.vy * dt; s.position.z += u.vz * dt;
+    if (u.life <= 0 || s.position.y < PATH_Y + .03) { scene.remove(s); FX.drops.splice(i, 1); if (dropPool.length < 200) dropPool.push(s); continue; }
+    s.material.opacity = Math.min(1, u.life * 4);
+  }
+  for (const m of splatMesh) if (m.userData.life > 0) { m.userData.life -= dt; m.material.opacity = Math.min(.8, m.userData.life * .6); if (m.userData.life <= 0) m.visible = false; }
+  for (let i = FX.pillars.length - 1; i >= 0; i--) {
+    const z = FX.pillars[i]; z.life -= dt; const k = 1 - z.life / z.max;
+    z.m.material.opacity = (1 - k) * .9; z.m.scale.x = z.m.scale.z = z.r * (1 - k * .55);
+    if (z.life <= 0) { scene.remove(z.m); z.m.material.dispose(); FX.pillars.splice(i, 1); }
+  }
+  for (let i = FX.dead.length - 1; i >= 0; i--) {
+    const c = FX.dead[i]; c.t += dt; const k = Math.min(1, c.t / c.dur), U = c.mesh.userData, b = c.bs * (1 + .42 * k * k);
+    c.mesh.scale.set(b, c.bs * (1 + .42 * k * k) * (1 - .2 * k), b); U.mat.emissive.copy(WHITE); U.mat.emissiveIntensity = .6 + k * 2.6;
+    if (c.segs) { const n = Math.floor(k * c.segs.length); while (c.popped < n) { const sg = c.segs[c.segs.length - 1 - c.popped++]; if (sg.visible) popFoe(sg.position, c.col, false); scene.remove(sg); shake(.05); } }
+    if (k >= 1) { popFoe(c.pos, c.col, c.boss); scene.remove(c.mesh); U.mat.dispose(); FX.dead.splice(i, 1); }
+  }
+  G.wordT -= dt; G.coinT -= dt;
+  updateSkill(dt);
+
   // Комбо
-  if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) { G.combo = 0; comboEl.classList.remove('on'); } }
+  if (G.comboT > 0) { G.comboT -= dt; if (G.comboT <= 0) { G.combo = 0; comboEl.classList.remove('on', 't2', 't3'); } }
 
   // Конец волны / поражение
   if (G.phase === 'wave') {
@@ -2206,11 +2530,12 @@ function renderNums(dt) {
   const w = stage.clientWidth, h = stage.clientHeight;
   for (const n of nums) {
     if (n.life <= 0) continue;
-    n.life -= dt; n.pos.y += dt * .8;
+    n.life -= dt; const age = n.max - n.life;
+    n.pos.y += dt * (.35 + n.life * .75); n.pos.x += n.vx * dt;
     tmpV.copy(n.pos).project(camera);
-    const x = (tmpV.x * .5 + .5) * w, y = (-tmpV.y * .5 + .5) * h;
-    n.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${.8 + Math.min(1, (0.8 - n.life) * 8) * .2})`;
-    n.el.style.opacity = Math.min(1, n.life * 2.5);
+    const x = (tmpV.x * .5 + .5) * w, y = (-tmpV.y * .5 + .5) * h, sc = age < .09 ? 1.75 - age * 8.3 : 1;   // выскакивает крупно и садится
+    n.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) rotate(${n.rot}deg) scale(${sc})`;
+    n.el.style.opacity = Math.max(0, Math.min(1, n.life * 3.2));
   }
 }
 
@@ -2312,19 +2637,20 @@ function openFaction(k) {
 function rollShop() {
   const pool = UNITS.flatMap(u => Array(u.cost <= 25 ? 4 : u.cost <= 30 ? 3 : 2).fill(u));
   G.shop = Array.from({ length: 5 }, () => ({ def: pool[Math.random() * pool.length | 0], sold: false }));
-  G.sel = null; renderCards(); setInfo();
+  G.sel = null; renderCards(true); setInfo();
 }
 
-function renderCards() {
+function renderCards(deal = false) {
   const box = $('cards'); box.innerHTML = '';
   const list = G.legTab ? IGS.map(def => ({ def, sold: false, leg: true })) : G.shop;
   list.forEach((card, i) => {
     const d = card.def, el = document.createElement('button');
     const have = G.units.filter(u => u.def.id === d.id).length;
-    el.className = 'card' + (card.leg ? ' leg' : '') + (card.sold ? ' sold' : '') + (G.coins < d.cost ? ' poor' : '') + (G.sel && G.sel.card === card && G.sel.idx === i ? ' sel' : '');
+    el.className = 'card ' + (d.cost <= 25 ? 'r1' : d.cost <= 30 ? 'r2' : 'r3') + (deal ? ' deal' : '') + (card.leg ? ' leg' : '') + (card.sold ? ' sold' : '') + (G.coins < d.cost ? ' poor' : '') + (G.sel && G.sel.card === card && G.sel.idx === i ? ' sel' : '');
     el.style.setProperty('--tc', FAC[d.fac].color);
     el.innerHTML = `<span class="fhead">${plate(d.fac, 18)}<span class="${(FAC[d.fac].short || FAC[d.fac].name).length > 9 ? 'long' : ''}">${FAC[d.fac].short || FAC[d.fac].name}</span></span>${have ? `<span class="have">×${have}</span>` : ''}<img alt="" src="${cellIcon(d)}"><span class="nm">${d.name}</span><span class="cost"><i></i>${d.cost}</span>`;
     el.onclick = () => selectCard(card, i);
+    if (deal) el.style.animationDelay = i * 55 + 'ms';
     box.appendChild(el);
   });
 }
@@ -2367,8 +2693,7 @@ function placeOn(pad) {
     star.scale.set(1.25, .39, 1);
     const u = { def: d, pad, pos: pad.pos.clone(), mesh, level: 1, spent: d.cost, cd: 0, ultT: d.ultCd ? d.ultCd * .5 : 0, phase: Math.random() * 6, starSprite: star };
     scene.add(mesh, star); pad.unit = u; G.units.push(u); if (pad.flag) pad.flag.visible = false;
-    ring(u.pos, d.col, 1, .5); spark(u.pos.clone().setY(.3), d.col, 14, 1.8, .25, .5, 1.8);
-    AU.play('place', u.pos.x, 1);
+    u.drop = 1; pillar(u.pos, d.col, .42, 2.8, .5);
     computeBonus();
   }
   if (!card.leg) card.sold = true;
@@ -2395,7 +2720,7 @@ function openUnit(u) {
     if (max || G.coins < cost) return;
     G.coins -= cost; u.spent += cost; u.level++;
     u.starSprite.material.map = STAR_TEX[u.level]; u.starSprite.material.needsUpdate = true;
-    u.mergeFx = 1.2; ring(u.pos, '#ffd36b', 1.4, .7); spark(u.pos.clone().setY(.5), '#ffd36b', 24, 2.2, .3, .7, 2);
+    u.mergeFx = 1.2; pillar(u.pos, '#ffd36b', .5, 3.4, .8); ring(u.pos, '#ffd36b', 1.4, .7); spark(u.pos.clone().setY(.5), '#ffd36b', 24, 2.2, .3, .7, 2);
     AU.play('merge', u.pos.x, 1); buzz(50); updateHUD(); openUnit(u);
   };
   $('destroyBtn').onclick = () => {
@@ -2414,7 +2739,11 @@ function closeUnit() { $('unitSheet').hidden = true; rangeMesh.visible = rangeFi
 let toastT = 0;
 function toast(msg, ms = 2200) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms); }
 let bannerT = 0;
-function showBanner(title, sub = '') { const b = $('banner'); b.innerHTML = title + (sub ? `<small>${sub}</small>` : ''); b.classList.add('on'); clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove('on'), 1800); }
+function showBanner(title, sub = '', kind = '') {
+  const b = $('banner'); b.innerHTML = `<b>${title}</b>` + (sub ? `<small>${sub}</small>` : ''); b.className = ''; void b.offsetWidth; b.className = 'on ' + kind;
+  $('dim').classList.toggle('on', kind === 'wave' || kind === 'boss');
+  clearTimeout(bannerT); bannerT = setTimeout(() => { b.classList.remove('on'); $('dim').classList.remove('on'); }, kind === 'boss' ? 2300 : 1700);
+}
 
 /* ---------- Нажатия по полю ---------- */
 const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.12);
@@ -2427,7 +2756,8 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const hit = new T.Vector3(); if (!ray.ray.intersectPlane(plane, hit)) return;
   let pad = null, bd = .62; pads.forEach(p => { const d = Math.hypot(p.pos.x - hit.x, p.pos.z - hit.z); if (d < bd) { bd = d; pad = p; } });
   if (G.phase === 'menu' || G.phase === 'end') return;
-  if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на шестиугольные площадки у сосуда'); return; }
+  if (G.aim) { castSkill(hit); return; }
+  if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на круглые площадки у сосуда'); return; }
   if (pad && pad.unit) openUnit(pad.unit); else closeUnit();
 });
 
@@ -2443,7 +2773,8 @@ function startGame(mode, lvl = G.level || 0) {
   for (const z of G.spikes) z.meshes.forEach(m => scene.remove(m));
   buildBoard(makeLayout(stageAspect())); fit();
   PROF.games++; saveProf();
-  Object.assign(G, { mode, phase: 'build', paused: false, coins: 100, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null });
+  Object.assign(G, { mode, phase: 'build', paused: false, coins: 100, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null, skillT: 0, aim: false, pend: [], boss: null, slow: 0 });
+  $('bossBar').classList.remove('on'); skillUI();
   $('legBtn').classList.remove('on');
   screenStack = []; show(null); closeUnit();
   computeBonus(); rollShop(); highlight(); updateHUD();
@@ -2452,19 +2783,23 @@ function startGame(mode, lvl = G.level || 0) {
 function startWave() {
   if (G.phase !== 'build') return;
   G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0;
-  if (G.wave % 10 !== 0) { showBanner('Волна ' + G.wave, waveTypes(G.wave).map(t => FOES[t].many).join(' + ')); AU.play('wave', 0, .9); }
-  updateHUD();
+  G.units.forEach(u => { u.dealt = 0; });
+  if (G.wave % 10 !== 0) { showBanner(isSwarm(G.wave) ? 'Нашествие!' : 'Волна ' + G.wave, waveTypes(G.wave).map(t => FOES[t].many).join(' + ') + (isSwarm(G.wave) ? ' · их вдвое больше' : ''), 'wave'); AU.play('wave', 0, .9); }
+  // ворота просыпаются
+  { const door = pathAt(.75); portal.userData.burst = 2.4; ring(door, '#ffd8a0', 2.4, .7); shake(.05); }
+  skillUI(); updateHUD();
 }
 function waveCleared() {
   const bonus = 15 + G.wave * 3;
-  G.coins += bonus; G.phase = 'build';
+  G.coins += bonus; G.phase = 'build'; G.aim = false; skillUI();
   if (G.mode === 'endless' && G.wave > G.best) { G.best = G.wave; try { localStorage.setItem('immuneBest', G.best); } catch (e) {} }
   if (G.mode === 'campaign' && G.wave >= CAMPAIGN_WAVES) return finish(true);
-  showBanner('Волна отбита', `+${bonus} монет · новые карты`); AU.play('coin', 0, 1);
+  const top = G.units.reduce((a, u) => (u.dealt || 0) > (a?.dealt || 0) ? u : a, null);
+  showBanner('Волна отбита', `+${bonus} монет` + (top ? ` · лучший боец: ${top.def.name}, ${Math.round(top.dealt)} урона` : ''), 'win'); AU.play('coin', 0, 1);
   rollShop(); highlight(); updateHUD();
 }
 function finish(win) {
-  G.phase = 'end'; updateHUD();
+  G.phase = 'end'; G.aim = false; skillUI(); $('bossBar').classList.remove('on'); updateHUD();
   const stars = !win ? 0 : G.hp === MAX_HP ? 3 : G.hp > MAX_HP / 2 ? 2 : 1;
   const L = LEVELS[G.level || 0];
   if (win && G.mode === 'campaign') { PROF.wins++; PROF.lv[L.id] = Math.max(PROF.lv[L.id] || 0, stars); }
@@ -2751,6 +3086,7 @@ function renderGuide() {
       ['Улучшай', 'Нажми на поставленную клетку → <b>«Улучшить»</b>. Уровней пять: от ★ до ★★★★★, урон растёт почти вчетверо. Ненужную клетку можно разрушить и вернуть половину монет.'],
       ['Собирай отряды', 'Плашка сверху карточки — это <b>отряд</b>. Две клетки одного отряда на поле дают бонус всем клеткам отряда, четыре — бонус больше. Значки отрядов светятся над полем.'],
       ['Легенды', 'Во вкладке «Легендарные» — <b>Антитела</b> (иммуноглобулины). Дорогие, но очень сильные, а вместе ещё сильнее: 2, 3 и 5 штук дают огромный бонус.'],
+      ['Цитокиновый удар', 'Во время волны внизу справа появляется <b>золотая кнопка</b>. Нажми её, потом нажми на скопление микробов — по ним придётся мощный удар, и они замедлятся. Заряжается 18 секунд. Каждая пятая волна — <b>нашествие</b>: микробов вдвое больше, но они слабее.'],
       ['Звёзды', 'Ни один микроб не дошёл — <b>★★★</b>. Потерял меньше половины здоровья — ★★. Больше — ★. Победа открывает следующий орган на карте.']
     ];
     h = steps.map(([t, d], k) => `<div class="gcard"><div class="gstep"><i>${k + 1}</i><div><h3>${t}</h3><p>${d}</p></div></div></div>`).join('');
@@ -2853,10 +3189,14 @@ new ResizeObserver(fit).observe(stage); fit();
 
 let lastT = performance.now();
 function loop(t) {
-  const dt = Math.min(.05, (t - lastT) / 1000); lastT = t;
+  const raw = Math.min(.05, (t - lastT) / 1000); lastT = t;
+  let dt = raw; if (G.slow > 0) { G.slow -= raw; dt = raw * .32; }   // замедление на гибели босса
   if (!G.paused) for (let i = 0; i < G.speed; i++) update(dt);
-  renderNums(dt);
+  renderNums(raw);
+  let sx = 0, sz = 0;
+  if (G.shakeA > .003 && !G.paused) { G.shakeA *= Math.pow(.004, raw); sx = (Math.random() - .5) * 2 * G.shakeA; sz = (Math.random() - .5) * 2 * G.shakeA; camera.position.x += sx; camera.position.z += sz; }
   renderer.render(scene, camera);
+  camera.position.x -= sx; camera.position.z -= sz;
   requestAnimationFrame(loop);
 }
 computeBonus(); rollShop(); updateHUD();

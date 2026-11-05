@@ -9,6 +9,8 @@
   Ancient civilization jungle pack — jungle_mud
 Старые текстуры (папка tex, Poly Haven, CC0) в игре больше не используются.
 
+3D-модели природы (папка kit): Stylized Nature MegaKit, Quaternius (CC0) — https://quaternius.com/packs/stylizednaturemegakit.html
+
 Звуки эффектов (CC0):
   Kenney — Sci-Fi Sounds, Interface Sounds (https://kenney.nl, зеркало на opengameart.org)
   OpenGameArt: 75 CC0 breaking/falling/hit sfx, 100 CC0 SFX, 40 CC0 water/splash/slime SFX, 25 CC0 bang/firework SFX

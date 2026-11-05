@@ -385,6 +385,44 @@ body {
 .lookvol { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
 .lookvol input { flex: 1; accent-color: var(--blood); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ===== Новый облик: сталь и золото, картинка на весь экран ===== */
+:root { --bg: #070d1c; --panel: #0e1830; --panel-2: #18264a; --line: #3a5688; --ink: #f0f4ff; --muted: #a6b8d8; }
+#stage { position: absolute; inset: 0; flex: none; z-index: 0; }
+#stage::after { background: radial-gradient(ellipse 90% 80% at 50% 45%, transparent 66%, #04081866 100%); }
+#app::before, #app::after { content: ''; position: absolute; left: 0; right: 0; z-index: 3; background: #0b1428; }
+#app::before { top: 0; height: env(safe-area-inset-top, 0px); }
+#app::after { bottom: 0; height: env(safe-area-inset-bottom, 0px); }
+#hud { background: linear-gradient(180deg, #16264a, #0d1730); padding: 7px 10px 7px; border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, #6a4a10, #ffd36b 30%, #fff0b8 50%, #ffd36b 70%, #6a4a10) 1; box-shadow: 0 4px 12px #0007; }
+.organ-top b { font-size: 14px; text-shadow: 0 1px 0 #0009; }
+.hpbar { height: 11px; border-radius: 3px; background: #050a18; box-shadow: 0 0 0 1.5px #5a7ab0, inset 0 2px 3px #000a; }
+.hpbar i { background: linear-gradient(180deg, #ff9aa4 0, #ff4d5e 35%, #c41d36 100%); }
+.pill { background: linear-gradient(180deg, #223660, #121e3c); border: 1.5px solid #6a88bc; border-radius: 9px; box-shadow: inset 0 1px 0 #ffffff33, 0 2px 0 #0008; font: 800 14px var(--display); }
+.iconbtn { background: linear-gradient(180deg, #2a4274, #142244); border: 1.5px solid #6a88bc; border-radius: 9px; box-shadow: inset 0 1px 0 #ffffff33, 0 2px 0 #0008; color: #fff; }
+#subhud { background: linear-gradient(180deg, #0d1730e6, #0d173099); padding: 4px 12px; color: #c6d4ec; text-shadow: 0 1px 2px #000; }
+#subhud b { color: #ffd36b; font-family: var(--display); }
+#traits { background: linear-gradient(180deg, #0d173099, transparent); min-height: 58px; padding-top: 4px; }
+.trait small { text-shadow: 0 1px 2px #000, 0 0 4px #000; color: #dfe8f8; }
+#panel { margin-top: auto; background: linear-gradient(180deg, #17274c, #0b1428 70%); border-top: none; padding: 7px 8px 8px; box-shadow: 0 -6px 18px #000a; }
+#panel::before { content: ''; position: absolute; top: -2px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #6a4a10, #ffd36b 30%, #fff0b8 50%, #ffd36b 70%, #6a4a10); }
+#info { color: #c6d4ec; }
+.btn { background: linear-gradient(180deg, #2c4678, #16264a); border: 1.5px solid #6a88bc; border-radius: 10px; box-shadow: inset 0 1px 0 #ffffff33, 0 3px 0 #060c1c; font-weight: 700; color: #fff; }
+.btn:active { transform: translateY(2px); box-shadow: inset 0 1px 0 #ffffff33, 0 1px 0 #060c1c; }
+.btn.go { background: linear-gradient(180deg, #ffd978, #ffb02e 48%, #e07a10); border: 1.5px solid #fff0b8; color: #4a2200; text-shadow: 0 1px 0 #ffe9a8; box-shadow: inset 0 1px 0 #ffffffaa, 0 3px 0 #7a3e00, 0 0 16px #ffb02e55; }
+.btn.go:disabled { background: linear-gradient(180deg, #2a3656, #1a2440); border-color: #3a4a70; color: #7a8ab0; text-shadow: none; box-shadow: 0 3px 0 #060c1c; }
+.card { background: radial-gradient(ellipse 90% 60% at 50% 42%, var(--cg, #2a4274) 0%, #101c38 72%); border-width: 2px; border-radius: 10px; min-height: 112px; box-shadow: 0 3px 0 #060c1c, inset 0 1px 0 #ffffff22 !important; }
+.card.r1 { --cg: #2a6a4a; } .card.r2 { --cg: #2a5a9a; } .card.r3 { --cg: #6a3a9a; }
+.card img { width: 52px; height: 52px; filter: drop-shadow(0 2px 3px #000a); }
+.card .nm { color: #fff; text-shadow: 0 1px 2px #000; }
+.card .cost { color: #ffd36b; text-shadow: 0 1px 2px #000; }
+.card.leg { background: radial-gradient(ellipse 90% 60% at 50% 42%, #8a6a1a 0%, #2a1c08 76%); border-color: #ffd36b; }
+.sheet { background: linear-gradient(180deg, #17274c, #0d1730); border: 2px solid #6a88bc; box-shadow: 0 0 0 1px #000, 0 18px 50px #000c, inset 0 1px 0 #ffffff22; }
+#look { background: linear-gradient(180deg, #17274c, #0d1730); border: 2px solid #6a88bc; }
+#combo { top: calc(var(--top, 60px) + 4px); }
+#banner { top: calc(var(--top, 60px) + 30%); }
+#bossBar { top: calc(var(--top, 60px) + 38px); }
+#toast { bottom: calc(var(--bot, 0px) + 12px) !important; }
+#skillBtn { bottom: calc(var(--bot, 0px) + 10px); }
 </style>
 
 <div id="app">
@@ -455,7 +493,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.16 · прототип</p>
+      <p class="ver">Версия 0.17 · прототип</p>
     </div>
   </div>
 
@@ -1020,8 +1058,8 @@ const camera = new T.PerspectiveCamera(38, 1, .1, 100);
 const hemi = new T.HemisphereLight('#ffe6ee', '#4a1840', .6); scene.add(hemi);
 const sun = new T.DirectionalLight('#fff1e6', 1.1);
 sun.position.set(-5, 12, 6); sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 10, bottom: -10, near: 1, far: 40 });
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 13, bottom: -13, near: 1, far: 44 });
 sun.shadow.bias = -.0015; sun.shadow.radius = 4;
 scene.add(sun);
 const rim = new T.DirectionalLight('#7ad8ff', .6); rim.position.set(7, 5, -9); scene.add(rim);
@@ -1052,58 +1090,48 @@ const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a
 
 // Фоны на рисованных текстурах (OpenGameArt, CC0): своя земля для поля и для холмов, своё небо, свет и украшения.
 // scale — сколько единиц поля занимает один повтор текстуры (маленькие 256-пиксельные — мельче, большие 1024 — крупнее).
-// Украшения: «капли» (камни, кусты, ракушки, кристаллы) и «стебли» (деревья, пальмы, ели, кактусы, колонны, камыш, цветы).
-const TREE = (cols, tips, o = {}) => Object.assign({ colors: cols, tips, h: [.7, 1.4], tip: 6, flat: .9, thick: 3, n: 14, per: 3, sway: .05 }, o);
+// Вокруг поля — настоящие 3D-модели природы (Quaternius, CC0): kit — что и сколько сажать, far — дальний лес, near — низкая зелень у края.
 const THEMES = [
   { name: 'Цветущий луг', soil: '#7a8a4a', floor: 'grass_paint', hills: 'grass_paint2', bg: '#a8dcff', fog: [26, 70], hemi: ['#ffffff', '#5a8a3a', .95], sun: ['#fff6e0', 1.2], rim: ['#ffffff', .3], exp: 1,
     bank: '#7a5a3a', amp: .9, freq: .14, scale: [4, 5],
-    stalk: TREE(['#4a9a3a'], ['#ff5a7a', '#ffd34a', '#ffffff', '#b48aff', '#ff9a3a'], { h: [.2, .45], tip: 1.9, flat: .6, thick: .8, n: 26, per: 6, sway: .18 }),
-    blob: { geo: 'sphere', colors: ['#3f8f30', '#56a83e', '#6ab84a'], size: [.25, .5], n: 12, flat: .8 },
-    motes: ['#ffffff', '#ffd34a'], moteA: .5, padc: '#c8b494', rim2: '#ff6a8a' },
+    motes: ['#ffffff', '#ffd34a'], moteA: .5, padc: '#c8b494', slabt: 'mt_stone', slabc: '#a8b4c0', kit: [['CommonTree_1', 7, .3, .42, 'far'], ['CommonTree_2', 6, .3, .4, 'far'], ['CommonTree_3', 4, .27, .34, 'far'], ['Bush_Common_Flowers', 12, .42, .62, 'near'], ['Flower_3_Group', 16, .3, .42, 'near'], ['Flower_4_Group', 14, .26, .36, 'near'], ['Grass_Common_Tall', 26, .28, .4, 'near'], ['Rock_Medium_2', 5, .24, .42, 'near']],
+    rim2: '#ff6a8a' },
   { name: 'Лесная опушка', soil: '#6a5a3a', floor: 'mt_grass', hills: 'rock_01', bg: '#bfe6a8', fog: [24, 62], hemi: ['#f4ffe8', '#3a5a2a', .9], sun: ['#fff4d0', 1.2], rim: ['#d8ffb0', .35], exp: 1,
     bank: '#5a4a2e', amp: 1.1, freq: .16, scale: [2.2, 4.5],
-    stalk: TREE(['#6a4a2e', '#7a5636'], ['#3a8a32', '#4a9a3a', '#2f7a2c']),
-    blob: { geo: 'dodeca', colors: ['#8a8a80', '#9a988c', '#6f8a5a'], size: [.15, .4], n: 12, flat: .6 },
-    motes: ['#fff6a0'], moteA: .45, padc: '#b8b0a0', rim2: '#ffd36b' },
+    motes: ['#fff6a0'], moteA: .45, padc: '#b8b0a0', slabt: 'mt_stone', slabc: '#9aa49a', kit: [['Pine_1', 9, .34, .46, 'far'], ['Pine_2', 8, .34, .46, 'far'], ['CommonTree_2', 4, .3, .38, 'far'], ['Fern_1', 18, .3, .46, 'near'], ['Bush_Common', 10, .4, .6, 'near'], ['Mushroom_Laetiporus', 7, .28, .4, 'near'], ['Mushroom_Common', 8, .36, .5, 'near'], ['Grass_Common_Tall', 20, .28, .4, 'near'], ['Rock_Medium_1', 7, .28, .5, 'near']],
+    rim2: '#ffd36b' },
   { name: 'Тропический остров', soil: '#d8c09a', floor: 'mt_sand', hills: 'mt_water', bg: '#8fd3ff', fog: [26, 72], hemi: ['#ffffff', '#c8a878', .95], sun: ['#fff2d8', 1.25], rim: ['#9fe0ff', .4], exp: .9,
     tint: '#f2d29e', ring: [.3, 1.6], flow: 1, bank: '#c8a070', amp: .12, freq: .14, scale: [2, 2.6],
-    stalk: TREE(['#8a6a44', '#9a7a52'], ['#2a7a26', '#358a2c', '#2f8030'], { h: [1.1, 1.8], tip: 7, flat: .32, thick: 1.8, n: 12, per: 2, sway: .07 }),
-    blob: { geo: 'sphere', colors: ['#ffd0dc', '#fff4e8', '#ffb8a0'], size: [.08, .18], n: 14, flat: .5 },
-    motes: ['#ffffff'], moteA: .25, padc: '#d8c8a4', rim2: '#ff8aa8' },
+    motes: ['#ffffff'], moteA: .25, padc: '#d8c8a4', slabt: 'mt_sandstone_block', slabc: '#e8d8b4', kit: [['Plant_1_Big', 12, .36, .5, 'near'], ['Fern_1', 12, .3, .44, 'near'], ['Plant_7_Big', 10, .4, .55, 'near'], ['TwistedTree_1', 4, .12, .15, 'near'], ['Grass_Wispy_Tall', 12, .24, .34, 'near'], ['Pebble_Round_1', 14, .7, 1, 'near']],
+    rim2: '#ff8aa8' },
   { name: 'Пустынные дюны', soil: '#c8a070', floor: 'mt_desert_sand', hills: 'mt_desert_stone', bg: '#ffe2b0', fog: [26, 72], hemi: ['#fff8e8', '#a87a4a', .9], sun: ['#fff0c8', 1.3], rim: ['#ffc890', .4], exp: 1,
     tint: '#ffe8c8', bank: '#a8784a', amp: 1.2, freq: .1, scale: [2.4, 2.6],
-    stalk: TREE(['#4f8a46', '#5a9a4e'], ['#ff6aa0', '#ffd34a'], { h: [.6, 1.2], tip: 1.6, flat: 1, thick: 2.6, n: 10, per: 2, sway: 0 }),
-    blob: { geo: 'dodeca', colors: ['#b07a5a', '#c89066', '#9a6a4a'], size: [.2, .5], n: 10, flat: .6 },
-    motes: ['#fff0c8'], moteA: .25, padc: '#c8a882', rim2: '#ff9a5a' },
+    motes: ['#fff0c8'], moteA: .25, padc: '#c8a882', slabt: 'mt_desert_stone', slabc: '#e8c8a0', recolor: true, kit: [['DeadTree_1', 6, .22, .3, 'far'], ['DeadTree_2', 5, .2, .26, 'far'], ['Rock_Medium_3', 12, .4, .85, 'far'], ['Rock_Medium_2', 8, .26, .46, 'near'], ['Plant_1', 12, .3, .44, 'near', ['#e8c870', '#d8a850']], ['Grass_Wispy_Tall', 14, .22, .32, 'near', ['#e0b860', '#c89a48']]],
+    rim2: '#ff9a5a' },
   { name: 'Снежная долина', soil: '#dfe8f2', floor: 'mt_ice', hills: 'mt_snow', bg: '#cfe6ff', fog: [24, 62], hemi: ['#ffffff', '#8aa0c8', .85], sun: ['#ffffff', 1.05], rim: ['#9fd8ff', .5], exp: .9,
     bank: '#8aa8c8', amp: 1.2, freq: .18, scale: [2.2, 2.6], tint: '#f4f8ff',
-    stalk: TREE(['#5a4030'], ['#2a5a3a', '#1f4a30', '#2e6a42'], { h: [.5, 1], tip: 4.5, flat: 2.2, thick: 2, n: 16, per: 4, sway: .03 }),
-    blob: { geo: 'octa', colors: ['#bfefff', '#e0f4ff', '#d8c8ff'], size: [.18, .45], n: 10, tall: 1.9 },
-    motes: ['#ffffff'], moteA: .7, fall: true, padc: '#a8b8cc', rim2: '#4aa8ff' },
+    motes: ['#ffffff'], moteA: .7, fall: true, padc: '#a8b8cc', slabt: 'mt_stone', slabc: '#b8cce4', recolor: true, kit: [['Pine_1', 10, .34, .46, 'far', ['#f0f6ff', '#dce8f6']], ['Pine_2', 9, .34, .46, 'far', ['#e8f0fa', '#f4f8ff']], ['DeadTree_1', 4, .2, .26, 'far'], ['Rock_Medium_1', 9, .3, .6, 'near', ['#dfe8f4']], ['Rock_Medium_2', 6, .24, .4, 'near', ['#eaf0f8']], ['Bush_Common', 8, .36, .5, 'near', ['#eef4ff']]],
+    rim2: '#4aa8ff' },
   { name: 'Старая мостовая', soil: '#8a8478', floor: 'mt_cobble', hills: 'mt_mossycobble', bg: '#b8d8c8', fog: [24, 64], hemi: ['#f4fff0', '#4a5a3a', .9], sun: ['#fff6e0', 1.2], rim: ['#c8ffd8', .35], exp: 1,
     bank: '#4a4a3a', amp: .9, freq: .16, scale: [1.8, 2],
-    stalk: TREE(['#d8d0c4', '#c8c0b4'], ['#e8e0d4'], { h: [1, 1.7], tip: 3.4, flat: .35, thick: 3.2, n: 8, per: 1, sway: 0 }),
-    blob: { geo: 'sphere', colors: ['#3e8a34', '#4f9a3c'], size: [.25, .5], n: 14, flat: .8 },
-    motes: ['#fff6c0'], moteA: .3, padc: '#b8ad9c', rim2: '#7acb5a' },
+    motes: ['#fff6c0'], moteA: .3, padc: '#b8ad9c', slabt: 'mt_stone', slabc: '#b0a898', kit: [['CommonTree_3', 7, .28, .36, 'far'], ['CommonTree_1', 6, .3, .4, 'far'], ['Bush_Common', 14, .42, .62, 'near'], ['Rock_Medium_2', 7, .26, .46, 'near'], ['RockPath_Square_Wide', 8, .5, .7, 'near'], ['Grass_Common_Tall', 16, .26, .36, 'near'], ['Clover_1', 12, .3, .42, 'near']],
+    rim2: '#7acb5a' },
   { name: 'Вулкан', soil: '#5a4a44', floor: 'rock_02', hills: 'lava_paint', bg: '#2a0e08', fog: [20, 56], hemi: ['#ffb08a', '#2a0a04', .65], sun: ['#ffcf9a', 1.05], rim: ['#ff5a1a', .9], exp: 1,
     flow: .25, bank: '#ff6a1a', amp: .2, freq: .18, scale: [3.5, 4], tint: '#a89890', lava: true,
-    stalk: null, blob: { geo: 'dodeca', colors: ['#2a2220', '#3a302c', '#1e1816'], size: [.25, .7], n: 16, flat: .7 },
-    motes: ['#ffb03a', '#ff6a1a'], moteA: .8, padc: '#6a5a52', rim2: '#ff8a3a' },
+    motes: ['#ffb03a', '#ff6a1a'], moteA: .8, padc: '#6a5a52', slabt: 'rock_02', slabc: '#8a7a72', kit: [['DeadTree_1', 7, .2, .3, 'near', ['#3a2c28']], ['DeadTree_2', 5, .18, .26, 'near', ['#2c2220']], ['Rock_Medium_3', 12, .4, .9, 'near', ['#4a3a34', '#3a2c28']], ['Rock_Medium_1', 10, .3, .6, 'near', ['#50403a']]],
+    rim2: '#ff8a3a' },
   { name: 'Осенняя роща', soil: '#a8783a', floor: 'mt_dry_grass', hills: 'mt_dirt', bg: '#f6dcb4', fog: [24, 66], hemi: ['#fff4e0', '#6a4a2a', .9], sun: ['#ffe8c0', 1.2], rim: ['#ffc890', .4], exp: 1,
     bank: '#6a4a2a', amp: 1, freq: .15, scale: [2.2, 2.6],
-    stalk: TREE(['#5a3e28', '#6a4a30'], ['#e8762a', '#d84a2a', '#f0b030', '#c8901a']),
-    blob: { geo: 'sphere', colors: ['#d86a2a', '#e8a030', '#b8502a'], size: [.2, .45], n: 12, flat: .8 },
-    motes: ['#ffb05a', '#ff8a3a'], moteA: .45, fall: true, padc: '#c0a888', rim2: '#ff8a3a' },
+    motes: ['#ffb05a', '#ff8a3a'], moteA: .45, fall: true, padc: '#c0a888', slabt: 'mt_sandstone_block', slabc: '#d8c4a4', recolor: true, kit: [['CommonTree_1', 8, .3, .42, 'far', ['#f08a2a', '#e8602a', '#f2b838']], ['CommonTree_2', 7, .3, .4, 'far', ['#f0a030', '#d8482a', '#f2c850']], ['CommonTree_3', 5, .27, .34, 'far', ['#e8782a', '#f0b030']], ['Bush_Common', 12, .4, .6, 'near', ['#e8782a', '#f0a830']], ['Mushroom_Common', 10, .36, .5, 'near'], ['Grass_Wispy_Tall', 16, .24, .34, 'near', ['#e0a848', '#c88a38']], ['Rock_Medium_2', 6, .26, .44, 'near']],
+    rim2: '#ff8a3a' },
   { name: 'Галечный берег', soil: '#9a9488', floor: 'mt_gravel', hills: 'water_cobble', bg: '#a8d8e8', fog: [24, 66], hemi: ['#f0faff', '#4a6a5a', .9], sun: ['#fff6e8', 1.2], rim: ['#9fe8ff', .4], exp: 1,
     ring: [.3, 1.6], flow: .6, bank: '#4a6a7a', amp: .12, freq: .15, scale: [2, 4],
-    stalk: TREE(['#6a8a3a', '#7a9a44'], ['#7a5a32', '#6a4a2a'], { h: [.5, 1.1], tip: 1.3, flat: 2.4, thick: .7, n: 18, per: 6, sway: .2 }),
-    blob: { geo: 'dodeca', colors: ['#9a9a90', '#b0aca0', '#8a8880'], size: [.15, .4], n: 12, flat: .6 },
-    motes: ['#ffffff'], moteA: .3, padc: '#b8b4aa', rim2: '#5ad8ff' },
+    motes: ['#ffffff'], moteA: .3, padc: '#b8b4aa', slabt: 'mt_stone', slabc: '#c0c8cc', kit: [['Rock_Medium_1', 10, .28, .55, 'near'], ['Rock_Medium_3', 7, .3, .5, 'near'], ['Pebble_Round_1', 18, .7, 1.1, 'near'], ['Pebble_Square_2', 14, .8, 1.2, 'near'], ['Grass_Wispy_Tall', 14, .22, .32, 'near'], ['Plant_7', 12, .4, .55, 'near']],
+    rim2: '#5ad8ff' },
   { name: 'Джунгли', soil: '#5a6a3a', floor: 'jungle_mud', hills: 'grass_paint2', bg: '#9fd8a8', fog: [22, 60], hemi: ['#f0ffe8', '#2a4a2a', .9], sun: ['#fff4d8', 1.15], rim: ['#c8ff90', .4], exp: 1,
     bank: '#3a4a2a', amp: 1.2, freq: .17, scale: [3, 4.5], tint: '#e8f4d8',
-    stalk: TREE(['#7a6a44', '#6a5a3a'], ['#2f8a2a', '#3a9a32', '#4aa83a'], { h: [1.2, 2], tip: 8, flat: .3, thick: 1.6, n: 14, per: 3, sway: .06 }),
-    blob: { geo: 'sphere', colors: ['#2a7a2a', '#3a8a30', '#1f6a24'], size: [.3, .6], n: 14, flat: .7 },
-    motes: ['#e8ff8a', '#ffe68a'], moteA: .6, padc: '#a8ac90', rim2: '#ffd36b' }
+    motes: ['#e8ff8a', '#ffe68a'], moteA: .6, padc: '#a8ac90', slabt: 'mt_mossycobble', slabc: '#c0ccb0', kit: [['TwistedTree_1', 6, .13, .17, 'far'], ['TwistedTree_2', 5, .12, .16, 'far'], ['CommonTree_3', 4, .3, .36, 'far'], ['Plant_1_Big', 14, .4, .56, 'near'], ['Fern_1', 18, .34, .5, 'near'], ['Flower_4_Group', 10, .28, .38, 'near'], ['Bush_Common', 10, .44, .64, 'near'], ['Rock_Medium_2', 5, .26, .44, 'near']],
+    rim2: '#ffd36b' }
 ];
 let TH = THEMES[0];
 
@@ -1151,8 +1179,8 @@ terrainMat.customProgramCacheKey = () => 'terrain2';
 function buildTerrain() {
   TER.hash.clear();
   for (let d = 0; d <= PATH.len; d += .12) { const p = pathAt(d); const k = Math.floor(p.x) + ',' + Math.floor(p.z); if (!TER.hash.has(k)) TER.hash.set(k, []); TER.hash.get(k).push(p.x, p.z); }
-  TER.box = new T.Box3(); pads.forEach(p => TER.box.expandByPoint(p.pos)); TER.box.expandByObject(organ); TER.box.expandByPoint(PATH.pts[0]);
-  TER.box.expandByScalar(.9);
+  TER.box = new T.Box3(); pads.forEach(p => TER.box.expandByPoint(p.pos)); TER.box.expandByObject(organ); TER.box.expandByPoint(PATH.pts[0]); TER.box.expandByPoint(BOARD_R.a); TER.box.expandByPoint(BOARD_R.b);
+  TER.box.expandByScalar(.25);
   const c = TER.box.getCenter(new T.Vector3()), sz = TER.box.getSize(new T.Vector3());
   const W = Math.max(sz.x, sz.z) + 26, seg = Math.min(300, Math.ceil(W / .17));
   const geo = new T.PlaneGeometry(W, W, seg, seg); geo.rotateX(-Math.PI / 2);
@@ -1183,6 +1211,47 @@ function buildTerrain() {
   buildDecor();
 }
 
+// Модели природы: один файл со сжатыми сетками + текстуры
+const KIT = { ready: false, models: {}, mats: {}, t: { value: 0 }, rec: { value: 0 } };
+function kitMaterial(name, m) {
+  const leafy = /^(Leaves|Grass|Flowers)/.test(name), crown = /^Leaves_/.test(name), masked = m.alpha === 'MASK' && !/^Bark/.test(name), base = (m.img || '').replace(/\.png$/, '');
+  const map = texLoader.load(`assets/kit/${base}.${masked ? 'png' : 'jpg'}`);
+  map.flipY = false; map.encoding = T.sRGBEncoding; map.wrapS = map.wrapT = T.RepeatWrapping; map.anisotropy = 4;
+  const mat = new T.MeshLambertMaterial({ map, side: T.DoubleSide, alphaTest: masked ? .45 : 0 });
+  const wind = name === 'Grass' ? .1 : .035;
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uT = KIT.t; sh.uniforms.uRec = leafy ? KIT.rec : { value: /^(Rocks|Bark)/.test(name) ? 0 : 0 };
+    if (leafy) sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uT;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>\n#ifdef USE_INSTANCING\nfloat ph = instanceMatrix[3][0] * .7 + instanceMatrix[3][2] * .5;\n#else\nfloat ph = 0.;\n#endif\ntransformed.x += sin(uT * 1.5 + ph + transformed.y * .5) * ${wind} * transformed.y;\ntransformed.z += cos(uT * 1.2 + ph) * ${wind * .6} * transformed.y;`);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uRec;')
+      .replace('#include <color_fragment>', crown
+        ? '#ifdef USE_COLOR\n  diffuseColor.rgb = vColor * (.5 + 1.1 * diffuseColor.r);\n#endif'   // кроны: в текстуре только форма и светотень, цвет задаёт тема
+        : '#ifdef USE_COLOR\n  float lum = dot(diffuseColor.rgb, vec3(.3, .59, .11));\n  diffuseColor.rgb = mix(diffuseColor.rgb * vColor, vec3(lum * 1.9) * vColor, uRec);\n#endif');
+  };
+  mat.customProgramCacheKey = () => 'kit' + (leafy ? wind : 'x') + (crown ? 'c' : '');
+  mat.userData.depth = masked ? new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map, alphaTest: .45 }) : null;
+  mat.userData.leafy = leafy; mat.userData.crown = crown;
+  return mat;
+}
+async function loadKit() {
+  const [meta, bin] = await Promise.all([fetch('assets/kit/kit.json').then(r => r.json()), fetch('assets/kit/kit.bin').then(r => r.arrayBuffer())]);
+  for (const k in meta.mats) KIT.mats[k] = kitMaterial(k, meta.mats[k]);
+  for (const k in meta.models) {
+    const M = meta.models[k];
+    KIT.models[k] = { h: M.hi[1] - M.lo[1], base: M.lo[1], prims: M.prims.map(q => {
+      const P = new Int16Array(bin, q.p, q.n * 3), N = new Int8Array(bin, q.nr, q.n * 4), U = new Int16Array(bin, q.uv, q.n * 2), I = new Uint16Array(bin, q.ix, q.ni);
+      const pos = new Float32Array(q.n * 3), nor = new Float32Array(q.n * 3), uv = new Float32Array(q.n * 2);
+      for (let i = 0; i < q.n; i++) {
+        for (let c = 0; c < 3; c++) { pos[i * 3 + c] = P[i * 3 + c] / 32767 * M.e + M.c[c]; nor[i * 3 + c] = N[i * 4 + c] / 127; }
+        uv[i * 2] = U[i * 2] / 2048; uv[i * 2 + 1] = U[i * 2 + 1] / 2048;
+      }
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('normal', new T.BufferAttribute(nor, 3)); g.setAttribute('uv', new T.BufferAttribute(uv, 2)); g.setIndex(new T.BufferAttribute(new Uint16Array(I), 1));
+      return { g, mat: KIT.mats[q.mat], name: q.mat };
+    }) };
+  }
+  KIT.ready = true; if (PATH) buildDecor();
+}
+
 // Склейка нескольких фигур в одну сетку: дешевле для телефона
 function mergeG(parts) {
   const pos = [], nor = [], v = new T.Vector3(), n3 = new T.Matrix3();
@@ -1192,93 +1261,52 @@ function mergeG(parts) {
   }
   const o = new T.BufferGeometry(); o.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); o.setAttribute('normal', new T.Float32BufferAttribute(nor, 3)); return o;
 }
-function clumpGeo(g) {   // пышная крона: большой шар и три поменьше
-  const M = (x, y, z, k) => new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion(), new T.Vector3(k, k, k));
-  return mergeG([[g, M(0, 0, 0, .82)], [g, M(.58, -.14, .22, .6)], [g, M(-.52, -.1, -.26, .64)], [g, M(.06, .44, -.14, .56)]]);
-}
 
-// Украшения
-const DECOR = { bub: null, vil: null, tip: null, data: [], bdata: [] };
-const BLOB_GEO = { sphere: clumpGeo(new T.SphereGeometry(1, 14, 10)), octa: new T.OctahedronGeometry(1, 0), dodeca: new T.DodecahedronGeometry(1, 1) };
-const vilGeo = new T.CapsuleGeometry(.07, 1, 4, 10), tipGeo = clumpGeo(new T.IcosahedronGeometry(1, 2));
-vilGeo.translate(0, .57, 0);
-const bubMat = new T.MeshStandardMaterial({ roughness: .6, metalness: 0 });
-const vilMat = new T.MeshStandardMaterial({ roughness: .8 });
-const tipMat = new T.MeshStandardMaterial({ roughness: .75, flatShading: true });
-function decorSpots(n, dmin, dmax) {
-  const out = [], b = TER.box; let tries = 0;
-  while (out.length < n && tries < n * 80) {
-    tries++;
-    const x = b.min.x - 9 + Math.random() * (b.max.x - b.min.x + 18), z = b.min.z - 9 + Math.random() * (b.max.z - b.min.z + 18), d = boxDist(x, z);
-    if (d >= dmin && d <= dmax && pathDist(x, z) > 2 && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > 1.5)) out.push([x, z]);
-  }
-  return out;
-}
-// свободные места на самом поле: подальше от сосуда и площадок
-function innerSpots(n) {
-  const out = [], b = TER.box; let tries = 0;
-  while (out.length < n && tries < n * 120) {
-    tries++;
-    const x = b.min.x + Math.random() * (b.max.x - b.min.x), z = b.min.z + Math.random() * (b.max.z - b.min.z);
-    if (pathDist(x, z) < 1.15) continue;
-    let ok = true; pads.forEach(p => { if (Math.hypot(p.pos.x - x, p.pos.z - z) < .85) ok = false; });
-    if (ok && Math.hypot(organ.position.x - x, organ.position.z - z) > 2 && out.every(([px, pz]) => Math.hypot(px - x, pz - z) > .9)) out.push([x, z]);
-  }
-  return out;
-}
+// Украшения: леса, кусты и скалы вокруг поля
+const CROWN = { Leaves_NormalTree: ['#3f9a2a', '#57ad30', '#2f8a2c'], Leaves_TwistedTree: ['#4aa83a', '#3a9a3a', '#62b83a'], Leaves_Pine: ['#2a6e3a', '#226030', '#347a3c'] };
+const DECOR = { list: [] };
 function buildDecor() {
-  for (const k of ['bub', 'vil', 'tip']) if (DECOR[k]) { scene.remove(DECOR[k]); DECOR[k].dispose(); DECOR[k] = null; }
-  DECOR.data = []; DECOR.bdata = [];
-  const pick = (a) => a[Math.random() * a.length | 0];
-  if (TH.blob) {
-    const B = TH.blob, cols = B.colors.map(c => new T.Color(c));
-    decorSpots(B.n, ...(TH.ring || [.8, 8])).forEach(([cx, cz]) => {
-      const n = 2 + (Math.random() * 4 | 0);
-      for (let i = 0; i < n; i++) { const r = B.size[0] + Math.random() * (B.size[1] - B.size[0]), x = cx + (Math.random() - .5) * 1.2, z = cz + (Math.random() - .5) * 1.2; if (pathDist(x, z) < 1.1 + r) continue; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); }
-    });
-    innerSpots(8).forEach(([x, z]) => { const r = (B.size[0] + Math.random() * (B.size[1] - B.size[0])) * .6; DECOR.bdata.push({ x, z, r, y: heightAt(x, z) + r * (B.tall ? .9 : (B.flat || 1) * .45), c: pick(cols), rot: Math.random() * 6, rx: (Math.random() - .5) * .5 }); });
-    bubMat.flatShading = B.geo !== 'sphere'; bubMat.roughness = B.geo === 'octa' ? .15 : .7; bubMat.transparent = B.geo === 'octa'; bubMat.opacity = B.geo === 'octa' ? .85 : 1; bubMat.needsUpdate = true;
-    DECOR.bub = new T.InstancedMesh(BLOB_GEO[B.geo], bubMat, Math.max(1, DECOR.bdata.length));
-    DECOR.bdata.forEach((b, i) => DECOR.bub.setColorAt(i, b.c));
-    DECOR.bub.castShadow = true; DECOR.bub.receiveShadow = true; scene.add(DECOR.bub);
+  for (const m of DECOR.list) { scene.remove(m); m.dispose(); }
+  DECOR.list = [];
+  if (!KIT.ready) return;
+  KIT.rec.value = TH.recolor ? 1 : 0;
+  const rockMap = KIT.mats.Rocks.map, want = TH.name === 'Пустынные дюны' ? 'Rocks_Desert_Diffuse' : 'Rocks_Diffuse';
+  if (!KIT.rockTex) KIT.rockTex = { Rocks_Diffuse: rockMap };
+  if (!KIT.rockTex[want]) { const t = texLoader.load(`assets/kit/${want}.jpg`); t.flipY = false; t.encoding = T.sRGBEncoding; t.wrapS = t.wrapT = T.RepeatWrapping; KIT.rockTex[want] = t; }
+  KIT.mats.Rocks.map = KIT.rockTex[want]; KIT.mats.Rocks.needsUpdate = true;
+  const b = TER.box, used = [], pick = (a) => a[Math.random() * a.length | 0], col = new T.Color(), white = new T.Color('#ffffff');
+  for (const [name, n, s0, s1, zone, tints] of TH.kit || []) {
+    const M = KIT.models[name]; if (!M) continue;
+    const far = zone === 'far', sp = far ? 1.25 : .5, spots = [], lim = TH.ring ? TH.ring[1] : far ? 9 : 2.6, low = far ? .35 : .08;
+    for (let t = 0; t < n * 60 && spots.length < n; t++) {
+      let x = b.min.x - lim + Math.random() * (b.max.x - b.min.x + lim * 2), z = b.min.z - lim + Math.random() * (b.max.z - b.min.z + lim * 2);
+      if (far && Math.random() < .8) { x = b.min.x - 1.5 + Math.random() * (b.max.x - b.min.x + 3); z = b.min.z - .4 - Math.random() * 4.2; }   // лес стоит за полем, там его видно
+      const d = boxDist(x, z);
+      if (d < low || d > lim || (M.h * s1 > .45 && z > b.max.z - .2 && d < .9)) continue;   // перед полем только низкая зелень
+      if (far && z > b.max.z - 1.2) continue;                           // высокие деревья не загораживают поле спереди
+      if (Math.hypot(x - portal.position.x, z - portal.position.z) < 1.5 || pathDist(x, z) < 1) continue;
+      if (used.every(([px, pz, r]) => Math.hypot(px - x, pz - z) > Math.max(r, sp) * .8)) { spots.push([x, z]); used.push([x, z, sp]); }
+    }
+    for (const q of M.prims) {
+      const im = new T.InstancedMesh(q.g, q.mat, Math.max(1, spots.length)); im.count = spots.length;
+      const tall = M.h * s1 > .55, dm = new T.Object3D();
+      spots.forEach(([x, z], i) => {
+        let r = Math.sin(x * 12.9 + z * 78.2) * 43758.5; r -= Math.floor(r);
+        const sc = s0 + r * (s1 - s0);
+        dm.position.set(x, heightAt(x, z) - M.base * sc - .03, z); dm.rotation.set(0, r * 6.28, 0); dm.scale.setScalar(sc); dm.updateMatrix(); im.setMatrixAt(i, dm.matrix);
+        const tinted = tints && (q.mat.userData.leafy || !/^Bark/.test(q.name));
+        col.set(tinted ? tints[(r * 97 | 0) % tints.length] : q.mat.userData.crown ? CROWN[q.name][(r * 97 | 0) % 3] : '#ffffff'); if (!tinted) col.multiplyScalar(.9 + r * .2);
+        if (TH.recolor && q.mat.userData.leafy && !tinted && !q.mat.userData.crown) col.set('#8fb060');
+        im.setColorAt(i, col);
+      });
+      im.castShadow = tall; im.receiveShadow = true; if (q.mat.userData.depth) im.customDepthMaterial = q.mat.userData.depth;
+      im.frustumCulled = false; scene.add(im); DECOR.list.push(im);
+    }
   }
-  if (TH.stalk) {
-    const S = TH.stalk, cols = S.colors.map(c => new T.Color(c)), tips = S.tips.map(c => new T.Color(c));
-    decorSpots(S.n, ...(TH.ring || [1, 9])).forEach(([cx, cz]) => {
-      for (let i = 0; i < S.per; i++) { const x = cx + (Math.random() - .5) * 1.4, z = cz + (Math.random() - .5) * 1.4; if (pathDist(x, z) < 1.3) continue; DECOR.data.push({ x, z, h: S.h[0] + Math.random() * (S.h[1] - S.h[0]), y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .25 }); }
-    });
-    innerSpots(Math.round(S.n * .5)).forEach(([x, z]) => DECOR.data.push({ x, z, h: (S.h[0] + Math.random() * (S.h[1] - S.h[0])) * .6, y: heightAt(x, z) - .05, ph: Math.random() * 6, c: pick(cols), tc: pick(tips), lean: (Math.random() - .5) * .2, small: .6 }));
-    DECOR.vil = new T.InstancedMesh(vilGeo, vilMat, Math.max(1, DECOR.data.length)); DECOR.tip = new T.InstancedMesh(tipGeo, tipMat, Math.max(1, DECOR.data.length));
-    DECOR.data.forEach((v, i) => { DECOR.vil.setColorAt(i, v.c); DECOR.tip.setColorAt(i, v.tc); });
-    DECOR.vil.castShadow = DECOR.tip.castShadow = true; scene.add(DECOR.vil, DECOR.tip);
-  }
-  animateDecor(0);
 }
-const dmy = new T.Object3D(), upV = new T.Vector3();
 function animateDecor(now) {
-  terrU.cloudT.value = now;
+  terrU.cloudT.value = now; KIT.t.value = now;
   if (TH.flow) terrU.map2Off.value.set(now * .012 * TH.flow, now * .007 * TH.flow);   // вода и лава медленно текут
-  if (DECOR.vil) {
-    const S = TH.stalk;
-    DECOR.data.forEach((v, i) => {
-      dmy.position.set(v.x, v.y, v.z); dmy.rotation.set(Math.sin(now * 1.3 + v.ph) * S.sway + v.lean, 0, Math.cos(now * 1.1 + v.ph * 1.7) * S.sway); dmy.scale.set(S.thick * (v.small || 1), v.h, S.thick * (v.small || 1)); dmy.updateMatrix();
-      DECOR.vil.setMatrixAt(i, dmy.matrix);
-      upV.set(0, v.h * 1.14, 0).applyEuler(dmy.rotation);
-      const ts = .09 * S.tip * (v.small || 1);
-      dmy.position.set(v.x + upV.x, v.y + upV.y + ts * S.flat * .3, v.z + upV.z); dmy.rotation.y = v.ph; dmy.scale.set(ts, ts * S.flat, ts); dmy.updateMatrix();
-      DECOR.tip.setMatrixAt(i, dmy.matrix);
-    });
-    DECOR.vil.instanceMatrix.needsUpdate = DECOR.tip.instanceMatrix.needsUpdate = true;
-  }
-  if (DECOR.bub && now === 0) {
-    const B = TH.blob;
-    DECOR.bdata.forEach((b, i) => {
-      dmy.position.set(b.x, b.y, b.z); dmy.rotation.set(b.rx, b.rot, 0);
-      dmy.scale.set(b.r, b.r * (B.tall || B.flat || 1), b.r); dmy.updateMatrix();
-      DECOR.bub.setMatrixAt(i, dmy.matrix);
-    });
-    DECOR.bub.instanceMatrix.needsUpdate = true;
-  }
 }
 
 // Искорки темы: пыльца, снег, угольки
@@ -1291,11 +1319,11 @@ for (let i = 0; i < 44; i++) {
 
 function applyTheme(i, rebuild = true) {
   TH = THEMES[(i + THEMES.length) % THEMES.length];
-  scene.background = new T.Color(TH.bg); scene.fog.color.set(TH.bg); scene.fog.near = TH.fog[0]; scene.fog.far = TH.fog[1];
+  scene.background = new T.Color(TH.bg); scene.fog.color.set(TH.bg); scene.fog.near = TH.fog[0] + 14; scene.fog.far = TH.fog[1] + 26;
   hemi.color.set(TH.hemi[0]); hemi.groundColor.set(TH.hemi[1]); hemi.intensity = TH.hemi[2];
   sun.color.set(TH.sun[0]); sun.intensity = TH.sun[1]; rim.color.set(TH.rim[0]); rim.intensity = TH.rim[1];
   warm.color.set(TH.rim[0]); warm.intensity = TH.lava ? .8 : .15; renderer.toneMappingExposure = TH.exp;
-  padMat.color.set(TH.padc || '#ddd4c4'); padMat.map = tex(TH.padt || 'mt_stone'); padMat.needsUpdate = true; stoneMat.color.set(TH.soil || '#6a5a3a').multiplyScalar(.85); padRimMat.uniforms.col.value.set(TH.rim2);
+  padMat.color.set(TH.padc || '#ddd4c4').lerp(new T.Color('#ffffff'), .35); slabMat.map = tex(TH.slabt || 'mt_stone'); slabMat.color.set(TH.slabc || '#a8b4c0'); slabMat.needsUpdate = true; padRimMat.uniforms.col.value.set(TH.rim2);
   drift.forEach((m, k) => { m.material.color.set(TH.motes[k % TH.motes.length]); m.visible = k < 44 * (TH.moteA > .4 ? 1 : .5); });
   // заранее подгружаем текстуры этой темы
   tex(TH.floor); tex(TH.hills);
@@ -1311,23 +1339,20 @@ const cellPos = (c, r) => new T.Vector3(c - OX, 0, r - OZ);
 // Змейка слева направо: вход слева посередине, вертикальные участки по очереди вверх и вниз, печень справа
 function makeLayout(aspect) {
   const portrait = aspect < 1.4;
-  const rows = aspect < .9 ? 13 : aspect < 1.4 ? 11 : 9, gap = portrait ? 2.6 : 3.4;
+  const rows = aspect < .9 ? 13 : aspect < 1.4 ? 11 : 9, gap = portrait ? 2.6 : 3.4, pc = gap / 2;
   const width = Math.round(rows * aspect * .92 - 2.6);
   const runs = Math.max(3, Math.floor((width - 1.4) / gap) + 1);
-  // вход сбоку: ворота слева сверху, развёрнуты наискосок к игроку; сосуд выходит из них и поворачивает вниз
-  const mid = Math.floor(rows / 2), wp = [[-.5, -.8]], R = [];
-  let y = 1.5;
-  wp.push([1, y]);
+  // ровная сетка плит: сосуд идёт по её линиям. Вход сбоку: ворота слева сверху, сосуд поворачивает вниз
+  const top = 1, n = Math.max(5, Math.round((rows - 4) / pc)), bot = top + n * pc, mid = top + Math.round(n / 2) * pc, wp = [[1 - pc * 1.9, top], [1, top]], R = [];
+  let y = top;
   for (let k = 0; k < runs; k++) {
-    const c = 1 + k * gap, to = k === runs - 1 ? mid : (k % 2 === 0 ? rows - 2 : 1);
+    const c = 1 + k * gap, to = k === runs - 1 ? mid : (k % 2 === 0 ? bot : top);
     if (k) wp.push([c, y]);
     wp.push([c, to]); R.push({ c, z0: y, z1: to }); y = to;
   }
   const last = 1 + (runs - 1) * gap;
-  wp.push([last + 2.3, mid]);   // конец сосуда спрятан внутри органа
-  // петли: между соседними участками, «залив» открыт в сторону начала участка
-  const turns = R.slice(0, -1).map((r, k) => ({ x: r.c + gap / 2, z: r.z1, dir: Math.sign(r.z0 - r.z1) || 1, a: r, b: R[k + 1] }));
-  return { rows, cols: Math.ceil(last + 2), wp, portrait, runs: R, turns, gap, mid };
+  wp.push([last + pc * 1.8, mid]);   // конец сосуда уходит под постамент органа
+  return { rows, cols: Math.ceil(last + 2), wp, portrait, runs: R, gap, pc, top, bot, n, last };
 }
 
 function pathAt(d, v = new T.Vector3()) {
@@ -1356,7 +1381,7 @@ bloodTex.wrapS = bloodTex.wrapT = T.RepeatWrapping;
 const portal = new T.Group();
 {
   // Ворота из камня с аркой, внутри — светящаяся закрученная мембрана; микробы выходят из неё
-  const stone = new T.MeshStandardMaterial({ color: '#8a7a8a', roughness: .7, flatShading: true });
+  const stone = new T.MeshStandardMaterial({ color: '#c0bab4', roughness: .8, map: tex('rock_03') });
   const trim = new T.MeshStandardMaterial({ color: '#ffe8b8', emissive: '#ffb050', emissiveIntensity: .35, roughness: .3 });
   const pill = (z) => { const m = new T.Mesh(new T.CylinderGeometry(.11, .14, 1.05, 8), stone); m.position.set(0, .52, z); m.castShadow = true; portal.add(m);
     const cap = new T.Mesh(new T.CylinderGeometry(.16, .16, .08, 8), stone); cap.position.set(0, .06, z); portal.add(cap); };
@@ -1479,40 +1504,38 @@ function setOrgan(lv) {
 setOrgan(LEVELS[0]);
 function CYL_HI() { return new T.CylinderGeometry(1, 1, 1, 16); }
 
-// Место для клетки: круглая каменная площадка со скруглённым бортиком на пятне утоптанной земли; по светящемуся кольцу бежит огонёк — видно, куда ставить
-const padGeo = (() => {
-  const prof = [[.4, 0], [.405, .03], [.395, .065], [.37, .095], [.34, .105], [.31, .1], [.29, .085], [.27, .08], [0, .08]];
-  const g = new T.LatheGeometry(prof.map(([x, y]) => new T.Vector2(x, y)), 48);
-  const p = g.attributes.position, uv = g.attributes.uv, c = new Float32Array(p.count * 3);
-  for (let i = 0; i < p.count; i++) {
-    uv.setXY(i, p.getX(i) * 1.2 + .5, p.getZ(i) * 1.2 + .5);                       // рисунок камня ложится сверху ровно
-    const r = Math.hypot(p.getX(i), p.getZ(i)), y = p.getY(i);
-    const k = y < .06 ? .62 + y * 4 : r > .3 ? 1.08 : .9;                             // бока темнее, бортик светлее, середина чуть темнее бортика
-    c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = k;
-  }
-  g.setAttribute('color', new T.BufferAttribute(c, 3)); return g;
-})();
-const stoneGeo = new T.CircleGeometry(.62, 40).rotateX(-Math.PI / 2);   // пятно земли под площадкой
-const stoneMat = new T.MeshStandardMaterial({ color: '#6a5a3a', roughness: 1, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2,
-  map: canvasTex(128, 128, (g, W, H) => {
-    const rg = g.createRadialGradient(W / 2, H / 2, W * .22, W / 2, H / 2, W / 2);
-    rg.addColorStop(0, 'rgba(255,255,255,.85)'); rg.addColorStop(.7, 'rgba(255,255,255,.55)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = rg; g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 90; i++) { const a = Math.random() * 6.28, r = Math.random() * W * .42; g.fillStyle = `rgba(${Math.random() < .5 ? '60,45,30' : '255,250,235'},${.15 + Math.random() * .25})`; g.beginPath(); g.arc(W / 2 + Math.cos(a) * r, H / 2 + Math.sin(a) * r, 1 + Math.random() * 2.5, 0, 7); g.fill(); }
-  }) });
-const padMat = new T.MeshStandardMaterial({ color: '#ddd4c4', roughness: .65, metalness: 0, vertexColors: true });
-const padRimGeo = new T.RingGeometry(.2, .245, 48).rotateX(-Math.PI / 2);
+// Поле из каменных плит со скошенными краями; места для клеток — светлые плиты с резной рамкой и бегущим по рамке огоньком
+function slabShape(h) {
+  const s = .5 - .05, r = .07, sh = new T.Shape();
+  sh.moveTo(-s + r, -s); sh.lineTo(s - r, -s); sh.quadraticCurveTo(s, -s, s, -s + r); sh.lineTo(s, s - r); sh.quadraticCurveTo(s, s, s - r, s); sh.lineTo(-s + r, s); sh.quadraticCurveTo(-s, s, -s, s - r); sh.lineTo(-s, -s + r); sh.quadraticCurveTo(-s, -s, -s + r, -s);
+  const g = new T.ExtrudeGeometry(sh, { depth: h - .05, bevelEnabled: true, bevelThickness: .05, bevelSize: .05, bevelSegments: 2, curveSegments: 3 });
+  g.rotateX(-Math.PI / 2); return g;
+}
+const slabGeo = slabShape(.2), padGeo = slabShape(.3);
+const slabMat = new T.MeshStandardMaterial({ color: '#a8b4c0', roughness: .85 });
+const padFace = canvasTex(256, 256, (g, W) => {
+  g.fillStyle = '#efe6d2'; g.fillRect(0, 0, W, W);
+  for (let i = 0; i < 90; i++) { const x = Math.random() * W, y = Math.random() * W, r = 8 + Math.random() * 30; const rg = g.createRadialGradient(x, y, 1, x, y, r); rg.addColorStop(0, `rgba(${Math.random() < .5 ? '130,110,80' : '255,250,235'},.16)`); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(x - r, y - r, r * 2, r * 2); }
+  const c = W / 2, w = (k, col, lw) => { g.strokeStyle = col; g.lineWidth = lw; g.strokeRect(c - W * k, c - W * k, W * k * 2, W * k * 2); };
+  const rg = g.createRadialGradient(c, c, 20, c, c, W * .42); rg.addColorStop(0, 'rgba(120,96,64,.05)'); rg.addColorStop(1, 'rgba(120,96,64,.34)'); g.fillStyle = rg; g.fillRect(c - W * .335, c - W * .335, W * .67, W * .67);
+  w(.335, 'rgba(70,52,34,.7)', 5); w(.35, 'rgba(255,250,235,.8)', 3);
+  for (const [dx, dy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const x = c + dx * W * .395, y = c + dy * W * .395; g.fillStyle = 'rgba(70,52,34,.55)'; g.beginPath(); g.arc(x, y + 1, 8, 0, 7); g.fill(); g.fillStyle = '#fff6e0'; g.beginPath(); g.arc(x, y, 6.5, 0, 7); g.fill(); }
+});
+padFace.wrapS = padFace.wrapT = T.ClampToEdgeWrapping;
+{ const uv = padGeo.attributes.uv, po = padGeo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, po.getX(i) + .5, -po.getZ(i) + .5); }
+const padMat = new T.MeshStandardMaterial({ color: '#ddd4c4', roughness: .7, metalness: 0, map: padFace });
+const padRimGeo = new T.RingGeometry(.285, .325, 4, 1, Math.PI / 4).rotateX(-Math.PI / 2);
 const padRimMat = new T.ShaderMaterial({
   uniforms: { col: { value: new T.Color('#5ad8ff') }, t: { value: 0 } },
   vertexShader: 'varying vec2 vP; void main(){ vP = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
   fragmentShader: `uniform vec3 col; uniform float t; varying vec2 vP;
-    void main(){ float a = atan(vP.y, vP.x), r = length(vP);
+    void main(){ float a = atan(vP.y, vP.x);
       float run = pow(.5 + .5 * cos(a - t * 1.6), 10.);                    // бегущий огонёк
-      float edge = smoothstep(.2, .215, r) * smoothstep(.245, .23, r);
-      gl_FragColor = vec4(col * (.55 + 1.1 * run) + run * .35, edge * (.45 + .55 * run)); }`,
+      gl_FragColor = vec4(col * (.6 + 1.1 * run) + run * .35, .4 + .6 * run); }`,
   transparent: true, depthWrite: false, blending: T.AdditiveBlending, toneMapped: false
 });
-const ringGeo = new T.RingGeometry(.44, .52, 48);
+const ringGeo = new T.RingGeometry(.56, .66, 4, 1, Math.PI / 4);
+const PAD_H = .32;
 
 function updateBackdrop() {
   const b = TER.box, c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3());
@@ -1548,8 +1571,9 @@ function animateBackdrop(dt, now) {
 const bloodMat = new T.MeshStandardMaterial({ map: bloodTex, roughness: .18, metalness: .05, emissive: '#5a0612', emissiveIntensity: .5, side: T.DoubleSide });
 const wallMat = new T.MeshStandardMaterial({ color: '#d0566a', roughness: .22, metalness: 0, emissive: '#3a0812', emissiveIntensity: .4 });
 
+const BOARD_R = { a: null, b: null, set(a, b) { this.a = a; this.b = b; } };
 function buildBoard(L) {
-  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo && o.geometry !== padRimGeo && o.geometry !== stoneGeo) o.geometry.dispose(); if (o.material && o.material !== padMat && o.material !== padRimMat && o.material !== stoneMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
+  for (const o of [...board.children]) { board.remove(o); if (o.geometry && o.geometry !== padGeo && o.geometry !== ringGeo && o.geometry !== padRimGeo && o.geometry !== slabGeo) o.geometry.dispose(); if (o.material && o.material !== padMat && o.material !== padRimMat && o.material !== slabMat) o.material !== bloodMat && o.material !== wallMat && o.material.dispose(); }
   pads.clear(); pathCells.clear();
   COLS = L.cols; ROWS = L.rows; OX = (COLS + 2) / 2; OZ = (ROWS - 1) / 2;
   const WP = L.wp.filter((q, i, a) => i === 0 || q[0] !== a[i - 1][0] || q[1] !== a[i - 1][1]);
@@ -1562,7 +1586,7 @@ function buildBoard(L) {
     }
   }
   // Плавные петли вместо прямых углов, сосуд слегка извивается
-  const P = WP.map(([c, r]) => cellPos(c, r)), raw = [P[0].clone()], rad = L.gap / 2 - .02;
+  const P = WP.map(([c, r]) => cellPos(c, r)), raw = [P[0].clone()], rad = L.pc * .5;
   for (let i = 1; i < P.length - 1; i++) {
     const a = P[i - 1], b = P[i], n = P[i + 1];
     const d1 = b.clone().sub(a).normalize(), d2 = n.clone().sub(b).normalize();
@@ -1577,8 +1601,6 @@ function buildBoard(L) {
     for (let k = 0; k < n; k++) out.push(a.clone().lerp(b, k / n));
   }
   out.push(raw[raw.length - 1].clone());
-  const ph = 1; L.ph = ph;   // изгибы всегда одинаковые — дорога одна и та же в каждой игре
-  out.forEach((v, i) => { const edge = Math.min(1, i / 8, (out.length - 1 - i) / 8); v.x += Math.sin(v.z * 1.25 + ph) * .2 * edge; });
   const cum = [0];
   for (let i = 1; i < out.length; i++) cum.push(cum[i - 1] + out[i].distanceTo(out[i - 1]));
   PATH = { pts: out, cum, len: cum[cum.length - 1] };
@@ -1613,52 +1635,50 @@ function buildBoard(L) {
     wall.castShadow = true; wall.receiveShadow = true; board.add(wall);
   }
 
-  { const g0 = pathAt(.75), g1 = pathAt(1.2); portal.position.set(g0.x, 0, g0.z); portal.rotation.y = -Math.atan2(g1.z - g0.z, g1.x - g0.x); portal.scale.setScalar(1.5); }   // ворота стоят ровно поперёк сосуда, микробы выходят из проёма
+  { const g0 = pathAt(.75), g1 = pathAt(1.2); portal.position.set(g0.x, 0, g0.z); portal.rotation.y = -Math.atan2(g1.z - g0.z, g1.x - g0.x) - .62; portal.scale.setScalar(1.5); }   // ворота стоят ровно поперёк сосуда, микробы выходят из проёма
   const sc = L.portrait ? 1.15 : 1.5, end = PATH.pts[PATH.pts.length - 1];
-  organ.scale.setScalar(sc); organ.position.set(end.x - .25 * sc, 0, end.z);  // последний отрезок сосуда уходит под орган
+  organ.scale.setScalar(sc); organ.position.set(end.x - .25 * sc, .46, end.z);  // орган стоит на ступенчатом постаменте, сосуд уходит под него
+  for (const [k, h] of [[2.5, 1], [1.9, 1.15]]) { const st = new T.Mesh(slabGeo, slabMat); st.scale.set(k, h, k); st.position.set(organ.position.x, k < 2 ? .22 : 0, end.z); st.castShadow = st.receiveShadow = true; board.add(st); }
   organ.updateMatrixWorld(true);
   const ob = new T.Box3().setFromObject(organ).expandByScalar(.2);
 
-  // Площадки — «островки» в выгодных местах: там, где в радиусе выстрела больше всего сосуда (петли, промежутки между участками)
   TER.hash.clear();
   for (let d = 0; d <= PATH.len; d += .12) { const pp = pathAt(d); const kk = Math.floor(pp.x) + ',' + Math.floor(pp.z); if (!TER.hash.has(kk)) TER.hash.set(kk, []); TER.hash.get(kk).push(pp.x, pp.z); }
-  // Порядок как в классических защитах: одна площадка в центре каждой петли, ещё две ровно по оси «залива»,
-  // и пара вдоль открытой стороны первого участка. Ни одна не касается сосуда.
-  const wob = (wz) => Math.sin(wz * 1.25 + L.ph) * .2, P0 = PATH.pts[0], rr = L.gap / 2;
-  const cands = [];
-  const add = (gx, gz, pr) => { const c = cellPos(gx, gz); cands.push({ x: c.x + wob(c.z), z: c.z, pr }); };
-  L.turns.forEach(t => {
-    add(t.x, t.z + t.dir * (rr + .1), 0);
-    const zEnd = t.dir > 0 ? Math.min(Math.max(t.a.z0, t.a.z1), Math.max(t.b.z0, t.b.z1)) : Math.max(Math.min(t.a.z0, t.a.z1), Math.min(t.b.z0, t.b.z1));
-    for (let n = 1, z = t.z + t.dir * (rr + .1 + 1.8); n <= 3 && (z - zEnd) * t.dir < -.6; n++, z += t.dir * 1.8) add(t.x, z, n);
-  });
-  { const r = L.runs[0], lo = Math.min(r.z0, r.z1), hi = Math.max(r.z0, r.z1); for (const f of [.45, .78]) add(r.c - 1.35, lo + (hi - lo) * f, 3); }
-  const chosen = [];
-  cands.sort((a, b) => a.pr - b.pr);
-  for (const cd of cands) {
-    let dp = pathDist(cd.x, cd.z);
-    if (dp < 1.32) {                                                            // слишком близко — пробуем чуть отодвинуть от сосуда
-      let bx = cd.x, bz = cd.z;
-      for (let k = 0; k < 12; k++) for (const st of [.15, .3, .45]) { const x = cd.x + Math.cos(k * Math.PI / 6) * st, z = cd.z + Math.sin(k * Math.PI / 6) * st, d = pathDist(x, z); if (d > dp) { dp = d; bx = x; bz = z; } }
-      cd.x = bx; cd.z = bz;
-    }
-    if (dp < 1.24) continue;                                                    // площадка с камешками (r 0,48) с зазором не касается стенки сосуда (0,65)
-    if (cd.x + .5 > ob.min.x && cd.z > ob.min.z - .3 && cd.z < ob.max.z + .3) continue;
-    if (Math.hypot(cd.x - P0.x, cd.z - P0.z) < 1.8) continue;
-    if (chosen.every(o => Math.hypot(o.x - cd.x, o.z - cd.z) >= 1.5)) chosen.push(cd);
+  // Поле — сетка плит. Лучшие для обороны плиты (больше всего сосуда в радиусе) становятся светлыми местами для клеток
+  const pc = L.pc, cells = [], cols = 2 * (L.runs.length - 1) + 4, rowsN = L.n + 3, door = pathAt(.75);
+  for (let i = 0; i < cols; i++) for (let j = 0; j < rowsN; j++) {
+    const c = cellPos(1 + (i - 1) * pc, L.top + (j - 1) * pc), dp = pathDist(c.x, c.z);
+    if (dp < pc * .72) continue;
+    if (Math.abs(c.x - organ.position.x) < 1.95 && Math.abs(c.z - organ.position.z) < 1.95) continue;
+    if (Math.hypot(c.x - door.x, c.z - door.z) < 1.25) continue;
+    let sc2 = 0; for (const q of PATH.pts) if (Math.hypot(q.x - c.x, q.z - c.z) < 2.4) sc2++;
+    cells.push({ x: c.x, z: c.z, dp, sc: sc2 + Math.random() * .01 });
   }
+  const chosen = [];
+  for (const c of [...cells].filter(c => c.dp < pc * 1.25).sort((a, b) => b.sc - a.sc)) { if (chosen.length >= 12) break; if (chosen.every(o => Math.hypot(o.x - c.x, o.z - c.z) > pc * 1.3)) { chosen.push(c); c.pad = true; } }
+  const plain = cells.filter(c => !c.pad), sm = new T.InstancedMesh(slabGeo, slabMat, plain.length), dm = new T.Object3D(), tint = new T.Color();
+  plain.forEach((c, i) => {
+    let r = Math.sin(c.x * 12.9 + c.z * 78.2) * 43758.5; r -= Math.floor(r);
+    dm.position.set(c.x, -.02 + r * .05, c.z); dm.rotation.set(0, (r * 97 | 0) % 4 * Math.PI / 2, 0); dm.scale.set(pc * .96, 1, pc * .96); dm.updateMatrix(); sm.setMatrixAt(i, dm.matrix);
+    sm.setColorAt(i, tint.setScalar(.8 + r * .3));
+  });
+  sm.castShadow = sm.receiveShadow = true; board.add(sm);
   chosen.forEach((cd, i) => {
     const cp = new T.Vector3(cd.x, 0, cd.z);
-    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, 0, cp.z); m.receiveShadow = true; m.castShadow = true; board.add(m);
-    const rim = new T.Mesh(padRimGeo, padRimMat); rim.position.set(cp.x, .084, cp.z); rim.rotation.y = i * 2.1; board.add(rim);
-    const st = new T.Mesh(stoneGeo, stoneMat); st.position.set(cp.x, .015, cp.z); st.rotation.y = i * 1.7; st.receiveShadow = true; board.add(st);
+    const m = new T.Mesh(padGeo, padMat); m.position.set(cp.x, 0, cp.z); m.scale.set(pc * .96, 1, pc * .96); m.receiveShadow = true; m.castShadow = true; board.add(m);
+    const rim = new T.Mesh(padRimGeo, padRimMat); rim.position.set(cp.x, PAD_H + .008, cp.z); rim.scale.set(pc * .96, 1, pc * .96); rim.rotation.y = (i % 4) * Math.PI / 2; board.add(rim);
     const hl = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: '#7be0b0', transparent: true, opacity: 0, depthWrite: false }));
-    hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, .12, cp.z); board.add(hl);
+    hl.rotation.x = -Math.PI / 2; hl.position.set(cp.x, PAD_H + .03, cp.z); hl.scale.setScalar(pc * .96); board.add(hl);
     pads.set('p' + i, { pos: cp, mesh: m, hl, unit: null });
   });
+  BOARD_R.set(cellPos(1 - 2 * pc * .75, L.top - pc * 1.1), cellPos(1 + (cols - 2) * pc, L.top + (rowsN - 1.9) * pc));
   buildTerrain();
 }
-const stageAspect = () => Math.max(.3, stage.clientWidth / Math.max(1, stage.clientHeight));
+function viewBox() {   // поле занимает место между верхней панелью и нижним лотком; картинка под ними тоже видна
+  const r = stage.getBoundingClientRect(), top = document.getElementById('traits').getBoundingClientRect().bottom - r.top, bot = r.bottom - document.getElementById('panel').getBoundingClientRect().top;
+  return { top, bot, w: r.width, h: r.height };
+}
+const stageAspect = () => { const v = viewBox(); return Math.max(.3, v.w / Math.max(1, v.h - v.top - v.bot)); };
 buildBoard(makeLayout(stageAspect()));
 
 /* ---------- Модели клеток ---------- */
@@ -2414,8 +2434,8 @@ function update(dt) {
     u.kick = Math.max(0, (u.kick || 0) - dt * 5);
     const bob = Math.sin(now * 2 + u.phase) * .04;
     const m = u.mesh;
-    const bs = u.def.leg ? 1.3 : 1.5;
-    m.position.set(u.pos.x, (u.def.leg ? .45 : .18 + u.def.r * bs) + bob, u.pos.z);
+    const bs = u.def.leg ? 1.45 : 1.75;
+    m.position.set(u.pos.x, PAD_H - .08 + (u.def.leg ? .45 : .18 + u.def.r * bs) + bob, u.pos.z);
     if (u.drop > 0) {
       u.drop = Math.max(0, u.drop - dt * 3.4); m.position.y += u.drop * u.drop * 2.6;
       if (u.drop === 0) { ring(u.pos, u.def.col, 1, .45); gfx(u.pos, 'halo', u.def.col, .3, 1.05, .35, { op: .5 }); for (let k = 0; k < 4; k++) flash(u.pos.clone().add(new T.Vector3((Math.random() - .5) * .8, .12, (Math.random() - .5) * .8)), 'smoke', '#e8e0d4', .2, .6, .45, { solid: true, op: .45 }); spark(u.pos.clone().setY(.3), u.def.col, 8, 1.6, .22, .4, 1.4); shake(.04); u.kick = 1; AU.play('place', u.pos.x, 1); }
@@ -2658,7 +2678,7 @@ function renderCards(deal = false) {
 function setInfo(html) {
   $('info').innerHTML = html || (G.legTab
     ? 'Иммуноглобулины всегда в продаже, но дорогие. Чем больше их на поле, тем сильнее каждый: 2, 3 и 5 штук дают большой бонус.'
-    : 'Выбери карту и нажми на свободную площадку. Чтобы улучшить клетку (до 5 уровней), нажми на неё.');
+    : 'Выбери карту и нажми на свободную светлую плиту. Чтобы улучшить клетку (до 5 уровней), нажми на неё.');
 }
 
 function selectCard(card, idx) {
@@ -2746,7 +2766,7 @@ function showBanner(title, sub = '', kind = '') {
 }
 
 /* ---------- Нажатия по полю ---------- */
-const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.12);
+const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.3);
 let downAt = null;
 renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
 renderer.domElement.addEventListener('pointerup', (e) => {
@@ -2754,10 +2774,10 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   const rect = renderer.domElement.getBoundingClientRect();
   ray.setFromCamera({ x: (e.clientX - rect.left) / rect.width * 2 - 1, y: -(e.clientY - rect.top) / rect.height * 2 + 1 }, camera);
   const hit = new T.Vector3(); if (!ray.ray.intersectPlane(plane, hit)) return;
-  let pad = null, bd = .62; pads.forEach(p => { const d = Math.hypot(p.pos.x - hit.x, p.pos.z - hit.z); if (d < bd) { bd = d; pad = p; } });
+  let pad = null, bd = .75; pads.forEach(p => { const d = Math.hypot(p.pos.x - hit.x, p.pos.z - hit.z); if (d < bd) { bd = d; pad = p; } });
   if (G.phase === 'menu' || G.phase === 'end') return;
   if (G.aim) { castSkill(hit); return; }
-  if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на круглые площадки у сосуда'); return; }
+  if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на светлые плиты у сосуда'); return; }
   if (pad && pad.unit) openUnit(pad.unit); else closeUnit();
 });
 
@@ -3081,7 +3101,7 @@ function renderGuide() {
   if (guideTab === 'basics') {
     const steps = [
       ['Цель', 'Микробы выходят из <b>светящихся ворот</b> и идут по сосуду к органу. Если микроб дошёл — орган теряет здоровье. Продержись <b>30 волн</b>.'],
-      ['Поставь клетку', 'Выбери карточку внизу и нажми на <b>свободный постамент</b> у сосуда. Лучшие места — <b>в центре петель</b>: оттуда клетка бьёт сразу по трём сторонам.'],
+      ['Поставь клетку', 'Выбери карточку внизу и нажми на <b>свободную светлую плиту</b> у сосуда. Лучшие места — <b>в центре петель</b>: оттуда клетка бьёт сразу по трём сторонам.'],
       ['Монеты', 'Монеты дают за каждого микроба и за каждую отбитую волну. «Обновить» меняет карточки за 5 монет.'],
       ['Улучшай', 'Нажми на поставленную клетку → <b>«Улучшить»</b>. Уровней пять: от ★ до ★★★★★, урон растёт почти вчетверо. Ненужную клетку можно разрушить и вернуть половину монет.'],
       ['Собирай отряды', 'Плашка сверху карточки — это <b>отряд</b>. Две клетки одного отряда на поле дают бонус всем клеткам отряда, четыре — бонус больше. Значки отрядов светятся над полем.'],
@@ -3163,8 +3183,11 @@ function fit() {
   const ob = new T.Box3().setFromObject(organ);
   for (const x of [ob.min.x, ob.max.x]) for (const z of [ob.min.z, ob.max.z]) pts.push(new T.Vector3(x, ob.max.y, z), new T.Vector3(x, 0, z));
   const ps = PATH.pts[0]; for (const dx of [-.8, .8]) for (const dz of [-.8, .8]) pts.push(new T.Vector3(ps.x + dx, 0, ps.z + dz));
+  pts.push(new T.Vector3(BOARD_R.a.x, 0, BOARD_R.a.z), new T.Vector3(BOARD_R.b.x, 0, BOARD_R.b.z), new T.Vector3(BOARD_R.a.x, 0, BOARD_R.b.z), new T.Vector3(BOARD_R.b.x, 0, BOARD_R.a.z));
   pts.push(portal.position.clone().setY(1.6)); { const pb = new T.Box3().setFromObject(portal); for (const x of [pb.min.x, pb.max.x]) for (const z of [pb.min.z, pb.max.z]) pts.push(new T.Vector3(x, pb.max.y, z), new T.Vector3(x, 0, z)); }   // ворота целиком в кадре
   for (let d = 0; d <= PATH.len; d += .5) { const q = pathAt(d); for (const o of [-.75, .75]) pts.push(new T.Vector3(q.x + o, 0, q.z + o)); }   // сосуд целиком в кадре
+  const vb = viewBox(), yT = 1 - 2 * vb.top / vb.h, yB = -1 + 2 * vb.bot / vb.h, yH = (yT - yB) * .98, yC = (yT + yB) / 2;
+  stage.style.setProperty('--top', vb.top + 'px'); stage.style.setProperty('--bot', vb.bot + 'px');
   const center = new T.Box3().setFromPoints(pts).getCenter(new T.Vector3()).setY(0);
   const place = (tilt, d, tgt) => { camera.position.set(tgt.x, Math.sin(tilt) * d, tgt.z + Math.cos(tilt) * d); camera.lookAt(tgt); camera.updateMatrixWorld(); };
   const extent = () => { let x0 = 9, x1 = -9, y0 = 9, y1 = -9; for (const p of pts) { const v = p.clone().project(camera); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); } return { x0, x1, y0, y1 }; };
@@ -3174,10 +3197,10 @@ function fit() {
     let d = 30;
     for (let it = 0; it < 4; it++) {
       let lo = 5, hi = 80;
-      for (let k = 0; k < 22; k++) { d = (lo + hi) / 2; place(tilt, d, tgt); const e = extent(); if (e.x1 - e.x0 < 1.95 && e.y1 - e.y0 < 1.93) hi = d; else lo = d; }
+      for (let k = 0; k < 22; k++) { d = (lo + hi) / 2; place(tilt, d, tgt); const e = extent(); if (e.x1 - e.x0 < 1.97 && e.y1 - e.y0 < yH) hi = d; else lo = d; }
       d = hi; place(tilt, d, tgt); const e = extent();
       // сдвигаем цель так, чтобы середина поля встала в середину экрана
-      fitRay.setFromCamera({ x: (e.x0 + e.x1) / 2, y: (e.y0 + e.y1) / 2 }, camera);
+      fitRay.setFromCamera({ x: (e.x0 + e.x1) / 2, y: (e.y0 + e.y1) / 2 - yC }, camera);
       const hit = new T.Vector3(); if (fitRay.ray.intersectPlane(groundPlane, hit)) { tgt.x = hit.x; tgt.z = hit.z; }
     }
     if (!best || d < best.d - .05) best = { tilt, d, tgt };
@@ -3200,6 +3223,7 @@ function loop(t) {
   requestAnimationFrame(loop);
 }
 computeBonus(); rollShop(); updateHUD();
+loadKit().catch(() => {});
 requestAnimationFrame(loop);
 boot();
 </script>

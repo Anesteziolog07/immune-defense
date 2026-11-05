@@ -411,7 +411,7 @@ body {
 .btn.go { background: linear-gradient(180deg, #ffd978, #ffb02e 48%, #e07a10); border: 1.5px solid #fff0b8; color: #4a2200; text-shadow: 0 1px 0 #ffe9a8; box-shadow: inset 0 1px 0 #ffffffaa, 0 3px 0 #7a3e00, 0 0 16px #ffb02e55; }
 .btn.go:disabled { background: linear-gradient(180deg, #2a3656, #1a2440); border-color: #3a4a70; color: #7a8ab0; text-shadow: none; box-shadow: 0 3px 0 #060c1c; }
 .card { background: radial-gradient(ellipse 90% 60% at 50% 42%, var(--cg, #2a4274) 0%, #101c38 72%); border-width: 2px; border-radius: 10px; min-height: 112px; box-shadow: 0 3px 0 #060c1c, inset 0 1px 0 #ffffff22 !important; }
-.card.r1 { --cg: #2a6a4a; } .card.r2 { --cg: #2a5a9a; } .card.r3 { --cg: #6a3a9a; }
+.card:not(.leg) { border-color: var(--tc); --cg: color-mix(in srgb, var(--tc) 45%, #101c38); }
 .card img { width: 52px; height: 52px; filter: drop-shadow(0 2px 3px #000a); }
 .card .nm { color: #fff; text-shadow: 0 1px 2px #000; }
 .card .cost { color: #ffd36b; text-shadow: 0 1px 2px #000; }
@@ -493,7 +493,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.17 · прототип</p>
+      <p class="ver">Версия 0.18 · прототип</p>
     </div>
   </div>
 
@@ -677,35 +677,30 @@ function crest(k, n, size = 48) {
 
 // Фракции: бонус за 2/4 клетки (иммуноглобулины — 2/3/5)
 const FAC = {
-  guard:    { name: 'Стражи', what: 'замедляют и держат врагов', color: '#4a8cff', tiers: [2, 4], text: ['враги замедляются сильнее', 'замедление очень сильное и долгое'] },
+  guard:    { name: 'Стражи', what: 'замедляют микробов', color: '#4a8cff', tiers: [2, 4], text: ['враги замедляются сильнее', 'замедление очень сильное и долгое'] },
   dissolve: { name: 'Токсины', what: 'травят ядом и разъедают броню', color: '#35c85a', tiers: [2, 4], text: ['яд и разъедание брони в 1,5 раза сильнее', 'яд и разъедание брони в 2,2 раза сильнее'] },
   hunt:     { name: 'Клинки', what: 'мощный удар в одного', color: '#ff4a5a', tiers: [2, 4], text: ['чаще бьют критом (+15%)', 'ещё чаще бьют критом (+30%)'] },
   snipe:    { name: 'Стрелки', what: 'бьют очень далеко', color: '#ff9a2a', tiers: [2, 4], text: ['дальность +0,6', 'дальность +1,2'] },
   bomb:     { name: 'Мортиры', what: 'взрывы по толпе', color: '#9a6aff', tiers: [2, 4], text: ['взрывы шире на 25%', 'взрывы шире на 50%'] },
   pierce:   { name: 'Иглы', what: 'выстрел прошивает насквозь', color: '#22c8b0', tiers: [2, 4], text: ['каждый следующий пробитый получает +20%', 'каждый следующий пробитый получает +40%'] },
-  ig:       { name: 'Антитела', what: 'легенды: очень сильные вместе', color: '#ffd21a', tiers: [2, 3, 5], text: ['урон иммуноглобулинов +30%', 'урон иммуноглобулинов +70%', 'урон иммуноглобулинов +150%'] }
+  ig:       { name: 'Антитела', what: 'легенды: очень сильные вместе', color: '#ffd21a', tiers: [2, 3, 5], text: ['урон иммуноглобулинов +20%', 'урон иммуноглобулинов +40%', 'урон иммуноглобулинов +80%'] }
 };
 
 const UNITS = [
-  { id: 'neu', name: 'Нейтрофил', fac: 'guard', org: 'innate', cost: 20, role: 'Быстрые удары, сеть замедляет', col: '#d8b4ff', nuc: 'lobed', r: .31, kind: 'melee', range: 1.55, rate: .5, dmg: 7, slow: [.3, 1.4], snd: 'pop' },
-  { id: 'mon', name: 'Моноцит', fac: 'guard', org: 'innate', cost: 30, role: 'Тяжёлый удар оглушает', col: '#8fb8ff', nuc: 'kidney', r: .34, kind: 'melee', range: 1.5, rate: 1.4, dmg: 24, stun: .55, snd: 'thump' },
-  { id: 'mac', name: 'Макрофаг', fac: 'dissolve', org: 'innate', cost: 30, role: 'Окислительный взрыв: враг горит', col: '#ff9440', nuc: 'round', pods: true, r: .27, kind: 'shot', proj: 'drop', range: 1.9, rate: 1.0, dmg: 8, burn: [11, 3], snd: 'spit' },
-  { id: 'den', name: 'Дендритная клетка', fac: 'dissolve', org: 'innate', cost: 25, role: 'Разъедает броню, по врагу бьют сильнее', col: '#b8f04a', nuc: 'round', spikes: true, r: .24, kind: 'shot', proj: 'drop', range: 2.2, rate: .9, dmg: 7, shred: 4, snd: 'spit' },
-  { id: 'tk', name: 'Т-киллер', fac: 'hunt', org: 'adaptive', cost: 40, role: 'Очень сильный удар в одного', col: '#4f7dff', nuc: 'round', gran: '#ff6b8a', r: .29, kind: 'shot', proj: 'needle', range: 1.8, rate: 1.3, dmg: 58, snd: 'dart' },
-  { id: 'nk', name: 'NK-клетка', fac: 'hunt', org: 'innate', cost: 35, role: 'Издалека бьёт самых сильных', col: '#ffd23f', nuc: 'round', gran: '#ff7b54', r: .3, kind: 'shot', proj: 'needle', range: 3.6, rate: 1.5, dmg: 40, crit: .25, target: 'strong', snd: 'dart' },
-  { id: 'b', name: 'B-клетка', fac: 'snipe', org: 'adaptive', cost: 30, role: 'Стреляет антителами, склеивает', col: '#3fe0ff', nuc: 'round', r: .28, kind: 'shot', proj: 'y', range: 3.4, rate: 1.1, dmg: 18, slow: [.2, 1.2], snd: 'shot' },
-  { id: 'pl', name: 'Плазмоцит', fac: 'snipe', org: 'adaptive', cost: 35, role: 'Шквал мелких выстрелов', col: '#9d8cff', nuc: 'eccentric', r: .29, kind: 'shot', proj: 'y', range: 3.0, rate: .24, dmg: 5, snd: 'shot' },
-  { id: 'eos', name: 'Эозинофил', fac: 'bomb', org: 'innate', cost: 30, role: 'Гранулы рвутся по площади', col: '#ff7272', nuc: 'bilobed', gran: '#ff5a3c', r: .31, kind: 'lob', range: 2.5, rate: 1.4, dmg: 20, aoe: 1.0, snd: 'lob' },
-  { id: 'bas', name: 'Базофил', fac: 'bomb', org: 'innate', cost: 35, role: 'Взрыв ослабляет врагов', col: '#8f6bff', nuc: 'bilobed', gran: '#5b2bd6', r: .31, kind: 'lob', range: 2.3, rate: 1.6, dmg: 16, aoe: 1.2, weaken: [.15, 3], snd: 'lob' },
-  { id: 'th', name: 'Т-хелпер', fac: 'pierce', org: 'adaptive', cost: 35, role: 'Длинный прошивающий выстрел', col: '#2fd6b0', nuc: 'round', r: .28, kind: 'pierce', range: 3.2, rate: 1.5, dmg: 24, plen: 4.2, snd: 'zip' },
-  { id: 'mast', name: 'Тучная клетка', fac: 'pierce', org: 'innate', cost: 30, role: 'Частые прошивающие выстрелы', col: '#ff7ac8', nuc: 'round', gran: '#c2185b', r: .33, kind: 'pierce', range: 2.4, rate: .75, dmg: 11, plen: 2.6, snd: 'zip' }
+  { id: 'neu', name: 'Нейтрофил', fac: 'guard', tag: 'Тормозит', cost: 20, role: 'Бьёт микробов рядом и замедляет их', r: .3, kind: 'melee', range: 1.75, rate: .6, dmg: 9, slow: [.3, 1.4], snd: 'pop' },
+  { id: 'mac', name: 'Макрофаг', fac: 'dissolve', tag: 'Травит', cost: 30, role: 'Травит ядом и снимает броню', r: .3, kind: 'shot', proj: 'drop', range: 2.2, rate: 1, dmg: 8, burn: [12, 3], shred: 4, snd: 'spit' },
+  { id: 'tk', name: 'Т-киллер', fac: 'hunt', tag: 'Мощный', cost: 40, role: 'Очень сильный удар по одному микробу', r: .3, kind: 'shot', proj: 'needle', range: 2.4, rate: 1.3, dmg: 60, crit: .15, target: 'strong', snd: 'dart' },
+  { id: 'b', name: 'B-клетка', fac: 'snipe', tag: 'Далеко', cost: 30, role: 'Стреляет дальше всех', r: .3, kind: 'shot', proj: 'y', range: 3.6, rate: .8, dmg: 17, snd: 'shot' },
+  { id: 'eos', name: 'Эозинофил', fac: 'bomb', tag: 'По толпе', cost: 35, role: 'Взрывы бьют сразу по толпе', r: .3, kind: 'lob', range: 2.7, rate: 1.4, dmg: 22, aoe: 1.05, snd: 'lob' },
+  { id: 'th', name: 'Т-хелпер', fac: 'pierce', tag: 'Насквозь', cost: 35, role: 'Прошивает всех в ряд насквозь', r: .3, kind: 'pierce', range: 3.2, rate: 1.2, dmg: 20, plen: 4.2, snd: 'zip' }
 ];
+UNITS.forEach(u => { u.col = FAC[u.fac].color; });
 const IGS = [
-  { id: 'igg', name: 'IgG', fac: 'ig', leg: true, cost: 200, role: 'Залп по площади и замедление', ult: 'Опсонизация: враги вокруг получают +50% урона', col: '#ffd36b', form: 'y', kind: 'lob', range: 3.2, rate: 1.3, dmg: 60, aoe: 1.3, slow: [.3, 1.5], ultCd: 9, snd: 'lob' },
-  { id: 'igm', name: 'IgM', fac: 'ig', leg: true, cost: 250, role: 'Веер из 5 антител', ult: 'Агглютинация: склеивает врагов на 1,5 с', col: '#ff8fb1', form: 'penta', kind: 'fan', range: 3.0, rate: 1.2, dmg: 30, ultCd: 10, snd: 'shot' },
-  { id: 'iga', name: 'IgA', fac: 'ig', leg: true, cost: 250, role: 'Средний урон', ult: 'Шипы: участок сосуда сильно тормозит микробов', col: '#7cf0d0', form: 'dimer', kind: 'shot', proj: 'y', range: 3.0, rate: .8, dmg: 34, ultCd: 8, snd: 'shot' },
-  { id: 'ige', name: 'IgE', fac: 'ig', leg: true, cost: 300, role: 'Огромный урон по боссам и крупным', ult: 'Против паразитов: сокрушительный выстрел', col: '#ff7a45', form: 'y', kind: 'shot', proj: 'needle', range: 3.6, rate: 1.6, dmg: 120, bigMul: 3, target: 'strong', ultCd: 9, snd: 'dart' },
-  { id: 'igd', name: 'IgD', fac: 'ig', leg: true, cost: 300, role: 'Импульс по кругу', ult: 'Ударная волна: по замедленным урон ×2', col: '#7fb2ff', form: 'y', kind: 'pulse', range: 2.2, rate: 1.5, dmg: 38, ultCd: 8, snd: 'thump' }
+  { id: 'igg', name: 'IgG', fac: 'ig', leg: true, cost: 300, role: 'Залп по площади и замедление', ult: 'Опсонизация: враги вокруг получают +50% урона', col: '#ffd36b', form: 'y', kind: 'lob', range: 3.2, rate: 1.3, dmg: 30, aoe: 1.3, slow: [.3, 1.5], ultCd: 9, snd: 'lob' },
+  { id: 'igm', name: 'IgM', fac: 'ig', leg: true, cost: 350, role: 'Веер из 5 антител', ult: 'Агглютинация: склеивает врагов на 1,5 с', col: '#ff8fb1', form: 'penta', kind: 'fan', range: 3.0, rate: 1.2, dmg: 15, ultCd: 10, snd: 'shot' },
+  { id: 'iga', name: 'IgA', fac: 'ig', leg: true, cost: 350, role: 'Средний урон', ult: 'Шипы: участок сосуда сильно тормозит микробов', col: '#7cf0d0', form: 'dimer', kind: 'shot', proj: 'y', range: 3.0, rate: .8, dmg: 17, ultCd: 8, snd: 'shot' },
+  { id: 'ige', name: 'IgE', fac: 'ig', leg: true, cost: 400, role: 'Огромный урон по боссам и крупным', ult: 'Против паразитов: сокрушительный выстрел', col: '#ff7a45', form: 'y', kind: 'shot', proj: 'needle', range: 3.6, rate: 1.6, dmg: 59, bigMul: 3, target: 'strong', ultCd: 9, snd: 'dart' },
+  { id: 'igd', name: 'IgD', fac: 'ig', leg: true, cost: 400, role: 'Импульс по кругу', ult: 'Ударная волна: по замедленным урон ×2', col: '#7fb2ff', form: 'y', kind: 'pulse', range: 2.2, rate: 1.5, dmg: 19, ultCd: 8, snd: 'thump' }
 ];
 const ALL = Object.fromEntries([...UNITS, ...IGS].map(u => [u.id, u]));
 
@@ -713,12 +708,12 @@ const FOES = {
   coccus:  { name: 'Кокк', many: 'Кокки', hp: 30, speed: 1.2, reward: 4, armor: 0, leak: 1, size: .2 },
   rod:     { name: 'Палочка', many: 'Палочки', hp: 55, speed: .95, reward: 5, armor: 0, leak: 1, size: .22 },
   virus:   { name: 'Вирус', many: 'Вирусы', hp: 15, speed: 1.55, reward: 2, armor: 0, leak: 1, size: .15 },
-  capsule: { name: 'Капсульная бактерия', many: 'Капсульные бактерии', hp: 95, speed: .8, reward: 8, armor: .4, leak: 2, size: .27, big: true },
+  capsule: { name: 'Капсульная бактерия', many: 'Капсульные бактерии', hp: 95, speed: .8, reward: 8, armor: .5, leak: 2, size: .27, big: true },
   spiro:   { name: 'Спирохета', many: 'Спирохеты', hp: 40, speed: 1.5, reward: 5, armor: 0, leak: 1, size: .2 },
   strep:   { name: 'Стрептококк', many: 'Стрептококки', hp: 70, speed: 1, reward: 6, armor: 0, leak: 1, size: .2 },
   amoeba:  { name: 'Амёба', many: 'Амёбы', hp: 150, speed: .7, reward: 10, armor: 0, leak: 2, size: .3, big: true, regen: .03 },
   phage:   { name: 'Бактериофаг', many: 'Бактериофаги', hp: 120, speed: .9, reward: 9, armor: .25, leak: 2, size: .26 },
-  spore:   { name: 'Спора', many: 'Споры', hp: 180, speed: .65, reward: 12, armor: .5, leak: 2, size: .26, big: true },
+  spore:   { name: 'Спора', many: 'Споры', hp: 180, speed: .65, reward: 12, armor: .6, leak: 2, size: .26, big: true },
   fungus:  { name: 'Грибок', many: 'Грибки', hp: 250, speed: .55, reward: 14, armor: .2, leak: 3, size: .36, big: true },
   worm:    { name: 'Гельминт', many: 'Гельминт', hp: 1800, speed: .4, reward: 120, armor: .3, leak: 6, size: .34, big: true, boss: true }
 };
@@ -739,10 +734,14 @@ const AU = {
     const ctx = this.ctx = new C();
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 5;
     const master = ctx.createGain(); master.gain.value = (typeof SET !== 'undefined' ? SET.vol / 100 : .8) * .9; this.master = master; master.connect(comp); comp.connect(ctx.destination);
-    // Короткая «комнатная» реверберация для объёма
-    const len = ctx.sampleRate * 1.6, ir = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
-    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .25; rev.connect(wet); wet.connect(master);
+    // Большое тёмное пространство: раздельные левый и правый хвосты дают ощущение объёма вокруг слушателя
+    const len = ctx.sampleRate * 2.2 | 0, ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch); let lp = 0;
+      for (let i = 0; i < len; i++) { const t = i / len, k = .08 + .5 * Math.pow(1 - t, 2); lp += ((Math.random() * 2 - 1) - lp) * k; d[i] = lp * Math.pow(1 - t, 3.6); }
+      for (const [ms, a] of ch ? [[17, .7], [41, .45], [83, .3]] : [[23, .7], [53, .45], [97, .3]]) d[ctx.sampleRate * ms / 1000 | 0] += a;   // ранние отражения
+    }
+    const rev = ctx.createConvolver(); rev.buffer = ir; const wet = ctx.createGain(); wet.gain.value = .3; rev.connect(wet); wet.connect(master);
     this.out = master; this.rev = rev;
     const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -943,8 +942,21 @@ const AU = {
     const ctx = this.ctx, list = this.smp[kind], src = ctx.createBufferSource();
     const gainK = { hit: .35, ui: .6, shot: .45, dart: .5, pop: .55, spit: .6, die: .55, zip: .55, coin: .6, boom: .85, lob: .6 }[kind] ?? .75;
     src.buffer = list[Math.random() * list.length | 0];
-    src.playbackRate.value = .92 + Math.random() * .16;
-    src.connect(this.bus(x / 4, vol * gainK)); src.start();
+    // ниже и плотнее: записи звучат взрослее, без «игрушечного» писка; широкая панорама по положению на поле
+    const body = { ui: 1, coin: .94, win: 1, lose: 1, wave: .9, siren: .9 }[kind] ?? .8;
+    src.playbackRate.value = body * (.95 + Math.random() * .1);
+    const lo = ctx.createBiquadFilter(), hi = ctx.createBiquadFilter();
+    lo.type = 'lowshelf'; lo.frequency.value = 190; lo.gain.value = kind === 'ui' ? 0 : 8;
+    hi.type = 'highshelf'; hi.frequency.value = 4800; hi.gain.value = kind === 'ui' ? 0 : -6;
+    src.connect(lo); lo.connect(hi); hi.connect(this.bus(x / 2.4, vol * gainK)); src.start();
+    if (kind === 'boom' || kind === 'die' || kind === 'thump' || kind === 'leak' || kind === 'ult') this.sub(vol * ({ boom: .9, die: .3, thump: .5, leak: .7, ult: .6 })[kind], kind === 'boom' ? .34 : .16);
+  },
+  // Низкий удар под взрывами: его скорее чувствуешь, чем слышишь
+  sub(vol, dur) {
+    const ctx = this.ctx, o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+    o.type = 'sine'; o.frequency.setValueAtTime(92, t); o.frequency.exponentialRampToValueAtTime(38, t + dur);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol * .8, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(this.out); o.start(t); o.stop(t + dur + .02);
   },
 
   // ---------- Фоновые звуки природы (записи CC0, без музыки) ----------
@@ -1430,14 +1442,14 @@ const organ = new T.Group();
 organ.rotation.y = Math.PI / 2; scene.add(organ);
 // Уровни-органы. theme — фон уровня, diff — во сколько раз крепче микробы
 const LEVELS = [
-  { id: 'liver', organ: 'Печень', region: 'Пищеварительная система', theme: 1, diff: 1 },
-  { id: 'lungs', organ: 'Лёгкие', region: 'Дыхательная система', theme: 4, diff: 1.25 },
-  { id: 'heart', organ: 'Сердце', region: 'Сердечно-сосудистая система', theme: 7, diff: 1.55 },
-  { id: 'kidney', organ: 'Почки', region: 'Мочевыделительная система', theme: 8, diff: 1.9 },
-  { id: 'stomach', organ: 'Желудок', region: 'Пищеварительная система', theme: 3, diff: 2.3 },
-  { id: 'spleen', organ: 'Селезёнка', region: 'Иммунная система', theme: 5, diff: 2.8 },
-  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 2, diff: 3.4 },
-  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 6, diff: 4.2 }
+  { id: 'liver', organ: 'Печень', region: 'Пищеварительная система', theme: 1, diff: 1.05 },
+  { id: 'lungs', organ: 'Лёгкие', region: 'Дыхательная система', theme: 4, diff: 1.15 },
+  { id: 'heart', organ: 'Сердце', region: 'Сердечно-сосудистая система', theme: 7, diff: 1.25 },
+  { id: 'kidney', organ: 'Почки', region: 'Мочевыделительная система', theme: 8, diff: 1.35 },
+  { id: 'stomach', organ: 'Желудок', region: 'Пищеварительная система', theme: 3, diff: 1.45 },
+  { id: 'spleen', organ: 'Селезёнка', region: 'Иммунная система', theme: 5, diff: 1.55 },
+  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 2, diff: 1.7 },
+  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 6, diff: 1.85 }
 ];
 function organTex(base, spots) {
   return canvasTex(512, 512, (g, W, H) => {
@@ -1709,94 +1721,56 @@ const SHAPES = {
 };
 
 // Каждая клетка — своя форма, цвет и хорошо видное ядро
+// Клетка: гладкое тело цвета своего отряда, крупный знак роли спереди и своя форма по краям
+const FAC_TEX = {};
+function facTex(k) {
+  if (FAC_TEX[k]) return FAC_TEX[k];
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = 4; FAC_TEX[k] = t;
+  const im = new Image(); im.onload = () => { c.getContext('2d').drawImage(im, 0, 0, 128, 128); t.needsUpdate = true; };
+  im.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(badgeSvg(k));
+  return t;
+}
+function badgeSvg(k) {   // белый круг с эмблемой: читается на любом фоне и на маленьком экране
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#ffffff"/><circle cx="32" cy="32" r="28.5" fill="none" stroke="${FAC[k].color}" stroke-width="3"/><g transform="translate(11 11) scale(.875)">${emblemBody(k, 'bg' + k)}</g></svg>`;
+}
 function buildCell(def) {
-  const g = new T.Group(), R = def.r, col = new T.Color(def.col), id = def.id;
-  const shape = id === 'neu' ? 'ruffled' : id === 'mac' ? 'amoeba' : 'round';
-  const bodyMat = new T.MeshPhysicalMaterial({ color: col, roughness: .22, metalness: 0, clearcoat: 1, clearcoatRoughness: .12, transparent: true, opacity: .4, emissive: col, emissiveIntensity: .22, depthWrite: false });
-  const body = new T.Mesh(shapedSphere(shape, SHAPES[shape]), bodyMat);
-  body.scale.setScalar(R); body.renderOrder = 2; body.castShadow = true; g.add(body);
-  if (id === 'mon') body.scale.set(R * 1.12, R * .92, R);
-  if (id === 'pl') body.scale.set(R * 1.4, R * .95, R * .95);
-  if (id === 'mast') body.scale.set(R * 1.15, R, R * .95);
-  if (id === 'den') body.scale.setScalar(R * 1.1);
-  const mk = (geo, color, emi = .6) => new T.Mesh(geo, new T.MeshStandardMaterial({ color, roughness: .35, emissive: color, emissiveIntensity: emi }));
-  const put = (m, x, y, z, s) => { m.position.set(x * R, y * R, z * R); if (s) (typeof s === 'number' ? m.scale.setScalar(s * R) : m.scale.set(s[0] * R, s[1] * R, s[2] * R)); m.renderOrder = 1; g.add(m); return m; };
-  const nuc = (x, y, z, s, c = '#3b1477') => put(mk(SPH_LO, c), x, y, z, s);
-  const granules = (n, c, rmin, rmax, size, upper = false) => {
-    const m = new T.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .55, roughness: .3 });
-    for (let i = 0; i < n; i++) {
-      const v = new T.Vector3().randomDirection(); if (upper) v.y = Math.abs(v.y) * .8 + .1;
-      v.multiplyScalar(rmin + Math.random() * (rmax - rmin));
-      put(new T.Mesh(SPH_LO, m), v.x, v.y, v.z, size * (.8 + Math.random() * .4));
-    }
-  };
-  const spikes = (n, len, w, c, branch = false) => {
-    const m = new T.MeshPhysicalMaterial({ color: c, roughness: .25, clearcoat: 1, emissive: c, emissiveIntensity: .25 });
-    for (let i = 0; i < n; i++) {
-      const a = i / n * Math.PI * 2, el = (i % 2 ? .35 : -.05) + Math.random() * .15;
-      const dir = new T.Vector3(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el)).normalize();
-      const sp = new T.Mesh(CONE, m); sp.scale.set(w * R, len * R, w * R);
-      sp.position.copy(dir.clone().multiplyScalar(R * (.85 + len / 2))); sp.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir); g.add(sp);
-      if (branch) {
-        const d2 = dir.clone().add(new T.Vector3(-dir.z, .3, dir.x).multiplyScalar(.6)).normalize();
-        const b = new T.Mesh(CONE, m); b.scale.set(w * .6 * R, len * .5 * R, w * .6 * R);
-        b.position.copy(dir.clone().multiplyScalar(R * (.85 + len * .55)).add(d2.clone().multiplyScalar(len * .22 * R))); b.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d2); g.add(b);
-      }
-    }
-  };
-  switch (id) {
-    case 'neu': // три дольки ядра цепочкой
-      nuc(-.36, .2, .12, .3); nuc(0, .3, -.14, .32); nuc(.36, .2, .12, .3);
-      put(mk(CYL, '#3b1477'), -.18, .25, -.01, [.1, .38, .1]).rotation.set(Math.PI / 2, 0, .9);
-      put(mk(CYL, '#3b1477'), .18, .25, -.01, [.1, .38, .1]).rotation.set(Math.PI / 2, 0, -.9);
-      granules(10, '#f3e6ff', .3, .8, .06); break;
-    case 'mon': { // ядро-подкова
-      const m = mk(new T.TorusGeometry(.42, .2, 12, 28, Math.PI * 1.35), '#1f3c8f');
-      put(m, 0, .25, 0, 1).rotation.set(Math.PI / 2, 0, .8); break; }
-    case 'mac': // крупный амебоид с вакуолями
-      nuc(.25, .25, .15, .32, '#6a2300');
-      for (const [x, z] of [[-.35, -.2], [-.15, .35], [.1, -.45], [-.5, .25]]) put(new T.Mesh(SPH_LO, new T.MeshPhysicalMaterial({ color: '#fff2c8', transparent: true, opacity: .55, roughness: .1, clearcoat: 1 })), x, .2, z, .14);
-      break;
-    case 'den': // «солнышко» с ветвистыми отростками
-      nuc(0, .2, 0, .5, '#3d5c00'); spikes(11, 1.0, .17, def.col, true); break;
-    case 'tk': // большое ядро, красные гранулы смещены к «жалу», короткие ворсинки
-      nuc(-.12, .15, 0, .58, '#101d5a'); granules(9, '#ff2e55', .4, .7, .11, true);
-      for (const gr of g.children.slice(-9)) gr.position.x = Math.abs(gr.position.x) + .2 * R;
-      spikes(16, .28, .07, '#a8c4ff'); break;
-    case 'nk': // золотая с крупными оранжевыми гранулами
-      nuc(0, .15, 0, .5, '#5a3a00'); granules(8, '#ff5a1f', .55, .75, .16, true); break;
-    case 'b': // ядро и антитела-рецепторы по всей поверхности
-      nuc(0, .15, 0, .58, '#0a3f60');
-      for (let i = 0; i < 14; i++) {
-        const dir = new T.Vector3().randomDirection(); if (dir.y < -.3) dir.y = -dir.y;
-        const y = buildY('#e9fdff', R * .55); y.position.copy(dir.clone().multiplyScalar(R * 1.08)); y.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), dir); g.add(y);
-      }
-      break;
-    case 'pl': { // овальная, ядро с «колесом» у края
-      const n = nuc(.6, .25, 0, [.42, .3, .42], '#241a7a');
-      for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; put(mk(SPH_LO, '#c8c0ff', .6), .6 + Math.cos(a) * .24, .52, Math.sin(a) * .24, .07); }
-      put(mk(SPH_LO, '#d8d0ff', .6), .6, .55, 0, .08);
-      put(new T.Mesh(SPH_LO, new T.MeshPhysicalMaterial({ color: '#f4f0ff', transparent: true, opacity: .5 })), .05, .2, 0, .25); break; }
-    case 'eos': // ядро-«очки» и крупные оранжевые гранулы
-      nuc(-.3, .25, 0, .3, '#5a0f2e'); nuc(.3, .25, 0, .3, '#5a0f2e');
-      put(mk(CYL, '#5a0f2e'), 0, .25, 0, [.07, .3, .07]).rotation.z = Math.PI / 2;
-      granules(22, '#ff8a1f', .35, .85, .12); break;
-    case 'bas': // тёмные гранулы почти закрывают ядро
-      nuc(0, .1, 0, .4, '#1a0a4a'); granules(28, '#2c0b78', .3, .85, .14); break;
-    case 'th': { // «планета» с кольцом и бусинами
-      nuc(0, .15, 0, .55, '#0a4a3e');
-      const ringM = new T.Mesh(new T.TorusGeometry(1.45, .07, 10, 48), new T.MeshPhysicalMaterial({ color: '#9ffff0', emissive: '#2fd6b0', emissiveIntensity: .7, roughness: .2, clearcoat: 1 }));
-      put(ringM, 0, 0, 0, 1).rotation.set(Math.PI / 2 - .35, 0, 0);
-      g.userData.ring = ringM;
+  const g = new T.Group(), R = def.r, k = def.fac, col = new T.Color(FAC[k].color);
+  const shape = k === 'dissolve' ? 'amoeba' : 'round';
+  const bodyMat = new T.MeshPhysicalMaterial({ color: col, roughness: .3, clearcoat: 1, clearcoatRoughness: .15, emissive: col, emissiveIntensity: .16 });
+  const dark = new T.MeshStandardMaterial({ color: col.clone().multiplyScalar(.5), roughness: .4 });
+  const light = new T.MeshPhysicalMaterial({ color: col.clone().lerp(new T.Color('#ffffff'), .6), roughness: .3, clearcoat: 1 });
+  const body = new T.Mesh(shapedSphere(shape, SHAPES[shape]), bodyMat); body.scale.setScalar(R); body.castShadow = true; g.add(body);
+  const put = (geo, m, x, y, z, s) => { const o = new T.Mesh(geo, m); o.position.set(x * R, y * R, z * R); if (typeof s === 'number') o.scale.setScalar(s * R); else o.scale.set(s[0] * R, s[1] * R, s[2] * R); o.castShadow = true; g.add(o); return o; };
+  const out = (geo, m, a, el, dist, s) => { const d = new T.Vector3(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el)); const o = put(geo, m, d.x * dist, d.y * dist, d.z * dist, s); o.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d); return o; };
+  switch (k) {
+    case 'guard': { // панцирь: толстый обруч с заклёпками
+      const t = put(new T.TorusGeometry(1.05, .2, 10, 36), light, 0, -.08, 0, 1); t.rotation.x = Math.PI / 2;
+      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; put(SPH_LO, dark, Math.cos(a) * 1.2, -.08, Math.sin(a) * 1.2, .13); }
       break; }
-    case 'mast': { // набита гранулами, часть гранул кружит снаружи
-      nuc(0, .1, 0, .32, '#3a0a4a'); granules(40, '#8a1aa0', .2, .85, .09);
-      const orbit = new T.Group(); const om = new T.MeshStandardMaterial({ color: '#c23ad8', emissive: '#c23ad8', emissiveIntensity: .8 });
-      for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, m = new T.Mesh(SPH_LO, om); m.position.set(Math.cos(a) * R * 1.3, (k % 2 ? .25 : -.1) * R, Math.sin(a) * R * 1.3); m.scale.setScalar(R * .1); orbit.add(m); }
-      g.add(orbit); g.userData.orbit = orbit; break; }
+    case 'dissolve': // живая капля с ложноножками и каплями яда
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + .4; put(SPH_LO, bodyMat, Math.cos(a) * 1.02, -.3 + (i % 2) * .22, Math.sin(a) * 1.02, .36); }
+      for (const [x, y, z] of [[.55, .85, .2], [-.5, .9, -.1], [.05, 1.05, -.45]]) put(SPH_LO, light, x, y, z, .16);
+      break;
+    case 'hunt': // острые шипы во все стороны
+      for (let i = 0; i < 9; i++) out(CONE, light, i / 9 * Math.PI * 2, (i % 2 ? .45 : -.05), 1.22, [.17, .75, .17]);
+      break;
+    case 'snipe': { // прицельная «антенна»-антитело сверху
+      const y = buildY('#ffffff', R * 1.6); y.position.set(0, R * 1.05, 0); g.add(y);
+      put(new T.CylinderGeometry(.42, .55, .22, 16), dark, 0, .92, 0, 1);
+      break; }
+    case 'bomb': // набита гранулами-зарядами, бугры сверху
+      for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2; put(SPH_LO, light, Math.cos(a) * .72, .56 + (i % 2) * .08, Math.sin(a) * .72, .3); }
+      put(SPH_LO, dark, 0, .98, 0, .3);
+      break;
+    case 'pierce': // три длинные иглы веером
+      for (const [a, el] of [[-1.57, .75], [-.5, 1.15], [-2.64, 1.15]]) out(CONE, light, a, el, 1.45, [.12, 1.25, .12]);
+      put(new T.TorusGeometry(1.02, .09, 8, 32), dark, 0, 0, 0, 1).rotation.x = Math.PI / 2;
+      break;
   }
-  const shell = new T.Mesh(shapedSphere(shape, SHAPES[shape]), shellMat(def.col, 3)); shell.scale.copy(body.scale).multiplyScalar(1.03); shell.renderOrder = 3; g.add(shell);
-  g.userData.shell = shell; g.userData.body = body;
+  const badge = new T.Sprite(new T.SpriteMaterial({ map: facTex(k), transparent: true, depthTest: false })); badge.scale.setScalar(R * 1.25); badge.position.set(0, R * .08, 0); badge.renderOrder = 6; g.add(badge);
+  const shell = new T.Mesh(shapedSphere(shape, SHAPES[shape]), shellMat(FAC[k].color, 3.4)); shell.scale.setScalar(R * 1.05); shell.renderOrder = 3; g.add(shell);
+  g.userData.shell = shell; g.userData.body = body; g.userData.core = body;
   return g;
 }
 function buildY(color, scale = 1) {
@@ -2081,7 +2055,7 @@ function unitStats(u) {
   const d = u.def, s = u.level - 1;
   let range = d.range + LV_RANGE[s] + (d.fac === 'snipe' ? [0, .6, 1.2][tier('snipe')] : 0);
   let rate = d.rate * LV_RATE[s];
-  let dmg = d.dmg * LV_DMG[s] * (d.fac === 'ig' ? [1, 1.3, 1.7, 2.5][tier('ig')] : 1);
+  let dmg = d.dmg * LV_DMG[s] * (d.fac === 'ig' ? [1, 1.2, 1.4, 1.8][tier('ig')] : 1);
   return { range, rate, dmg };
 }
 
@@ -2111,13 +2085,15 @@ function makeWave(n) {
   });
   return q.sort((a, b) => a.t - b.t).slice(0, 56);   // потолок: чтобы телефон не тормозил
 }
-const hpScale = (n) => Math.pow(1.13, n - 1) * (1 + n * .03) * (LEVELS[G.level || 0].diff || 1);
+// Баланс рассчитан на прогонах роботом-игроком: разумная смесь отрядов держит 30 волн, одна клетка и игра без улучшений — нет
+const BAL = { hpG: 1.11, hpL: .02, boss: .62, rw: 1, wb: [20, 4], rwG: .04, start: 100 };
+const hpScale = (n) => Math.pow(BAL.hpG, n - 1) * (1 + n * BAL.hpL) * (LEVELS[G.level || 0].diff || 1);
 
 const barTex = canvasTex(64, 16, (g, W, H) => { g.fillStyle = '#fff'; g.beginPath(); g.roundRect(0, 0, W, H, 7); g.fill(); });
 function spawn(type, swarm = false) {
   const f = FOES[type], mesh = buildFoe(type), n = G.wave;
   let hp = f.hp * hpScale(n) * (swarm ? .5 : 1);
-  if (type === 'worm' && G.mode === 'campaign' && n === CAMPAIGN_WAVES) hp *= 1.6;
+  if (type === 'worm') hp *= BAL.boss * (G.mode === 'campaign' && n === CAMPAIGN_WAVES ? 1.6 : 1);
   const spr = (color, op = 1) => { const m = new T.Sprite(new T.SpriteMaterial({ map: barTex, color, depthWrite: false, transparent: true, opacity: op })); m.center.set(0, .5); m.renderOrder = 5; m.visible = false; return m; };
   const bg = spr('#1a0508', .9), lag = spr('#fff4dc'), fill = spr('#ff4d5e');
   const w = f.boss ? 1.2 : .62; bg.scale.set(w + .05, .13, 1); lag.scale.set(w, .085, 1); fill.scale.set(w, .085, 1);
@@ -2170,7 +2146,7 @@ function hurt(e, dmg, u, opt = {}) {
 
 function kill(e) {
   e.dead = true; e.corpse = true;
-  const reward = Math.max(1, Math.round(e.f.reward * (1 + G.wave * .04) * e.rk));
+  const reward = Math.max(1, Math.round(e.f.reward * BAL.rw * (1 + G.wave * BAL.rwG) * e.rk));
   G.coins += reward; updateHUD(); coinFly(e.pos);
   G.kills[e.type] = (G.kills[e.type] || 0) + 1; PROF.kills++;
   const col = '#' + FOE_MAT[e.type].color.getHexString();
@@ -2265,7 +2241,7 @@ function fire(u, e, s) {
     AU.play('zip', u.pos.x, .7); return;
   }
   G.shots.push({ kind: 'homing', mesh: addMesh(projMesh(d.proj, d.proj === 'drop' ? (d.id === 'mac' ? '#ffb347' : '#7dff9e') : col), from), target: e, u, s, speed: d.proj === 'needle' ? 13 : 8 });
-  AU.play(d.snd, u.pos.x, d.id === 'pl' ? .45 : .75);
+  AU.play(d.snd, u.pos.x, .75);
 }
 function addMesh(m, p) { m.position.copy(p); scene.add(m); return m; }
 
@@ -2567,6 +2543,18 @@ const comboEl = $('combo');
 const iconCache = {};
 function cellIcon(def) {
   if (iconCache[def.id]) return iconCache[def.id];
+  if (!def.leg) {
+    const k = def.fac, C = FAC[k].color, id = 'ic' + def.id, tri = (a, l, w) => { const c = Math.cos(a), n = Math.sin(a), x = 48 + c * 30, y = 48 + n * 30; return `<path d="M${(x - n * w).toFixed(1)} ${(y + c * w).toFixed(1)}L${(48 + c * (30 + l)).toFixed(1)} ${(48 + n * (30 + l)).toFixed(1)}L${(x + n * w).toFixed(1)} ${(y - c * w).toFixed(1)}z" fill="#fff" stroke="${C}" stroke-width="1.5"/>`; };
+    let sil = '';
+    if (k === 'guard') sil = `<circle cx="48" cy="48" r="38" fill="none" stroke="#dfeaff" stroke-width="9"/>` + [...Array(8)].map((_, i) => { const a = i / 8 * 6.283; return `<circle cx="${(48 + Math.cos(a) * 39).toFixed(1)}" cy="${(48 + Math.sin(a) * 39).toFixed(1)}" r="4" fill="#2a4a9a"/>`; }).join('');
+    if (k === 'dissolve') sil = [[-30, 6, 13], [29, -6, 13], [-14, 30, 12], [18, 28, 11], [8, -32, 12], [-22, -24, 11]].map(([x, y, r]) => `<circle cx="${48 + x}" cy="${48 + y}" r="${r}" fill="${C}"/>`).join('');
+    if (k === 'hunt') sil = [...Array(9)].map((_, i) => tri(i / 9 * 6.283, 15, 7)).join('');
+    if (k === 'snipe') sil = `<path d="M48 22V9M48 11L37 1M48 11L59 1" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M48 22V9M48 11L37 1M48 11L59 1" stroke="${C}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    if (k === 'bomb') sil = [...Array(9)].map((_, i) => { const a = i / 9 * 6.283; return `<circle cx="${(48 + Math.cos(a) * 31).toFixed(1)}" cy="${(48 + Math.sin(a) * 31).toFixed(1)}" r="9" fill="#e4d8ff" stroke="${C}" stroke-width="1.5"/>`; }).join('');
+    if (k === 'pierce') sil = [-2.45, -1.57, -.69].map(a => tri(a, 26, 5)).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><radialGradient id="${id}" cx="36%" cy="30%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="${C}"/><stop offset="1" stop-color="${C}" stop-opacity=".75"/></radialGradient></defs>${sil}<circle cx="48" cy="48" r="32" fill="url(#${id})" stroke="#ffffffaa" stroke-width="2"/><g transform="translate(24 24) scale(.75)">${badgeSvg(k).replace(/^<svg[^>]*>/, '').replace('</svg>', '')}</g></svg>`;
+    return iconCache[def.id] = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
   const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d');
   if (def.leg) {
     const gr = g.createRadialGradient(48, 48, 4, 48, 48, 46); gr.addColorStop(0, def.col + 'aa'); gr.addColorStop(1, def.col + '00');
@@ -2576,31 +2564,6 @@ function cellIcon(def) {
     drawY(46, 44, 1.1, 0);
     g.beginPath(); g.arc(72, 72, 16, 0, 7); g.fillStyle = def.col; g.fill(); g.lineWidth = 3; g.strokeStyle = '#fff'; g.stroke();
     g.font = '900 18px Unbounded, Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(def.name.slice(-1), 72, 73);
-  } else {
-    const id = def.id, C = def.col;
-    const dot = (x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); };
-    const rnd = (n, rmax, r, c) => { for (let i = 0; i < n; i++) { const a = Math.random() * 7, rr = Math.sqrt(Math.random()) * rmax; dot(48 + Math.cos(a) * rr, 48 + Math.sin(a) * rr, r, c); } };
-    const body = (rx, ry) => {
-      const gr = g.createRadialGradient(40, 38, 3, 48, 48, Math.max(rx, ry));
-      gr.addColorStop(0, '#ffffffdd'); gr.addColorStop(.3, C); gr.addColorStop(1, C + '88');
-      g.fillStyle = gr; g.beginPath(); g.ellipse(48, 48, rx, ry, 0, 0, 7); g.fill(); g.strokeStyle = '#ffffffbb'; g.lineWidth = 2; g.stroke();
-    };
-    g.lineCap = 'round';
-    if (id === 'den') { g.strokeStyle = C; g.lineWidth = 5; for (let i = 0; i < 11; i++) { const a = i / 11 * 7; g.beginPath(); g.moveTo(48 + Math.cos(a) * 18, 48 + Math.sin(a) * 18); g.lineTo(48 + Math.cos(a) * 45, 48 + Math.sin(a) * 45); g.stroke(); } body(22, 22); dot(48, 48, 11, '#3d5c00'); }
-    else if (id === 'mac') { g.fillStyle = C; [[0, 0, 30], [24, -6, 14], [-22, 14, 14], [-16, -20, 13], [10, 24, 12]].forEach(([x, y, r]) => { g.beginPath(); g.arc(48 + x, 48 + y, r, 0, 7); g.fill(); }); dot(56, 44, 10, '#6a2300'); [[38, 38], [42, 60], [30, 52]].forEach(([x, y]) => dot(x, y, 5, '#fff2c8cc')); }
-    else if (id === 'pl') { body(42, 28); dot(68, 48, 14, '#241a7a'); for (let k = 0; k < 8; k++) { const a = k / 8 * 7; dot(68 + Math.cos(a) * 8, 48 + Math.sin(a) * 8, 2.5, '#c8c0ff'); } dot(40, 48, 9, '#f4f0ffaa'); }
-    else if (id === 'th') { g.strokeStyle = '#9ffff0'; g.lineWidth = 4; g.beginPath(); g.ellipse(48, 50, 45, 14, -.2, 0, 7); g.stroke(); body(28, 28); dot(48, 46, 15, '#0a4a3e'); }
-    else if (id === 'b') { g.strokeStyle = '#e9fdff'; g.lineWidth = 3; for (let i = 0; i < 12; i++) { const a = i / 12 * 7, x = 48 + Math.cos(a) * 36, y = 48 + Math.sin(a) * 36; g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2); g.beginPath(); g.moveTo(0, 4); g.lineTo(0, -2); g.lineTo(-4, -8); g.moveTo(0, -2); g.lineTo(4, -8); g.stroke(); g.restore(); } body(32, 32); dot(48, 48, 18, '#0a3f60'); }
-    else if (id === 'tk') { g.strokeStyle = '#a8c4ff'; g.lineWidth = 3; for (let i = 0; i < 16; i++) { const a = i / 16 * 7; g.beginPath(); g.moveTo(48 + Math.cos(a) * 34, 48 + Math.sin(a) * 34); g.lineTo(48 + Math.cos(a) * 42, 48 + Math.sin(a) * 42); g.stroke(); } body(34, 34); dot(42, 48, 18, '#101d5a'); for (let i = 0; i < 7; i++) dot(64 + Math.random() * 8, 36 + Math.random() * 24, 4, '#ff2e55'); }
-    else if (id === 'mast') { body(38, 34); rnd(40, 30, 3.2, '#8a1aa0'); dot(48, 48, 9, '#3a0a4a'); for (let k = 0; k < 6; k++) { const a = k / 6 * 7; dot(48 + Math.cos(a) * 44, 48 + Math.sin(a) * 44, 3.5, '#c23ad8'); } }
-    else {
-      body(id === 'mon' ? 40 : 36, id === 'mon' ? 32 : 36);
-      if (id === 'neu') { [[-14, 4], [0, -6], [14, 4]].forEach(([x, y]) => dot(48 + x, 48 + y, 10, '#3b1477')); g.strokeStyle = '#3b1477'; g.lineWidth = 5; g.beginPath(); g.moveTo(34, 52); g.lineTo(48, 42); g.lineTo(62, 52); g.stroke(); }
-      if (id === 'mon') { g.strokeStyle = '#1f3c8f'; g.lineWidth = 11; g.beginPath(); g.arc(48, 50, 14, .4, Math.PI * 1.75); g.stroke(); }
-      if (id === 'nk') { dot(48, 48, 16, '#5a3a00'); rnd(8, 28, 5.5, '#ff5a1f'); }
-      if (id === 'eos') { dot(37, 48, 11, '#5a0f2e'); dot(59, 48, 11, '#5a0f2e'); g.strokeStyle = '#5a0f2e'; g.lineWidth = 4; g.beginPath(); g.moveTo(40, 48); g.lineTo(56, 48); g.stroke(); rnd(22, 30, 4.5, '#ff8a1f'); }
-      if (id === 'bas') { dot(48, 48, 14, '#1a0a4a'); rnd(30, 30, 5, '#2c0b78'); }
-    }
   }
   return iconCache[def.id] = c.toDataURL();
 }
@@ -2666,9 +2629,9 @@ function renderCards(deal = false) {
   list.forEach((card, i) => {
     const d = card.def, el = document.createElement('button');
     const have = G.units.filter(u => u.def.id === d.id).length;
-    el.className = 'card ' + (d.cost <= 25 ? 'r1' : d.cost <= 30 ? 'r2' : 'r3') + (deal ? ' deal' : '') + (card.leg ? ' leg' : '') + (card.sold ? ' sold' : '') + (G.coins < d.cost ? ' poor' : '') + (G.sel && G.sel.card === card && G.sel.idx === i ? ' sel' : '');
+    el.className = 'card' + (deal ? ' deal' : '') + (card.leg ? ' leg' : '') + (card.sold ? ' sold' : '') + (G.coins < d.cost ? ' poor' : '') + (G.sel && G.sel.card === card && G.sel.idx === i ? ' sel' : '');
     el.style.setProperty('--tc', FAC[d.fac].color);
-    el.innerHTML = `<span class="fhead">${plate(d.fac, 18)}<span class="${(FAC[d.fac].short || FAC[d.fac].name).length > 9 ? 'long' : ''}">${FAC[d.fac].short || FAC[d.fac].name}</span></span>${have ? `<span class="have">×${have}</span>` : ''}<img alt="" src="${cellIcon(d)}"><span class="nm">${d.name}</span><span class="cost"><i></i>${d.cost}</span>`;
+    el.innerHTML = `<span class="fhead">${plate(d.fac, 18)}<span class="${(d.tag || FAC[d.fac].name).length > 9 ? 'long' : ''}">${d.tag || FAC[d.fac].name}</span></span>${have ? `<span class="have">×${have}</span>` : ''}<img alt="" src="${cellIcon(d)}"><span class="nm">${d.name}</span><span class="cost"><i></i>${d.cost}</span>`;
     el.onclick = () => selectCard(card, i);
     if (deal) el.style.animationDelay = i * 55 + 'ms';
     box.appendChild(el);
@@ -2678,7 +2641,7 @@ function renderCards(deal = false) {
 function setInfo(html) {
   $('info').innerHTML = html || (G.legTab
     ? 'Иммуноглобулины всегда в продаже, но дорогие. Чем больше их на поле, тем сильнее каждый: 2, 3 и 5 штук дают большой бонус.'
-    : 'Выбери карту и нажми на свободную светлую плиту. Чтобы улучшить клетку (до 5 уровней), нажми на неё.');
+    : 'Выбери клетку и нажми на светлую плиту. Две одинаковые клетки дают бонус.');
 }
 
 function selectCard(card, idx) {
@@ -2793,7 +2756,7 @@ function startGame(mode, lvl = G.level || 0) {
   for (const z of G.spikes) z.meshes.forEach(m => scene.remove(m));
   buildBoard(makeLayout(stageAspect())); fit();
   PROF.games++; saveProf();
-  Object.assign(G, { mode, phase: 'build', paused: false, coins: 100, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null, skillT: 0, aim: false, pend: [], boss: null, slow: 0 });
+  Object.assign(G, { mode, phase: 'build', paused: false, coins: BAL.start, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null, skillT: 0, aim: false, pend: [], boss: null, slow: 0 });
   $('bossBar').classList.remove('on'); skillUI();
   $('legBtn').classList.remove('on');
   screenStack = []; show(null); closeUnit();
@@ -2810,7 +2773,7 @@ function startWave() {
   skillUI(); updateHUD();
 }
 function waveCleared() {
-  const bonus = 15 + G.wave * 3;
+  const bonus = BAL.wb[0] + G.wave * BAL.wb[1];
   G.coins += bonus; G.phase = 'build'; G.aim = false; skillUI();
   if (G.mode === 'endless' && G.wave > G.best) { G.best = G.wave; try { localStorage.setItem('immuneBest', G.best); } catch (e) {} }
   if (G.mode === 'campaign' && G.wave >= CAMPAIGN_WAVES) return finish(true);
@@ -3090,7 +3053,7 @@ const FOE_TIP = {
 const COMBOS = [
   ['guard', 'bomb', 'Стражи тормозят толпу, Мортиры накрывают её взрывом — против стай вирусов и кокков.'],
   ['dissolve', 'hunt', 'Токсины снимают броню, Клинки добивают сильных — против капсульных, спор и боссов.'],
-  ['snipe', 'pierce', 'Стрелки склеивают колонну антителами, Иглы прошивают её насквозь — против цепочек.'],
+  ['snipe', 'pierce', 'Стрелки достают издалека, Иглы прошивают всю колонну насквозь — против длинных цепочек.'],
   ['guard', 'pierce', 'Пока Стражи держат микробов в куче, каждый выстрел Игл попадает в нескольких.'],
   ['ig', 'ig', 'IgA шипами тормозит участок сосуда, IgD бьёт замедленных вдвое сильнее. IgG даёт всем +50% урона по врагам рядом.']
 ];
@@ -3135,7 +3098,7 @@ function buildTitleBg() {
   let h = '';
   for (let k = 0; k < 18; k++) { const sz = 30 + Math.random() * 90; h += `<i style="left:${(Math.random() * 100).toFixed(0)}%;top:${(60 + Math.random() * 80).toFixed(0)}%;width:${sz.toFixed(0)}px;height:${sz.toFixed(0)}px;background:${['#ff6a9a', '#6ad8ff', '#ffb06a', '#b48aff'][k % 4]};animation-duration:${(18 + Math.random() * 20).toFixed(0)}s;animation-delay:-${(Math.random() * 20).toFixed(0)}s"></i>`; }
   h += `<svg class="vessel" viewBox="0 0 400 120" preserveAspectRatio="none"><path d="M-10 70C60 20 120 110 200 60S330 20 410 70" stroke="#5a0a14" stroke-width="44" fill="none"/><path d="M-10 70C60 20 120 110 200 60S330 20 410 70" stroke="#d42a3a" stroke-width="32" fill="none"/><path class="flow" d="M-10 70C60 20 120 110 200 60S330 20 410 70" stroke="#ff9aa8" stroke-width="8" fill="none" stroke-dasharray="6 22" stroke-linecap="round"/></svg>`;
-  const hero = [['neu', 6, 18, 92], ['mac', 70, 14, 104], ['tk', 74, 47, 84], ['igg', 4, 50, 96], ['den', 40, 70, 74], ['b', 82, 72, 66]];
+  const hero = [['neu', 6, 18, 92], ['mac', 70, 14, 104], ['tk', 74, 47, 84], ['igg', 4, 50, 96], ['eos', 40, 70, 74], ['b', 82, 72, 66]];
   hero.forEach(([id, x, y, sz], k) => { h += `<img alt="" src="${cellIcon(ALL[id])}" style="left:${x}%;top:${y}%;width:${sz}px;height:${sz}px;animation-duration:${3 + k * .6}s"/>`; });
   const mic = [
     [`<circle cx="20" cy="20" r="11" fill="#c06cff" stroke="#3a0a5a" stroke-width="2"/>${[...Array(10)].map((_, i) => { const a = i / 10 * 6.283; return `<path d="M${(20 + Math.cos(a) * 11).toFixed(1)} ${(20 + Math.sin(a) * 11).toFixed(1)}L${(20 + Math.cos(a) * 17).toFixed(1)} ${(20 + Math.sin(a) * 17).toFixed(1)}" stroke="#c06cff" stroke-width="2.5" stroke-linecap="round"/>`; }).join('')}`, 38, 22, 44],

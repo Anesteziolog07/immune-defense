@@ -493,7 +493,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.18.1 · прототип</p>
+      <p class="ver">Версия 0.19 · прототип</p>
     </div>
   </div>
 
@@ -935,7 +935,7 @@ const AU = {
   loadSamples() {
     const N = { pop: 2, thump: 2, spit: 2, dart: 2, shot: 2, lob: 2, boom: 3, zip: 2, hit: 2, die: 3, leak: 2, place: 2, merge: 2, coin: 2, ui: 2, wave: 2, ult: 2, win: 1, lose: 1, siren: 1 };
     this.smp = {}; this.fresh = {};
-    const NEW = { boom: 2, dart: 1, shot: 1 };   // новые объёмные записи (ElevenLabs): если есть, заменяют старые
+    const NEW = Object.fromEntries(Object.keys(N).map(k => [k, 2]));   // объёмные записи (ElevenLabs), по два варианта каждого звука
     const get = (url, fn) => fetch(url).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => this.ctx.decodeAudioData(b)).then(fn).catch(() => {});
     for (const [k, n] of Object.entries(N)) {
       if (NEW[k]) { this.fresh[k] = true; for (let i = 0; i < NEW[k]; i++) get(`assets/sfx/${k}_${i}.m4a`, buf => { (this.smp[k] ||= []).push(buf); }); }
@@ -944,7 +944,7 @@ const AU = {
   },
   sample(kind, x, vol) {
     const ctx = this.ctx, list = this.smp[kind], src = ctx.createBufferSource();
-    const gainK = { hit: .35, ui: .6, shot: .45, dart: .5, pop: .55, spit: .6, die: .55, zip: .55, coin: .6, boom: .85, lob: .6 }[kind] ?? .75;
+    const gainK = { hit: .3, ui: .45, shot: .38, dart: .42, pop: .5, spit: .5, die: .5, zip: .48, coin: .55, boom: .8, lob: .55, thump: .6, place: .7, merge: .65, wave: .7, ult: .5, siren: .7, leak: .7, win: .8, lose: .8 }[kind] ?? .7;
     src.buffer = list[Math.random() * list.length | 0];
     // ниже и плотнее: записи звучат взрослее, без «игрушечного» писка; широкая панорама по положению на поле
     const fresh = this.fresh[kind], body = fresh ? 1 : { ui: 1, coin: .94, win: 1, lose: 1, wave: .9, siren: .9 }[kind] ?? .8;
@@ -2821,7 +2821,9 @@ const SET = store.get('immuneSettings', { sound: true, vol: 80, vibro: true, dmg
 if ((SET.ver || 0) < 8) { SET.theme = -1; SET.ver = 8; }
 if ((SET.ver || 0) < 9) { SET.ambVol = Math.min(SET.ambVol, 35); SET.ver = 9; }
 if ((SET.ver || 0) < 7) { SET.sfx = 'real'; SET.theme = 0; SET.amb = ({ surf: 'sea', brook: 'river', storm: 'rain', fire: 'off' })[SET.amb] || SET.amb; SET.ver = 7; }
+if ((SET.ver || 0) < 11) { SET.sfx = 'real'; }   // все получают новые объёмные звуки
 if ((SET.ver || 0) < 10) { SET.amb = ({ rain: 'softrain', forest: 'morning', river: 'waterfall', wind: 'wind', birds: 'morning', sea: 'beach', crickets: 'night', off: 'off' })[SET.amb] || 'off'; SET.ver = 10; }   // старые звуки заменены новыми
+SET.ver = Math.max(SET.ver || 0, 11);
 const PROF = store.get('immuneProfile', { name: 'Игрок', avatar: 'neu', games: 0, kills: 0, wins: 0, liverStars: 0, lv: {} });
 PROF.lv ||= {}; if (PROF.liverStars && !PROF.lv.liver) PROF.lv.liver = PROF.liverStars;
 const totalStars = () => LEVELS.reduce((a, l) => a + (PROF.lv[l.id] || 0), 0);
@@ -2900,7 +2902,7 @@ const AMBS = [
   { id: 'night', name: 'Ночь и сверчки' }, { id: 'thunder', name: 'Дождь и далёкий гром' }, { id: 'waterfall', name: 'Водопад' }, { id: 'beach', name: 'Морской берег' },
   { id: 'wind', name: 'Ветер в поле' }, { id: 'softrain', name: 'Тихий дождь' }
 ];
-const SFXS = [{ id: 'real', name: 'Настоящие записи', sub: 'живые звуки' }, { id: 'juicy', name: 'Сочные', sub: 'синтез, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
+const SFXS = [{ id: 'real', name: 'Объёмные', sub: 'глубокие записи, как в кино' }, { id: 'juicy', name: 'Сочные', sub: 'синтез, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
 let lookTab = 'bg', lookFrom = null;
 function openLook(from) {
   lookFrom = from; AU.init();

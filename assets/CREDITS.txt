@@ -15,6 +15,8 @@
   Kenney — Sci-Fi Sounds, Interface Sounds (https://kenney.nl, зеркало на opengameart.org)
   OpenGameArt: 75 CC0 breaking/falling/hit sfx, 100 CC0 SFX, 40 CC0 water/splash/slime SFX, 25 CC0 bang/firework SFX
 
+Новые звуки эффектов (папка sfx): созданы в ElevenLabs Sound Effects, аккаунт владельца.
+
 Фоновые звуки (amb2_*.m4a, OpenGameArt, CC0):
   Morning sounds perfect loop (утро в лесу), Outside ambience 1 (летний день), Swamp environment audio (болото),
   Cicada sounds (цикады), Cricket sounds (ночь), Rain long thunder (дождь и гром, тихий дождь),

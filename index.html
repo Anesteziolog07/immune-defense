@@ -493,7 +493,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.18 · прототип</p>
+      <p class="ver">Версия 0.18.1 · прототип</p>
     </div>
   </div>
 
@@ -934,22 +934,26 @@ const AU = {
   // ---------- Записанные эффекты (CC0: Kenney, OpenGameArt) ----------
   loadSamples() {
     const N = { pop: 2, thump: 2, spit: 2, dart: 2, shot: 2, lob: 2, boom: 3, zip: 2, hit: 2, die: 3, leak: 2, place: 2, merge: 2, coin: 2, ui: 2, wave: 2, ult: 2, win: 1, lose: 1, siren: 1 };
-    this.smp = {};
-    for (const [k, n] of Object.entries(N)) for (let i = 0; i < n; i++)
-      fetch(`assets/snd/${k}_${i}.wav`).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => this.ctx.decodeAudioData(b)).then(buf => { (this.smp[k] ||= []).push(buf); }).catch(() => {});
+    this.smp = {}; this.fresh = {};
+    const NEW = { boom: 2, dart: 1, shot: 1 };   // новые объёмные записи (ElevenLabs): если есть, заменяют старые
+    const get = (url, fn) => fetch(url).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => this.ctx.decodeAudioData(b)).then(fn).catch(() => {});
+    for (const [k, n] of Object.entries(N)) {
+      if (NEW[k]) { this.fresh[k] = true; for (let i = 0; i < NEW[k]; i++) get(`assets/sfx/${k}_${i}.m4a`, buf => { (this.smp[k] ||= []).push(buf); }); }
+      else for (let i = 0; i < n; i++) get(`assets/snd/${k}_${i}.wav`, buf => { (this.smp[k] ||= []).push(buf); });
+    }
   },
   sample(kind, x, vol) {
     const ctx = this.ctx, list = this.smp[kind], src = ctx.createBufferSource();
     const gainK = { hit: .35, ui: .6, shot: .45, dart: .5, pop: .55, spit: .6, die: .55, zip: .55, coin: .6, boom: .85, lob: .6 }[kind] ?? .75;
     src.buffer = list[Math.random() * list.length | 0];
     // ниже и плотнее: записи звучат взрослее, без «игрушечного» писка; широкая панорама по положению на поле
-    const body = { ui: 1, coin: .94, win: 1, lose: 1, wave: .9, siren: .9 }[kind] ?? .8;
+    const fresh = this.fresh[kind], body = fresh ? 1 : { ui: 1, coin: .94, win: 1, lose: 1, wave: .9, siren: .9 }[kind] ?? .8;
     src.playbackRate.value = body * (.95 + Math.random() * .1);
     const lo = ctx.createBiquadFilter(), hi = ctx.createBiquadFilter();
-    lo.type = 'lowshelf'; lo.frequency.value = 190; lo.gain.value = kind === 'ui' ? 0 : 8;
-    hi.type = 'highshelf'; hi.frequency.value = 4800; hi.gain.value = kind === 'ui' ? 0 : -6;
+    lo.type = 'lowshelf'; lo.frequency.value = 190; lo.gain.value = kind === 'ui' || fresh ? 0 : 8;
+    hi.type = 'highshelf'; hi.frequency.value = 4800; hi.gain.value = kind === 'ui' || fresh ? 0 : -6;
     src.connect(lo); lo.connect(hi); hi.connect(this.bus(x / 2.4, vol * gainK)); src.start();
-    if (kind === 'boom' || kind === 'die' || kind === 'thump' || kind === 'leak' || kind === 'ult') this.sub(vol * ({ boom: .9, die: .3, thump: .5, leak: .7, ult: .6 })[kind], kind === 'boom' ? .34 : .16);
+    if (!fresh && (kind === 'boom' || kind === 'die' || kind === 'thump' || kind === 'leak' || kind === 'ult')) this.sub(vol * ({ boom: .9, die: .3, thump: .5, leak: .7, ult: .6 })[kind], kind === 'boom' ? .34 : .16);
   },
   // Низкий удар под взрывами: его скорее чувствуешь, чем слышишь
   sub(vol, dur) {

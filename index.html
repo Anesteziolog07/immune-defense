@@ -423,6 +423,33 @@ body {
 #bossBar { top: calc(var(--top, 60px) + 38px); }
 #toast { bottom: calc(var(--bot, 0px) + 12px) !important; }
 #skillBtn { bottom: calc(var(--bot, 0px) + 10px); }
+
+/* ===== Бой ===== */
+#frenzy { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s; }
+#frenzy.f1 { opacity: .55; box-shadow: inset 0 0 50px #ffc93a; }
+#frenzy.f2 { opacity: .75; box-shadow: inset 0 0 70px #ff8a2a; }
+#frenzy.f3 { opacity: 1; box-shadow: inset 0 0 90px #ff3b4e; animation: frz .5s ease-in-out infinite alternate; }
+@keyframes frz { to { opacity: .6; } }
+#skillBtn { width: 68px; height: 68px; color: #ffd36b; background: conic-gradient(#ff8a2a var(--p, 0%), #182444 0); box-shadow: 0 4px 14px #0009, 0 0 0 2px #ffd36b66; transition: transform .15s; }
+#skillBtn::before { background: radial-gradient(circle at 40% 30%, #2c4678, #0e1830); }
+#skillBtn.ready { color: #fff; transform: scale(1.14); }
+#skillBtn.ready::before { background: radial-gradient(circle at 40% 30%, #ffd978, #ff6a1a 70%); }
+#perks { position: absolute; inset: 0; z-index: 12; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 18px; background: #050a18cc; }
+#perks h2 { margin: 0; font: 900 24px var(--display); color: #ffd36b; text-shadow: 0 2px 0 #6a3a00; }
+#perkCards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; max-width: 560px; }
+.perk { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 6px 14px; min-height: 190px; border-radius: 14px; border: 2px solid #ffd36b; color: #fff; cursor: pointer; font-family: var(--body); background: radial-gradient(ellipse 90% 60% at 50% 30%, #3a5a9a, #101c38 75%); box-shadow: 0 5px 0 #6a4a10, 0 0 26px #ffd36b44; animation: perkIn .4s cubic-bezier(.2, 1.4, .4, 1) backwards; }
+.perk i { font-size: 40px; font-style: normal; line-height: 1.1; }
+.perk b { font: 800 13px var(--display); color: #ffd36b; text-align: center; }
+.perk span { font-size: 12.5px; line-height: 1.25; text-align: center; }
+.perk small { color: #a6b8d8; font-size: 11px; }
+.perk:active { transform: translateY(3px); box-shadow: 0 2px 0 #6a4a10; }
+@keyframes perkIn { from { transform: translateY(40px) scale(.7) rotate(-4deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.sfxhint { margin: 0 0 4px; font-size: 13px; color: var(--muted); grid-column: 1 / -1; }
+.sfxrow { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 2px; border-bottom: 1px solid #ffffff14; }
+.sfxrow b { font-size: 13px; font-weight: 600; }
+.sfxrow span { display: flex; gap: 5px; flex: none; }
+.sfxrow button { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid #6a88bc; background: #18264a; color: #fff; font: 700 13px var(--display); cursor: pointer; }
+.sfxrow button.on { background: #ffc93a; border-color: #fff0b8; color: #4a2200; }
 </style>
 
 <div id="app">
@@ -443,6 +470,7 @@ body {
   <div id="traits"></div>
   <div id="stage">
     <div id="fx">
+      <div id="frenzy"></div>
       <div id="dim"></div>
       <div id="flash"></div>
       <div id="bossBar"><span id="bossName"></span><div class="bb"><i id="bossLag"></i><i id="bossFill"></i></div></div>
@@ -450,7 +478,7 @@ body {
       <div id="banner"></div>
       <div id="toast"></div>
     </div>
-    <button id="skillBtn" hidden aria-label="Цитокиновый удар"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 1l2.4 7.1L21 5l-3.1 6.6L23 14l-7 1.3L17 23l-5-5.4L7 23l1-7.7L1 14l5.1-2.4L3 5l6.6 3.1z" fill="currentColor"/></svg></button>
+    <button id="skillBtn" hidden aria-label="Ярость"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 1l2.4 7.1L21 5l-3.1 6.6L23 14l-7 1.3L17 23l-5-5.4L7 23l1-7.7L1 14l5.1-2.4L3 5l6.6 3.1z" fill="currentColor"/></svg></button>
   </div>
   <footer id="panel">
     <div id="info"></div>
@@ -463,6 +491,8 @@ body {
   </footer>
 
   <div id="unitSheet" hidden></div>
+
+  <div id="perks" hidden><h2>Выбери усиление</h2><div id="perkCards"></div></div>
 
   <div id="look" hidden>
     <div class="lookhead"><b>Фон и звуки</b><button class="btn go" id="lookDone">Готово</button></div>
@@ -493,7 +523,7 @@ body {
     <div class="tbottom">
       <button class="btn go huge" data-go="mapScreen">Играть</button>
       <button class="btn ghost" data-go="howto"><b class="q">?</b> Как играть</button>
-      <p class="ver">Версия 0.19 · прототип</p>
+      <p class="ver">Версия 0.20 · прототип</p>
     </div>
   </div>
 
@@ -726,6 +756,7 @@ const MAX_HP = 20, CAMPAIGN_WAVES = 30;
 /* =========================================================
    ЗВУК (синтез, без музыки)
    ========================================================= */
+const SFX_KINDS = { tap: ['Твой удар', 5], die: ['Микроб лопается', 5], chain: ['Цепной взрыв', 5], rage: ['Ярость', 5], boom: ['Взрыв', 5], hit: ['Попадание', 5], shot: ['Выстрел', 5], dart: ['Игла', 5], spit: ['Яд', 5], zip: ['Луч насквозь', 5], pop: ['Удар рядом', 5], thump: ['Тяжёлый удар', 5], lob: ['Запуск мортиры', 5], coin: ['Монета', 5], pick: ['Выбор усиления', 5], place: ['Клетка на плите', 5], ui: ['Кнопка', 5], merge: ['Улучшение', 2], wave: ['Начало волны', 2], ult: ['Умение антитела', 2], siren: ['Босс', 2], leak: ['Микроб дошёл', 2], win: ['Победа', 2], lose: ['Поражение', 2] };
 const AU = {
   ctx: null, out: null, on: true, last: {}, voices: 0, noise: null,
   init() {
@@ -921,34 +952,40 @@ const AU = {
       case 'lose':  this.osc(b, 'sine', 400, 90, t, 1.2, .3, { lp: 1200 }); break;
     }
   },
-  play(kind, x = 0, vol = 1) {
+  play(kind, x = 0, vol = 1, rate = 1) {
     if (!this.ctx || !this.on || this.ctx.state !== 'running' || !this.pw) return;
     const now = this.ctx.currentTime, gap = { boom: .06, die: .04, hit: .035, shot: .05 }[kind] ?? .05;
     if (now - (this.last[kind] || 0) < gap) return;
     this.last[kind] = now;
     const st = (typeof SET !== 'undefined' && SET.sfx) || 'real';
-    if (st === 'real' && this.smp && this.smp[kind === 'organ' ? 'leak' : kind]) this.sample(kind === 'organ' ? 'leak' : kind, x, vol);
+    if (st === 'real' && this.smp && this.smp[kind === 'organ' ? 'leak' : kind]) this.sample(kind === 'organ' ? 'leak' : kind, x, vol, rate);
     else if (st === 'chip') this.chip(kind, x, vol, now); else if (st === 'soft') this.soft(kind, x, vol, now); else this.juicy(kind, x, vol, now);
   },
 
   // ---------- Записанные эффекты (CC0: Kenney, OpenGameArt) ----------
   loadSamples() {
-    const N = { pop: 2, thump: 2, spit: 2, dart: 2, shot: 2, lob: 2, boom: 3, zip: 2, hit: 2, die: 3, leak: 2, place: 2, merge: 2, coin: 2, ui: 2, wave: 2, ult: 2, win: 1, lose: 1, siren: 1 };
-    this.smp = {}; this.fresh = {};
-    const NEW = Object.fromEntries(Object.keys(N).map(k => [k, 2]));   // объёмные записи (ElevenLabs), по два варианта каждого звука
-    const get = (url, fn) => fetch(url).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => this.ctx.decodeAudioData(b)).then(fn).catch(() => {});
-    for (const [k, n] of Object.entries(N)) {
-      if (NEW[k]) { this.fresh[k] = true; for (let i = 0; i < NEW[k]; i++) get(`assets/sfx/${k}_${i}.m4a`, buf => { (this.smp[k] ||= []).push(buf); }); }
-      else for (let i = 0; i < n; i++) get(`assets/snd/${k}_${i}.wav`, buf => { (this.smp[k] ||= []).push(buf); });
+    this.smp = {}; this.fresh = {}; this.vars = {};
+    for (const k of Object.keys(SFX_KINDS)) {
+      this.fresh[k] = true;
+      const pick = (typeof SET !== 'undefined' && SET.pick && SET.pick[k]);
+      for (const v of pick != null ? [pick] : [0, 1]) this.getVar(k, v).then(buf => { if (buf) (this.smp[k] ||= []).push(buf); });
     }
   },
-  sample(kind, x, vol) {
+  getVar(k, v) {
+    const key = k + v; if (this.vars[key]) return this.vars[key];
+    return this.vars[key] = fetch(`assets/sfx/${k}_${v}.m4a`).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(b => this.ctx.decodeAudioData(b)).catch(() => null);
+  },
+  // Выбор на слух: нажал на вариант — услышал, он и останется в игре
+  tryVar(k, v) {
+    this.getVar(k, v).then(buf => { if (!buf) return; this.smp[k] = [buf]; this.last = {}; this.play(k, 0, 1); });
+  },
+  sample(kind, x, vol, rate = 1) {
     const ctx = this.ctx, list = this.smp[kind], src = ctx.createBufferSource();
-    const gainK = { hit: .3, ui: .45, shot: .38, dart: .42, pop: .5, spit: .5, die: .5, zip: .48, coin: .55, boom: .8, lob: .55, thump: .6, place: .7, merge: .65, wave: .7, ult: .5, siren: .7, leak: .7, win: .8, lose: .8 }[kind] ?? .7;
+    const gainK = { tap: .55, chain: .4, rage: .9, pick: .7, hit: .3, ui: .45, shot: .38, dart: .42, pop: .5, spit: .5, die: .5, zip: .48, coin: .55, boom: .8, lob: .55, thump: .6, place: .7, merge: .65, wave: .7, ult: .5, siren: .7, leak: .7, win: .8, lose: .8 }[kind] ?? .7;
     src.buffer = list[Math.random() * list.length | 0];
     // ниже и плотнее: записи звучат взрослее, без «игрушечного» писка; широкая панорама по положению на поле
     const fresh = this.fresh[kind], body = fresh ? 1 : { ui: 1, coin: .94, win: 1, lose: 1, wave: .9, siren: .9 }[kind] ?? .8;
-    src.playbackRate.value = body * (.95 + Math.random() * .1);
+    src.playbackRate.value = body * rate * (.95 + Math.random() * .1);
     const lo = ctx.createBiquadFilter(), hi = ctx.createBiquadFilter();
     lo.type = 'lowshelf'; lo.frequency.value = 190; lo.gain.value = kind === 'ui' || fresh ? 0 : 8;
     hi.type = 'highshelf'; hi.frequency.value = 4800; hi.gain.value = kind === 'ui' || fresh ? 0 : -6;
@@ -1452,8 +1489,8 @@ const LEVELS = [
   { id: 'kidney', organ: 'Почки', region: 'Мочевыделительная система', theme: 8, diff: 1.35 },
   { id: 'stomach', organ: 'Желудок', region: 'Пищеварительная система', theme: 3, diff: 1.45 },
   { id: 'spleen', organ: 'Селезёнка', region: 'Иммунная система', theme: 5, diff: 1.55 },
-  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 2, diff: 1.7 },
-  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 6, diff: 1.85 }
+  { id: 'eye', organ: 'Глаз', region: 'Органы чувств', theme: 2, diff: 1.62 },
+  { id: 'brain', organ: 'Мозг', region: 'Нервная система', theme: 6, diff: 1.75 }
 ];
 function organTex(base, spots) {
   return canvasTex(512, 512, (g, W, H) => {
@@ -2040,7 +2077,7 @@ const G = {
   mode: 'campaign', phase: 'menu', paused: false, coins: 0, hp: MAX_HP, wave: 0, speed: 1,
   units: [], foes: [], shots: [], spikes: [], queue: [], spawnT: 0,
   shop: [], legTab: false, sel: null, kills: {}, combo: 0, comboT: 0, bonus: {}, best: 0,
-  shakeA: 0, slow: 0, wordT: 0, coinT: 0, skillT: 0, aim: false, pend: [], boss: null
+  shakeA: 0, slow: 0, stop: 0, wordT: 0, coinT: 0, rage: 0, frenzyT: 0, perk: {}, chainQ: [], loot: [], tapHit: false, boss: null
 };
 try { G.best = +localStorage.getItem('immuneBest') || 0; } catch (e) {}
 
@@ -2055,11 +2092,44 @@ function computeBonus() {
 }
 const tier = (k) => G.bonus[k]?.t || 0;
 
+// Усиления: каждые 3 волны игрок выбирает одно из трёх — каждая игра складывается по-своему
+const PERKS = [
+  { id: 'dmg', ic: '⚔️', name: 'Сила', text: 'Урон всех клеток +15%' },
+  { id: 'rate', ic: '⚡', name: 'Скорость', text: 'Клетки бьют на 12% быстрее' },
+  { id: 'range', ic: '📡', name: 'Дальность', text: 'Дальность всех клеток +0,25' },
+  { id: 'crit', ic: '🎯', name: 'Меткость', text: 'Критический удар: шанс +8%' },
+  { id: 'aoe', ic: '💥', name: 'Большой взрыв', text: 'Взрывы шире на 25%' },
+  { id: 'chain', ic: '🔗', name: 'Цепная реакция', text: 'Цепные взрывы сильнее на 60%' },
+  { id: 'rage', ic: '🔥', name: 'Ярость', text: 'Шкала ярости копится на 40% быстрее' },
+  { id: 'tap', ic: '👊', name: 'Тяжёлый палец', text: 'Твой удар сильнее на 70%' },
+  { id: 'coins', ic: '💰', name: 'Трофеи', text: 'Монеты за микробов +20%' },
+  { id: 'slow', ic: '❄️', name: 'Холод', text: 'Замедление сильнее на 10%' },
+  { id: 'poison', ic: '🧪', name: 'Едкий яд', text: 'Яд сильнее на 40%' },
+  { id: 'heal', ic: '❤️', name: 'Лечение', text: 'Орган получает +4 здоровья' }
+];
+const pk = (k) => G.perk[k] || 0;
+function openPerks() {
+  const pool = PERKS.filter(x => x.id !== 'heal' || G.hp < MAX_HP).sort(() => Math.random() - .5).slice(0, 3);
+  const box = $('perkCards'); box.innerHTML = '';
+  pool.forEach((x, i) => {
+    const b = document.createElement('button'); b.className = 'perk'; b.style.animationDelay = i * 90 + 'ms';
+    b.innerHTML = `<i>${x.ic}</i><b>${x.name}</b><span>${x.text}</span>${pk(x.id) ? `<small>уже ×${pk(x.id)}</small>` : ''}`;
+    b.onclick = () => takePerk(x); box.appendChild(b);
+  });
+  $('perks').hidden = false; AU.play('merge', 0, .7);
+}
+function takePerk(x) {
+  G.perk[x.id] = pk(x.id) + 1;
+  if (x.id === 'heal') { G.hp = Math.min(MAX_HP, G.hp + 4); updateHUD(); }
+  $('perks').hidden = true; AU.play('pick', 0, 1); screenFlash('#ffd36b', .25, 300);
+  G.units.forEach(u => { pillar(u.pos, '#ffd36b', .4, 2.4, .5); });
+}
+
 function unitStats(u) {
   const d = u.def, s = u.level - 1;
-  let range = d.range + LV_RANGE[s] + (d.fac === 'snipe' ? [0, .6, 1.2][tier('snipe')] : 0);
-  let rate = d.rate * LV_RATE[s];
-  let dmg = d.dmg * LV_DMG[s] * (d.fac === 'ig' ? [1, 1.2, 1.4, 1.8][tier('ig')] : 1);
+  let range = d.range + LV_RANGE[s] + (d.fac === 'snipe' ? [0, .6, 1.2][tier('snipe')] : 0) + .25 * pk('range');
+  let rate = d.rate * LV_RATE[s] / (1 + .12 * pk('rate'));
+  let dmg = d.dmg * LV_DMG[s] * (d.fac === 'ig' ? [1, 1.2, 1.4, 1.8][tier('ig')] : 1) * (1 + .15 * pk('dmg'));
   return { range, rate, dmg };
 }
 
@@ -2090,8 +2160,9 @@ function makeWave(n) {
   return q.sort((a, b) => a.t - b.t).slice(0, 56);   // потолок: чтобы телефон не тормозил
 }
 // Баланс рассчитан на прогонах роботом-игроком: разумная смесь отрядов держит 30 волн, одна клетка и игра без улучшений — нет
-const BAL = { hpG: 1.11, hpL: .02, boss: .62, rw: 1, wb: [20, 4], rwG: .04, start: 100 };
-const hpScale = (n) => Math.pow(BAL.hpG, n - 1) * (1 + n * BAL.hpL) * (LEVELS[G.level || 0].diff || 1);
+const BAL = { hpG: 1.15, hpL: .03, boss: .8, rw: 1, wb: [20, 4], rwG: .04, start: 100, tap: 7, tapP: .85, chain: .15, rage: .7 };
+const waveScale = (n) => Math.pow(BAL.hpG, n - 1) * (1 + n * BAL.hpL);   // рост от волны; сила ударов игрока от сложности уровня не зависит
+const hpScale = (n) => waveScale(n) * (LEVELS[G.level || 0].diff || 1);
 
 const barTex = canvasTex(64, 16, (g, W, H) => { g.fillStyle = '#fff'; g.beginPath(); g.roundRect(0, 0, W, H, 7); g.fill(); });
 function spawn(type, swarm = false) {
@@ -2138,26 +2209,30 @@ function hurt(e, dmg, u, opt = {}) {
   if (opt.vsSlow && (e.slowT > 0 || e.stunT > 0)) mult *= 2;
   if (d.bigMul && e.f.big) mult *= d.bigMul;
   let crit = false;
-  const cc = (d.crit || 0) + (d.fac === 'hunt' ? [0, .15, .3][tier('hunt')] : 0);
+  const cc = u ? (d.crit || 0) + (d.fac === 'hunt' ? [0, .15, .3][tier('hunt')] : 0) + .08 * pk('crit') : 0;
   if (cc && Math.random() < cc) { mult *= 2.2; crit = true; }
   const armor = e.shredT > 0 ? 0 : e.armor;
   const val = dmg * mult * (1 - armor);
-  e.hp -= val; if (u) { u.dealt = (u.dealt || 0) + val; if (!opt.dot) { e.squash = 1; e.flash = 1; e.jolt = 1; } }
+  e.hp -= val; if (u) u.dealt = (u.dealt || 0) + val; if ((u && !opt.dot) || opt.tap || opt.chain) { e.squash = 1; e.flash = 1; e.jolt = 1; }
   if (val >= 10 || crit || opt.ult) popNum(e.pos, Math.round(val), opt.ult ? 'ult' : crit ? 'crit' : '');
-  if (crit) { flash(e.pos.clone().setY(.45), 'halo', '#ffc93a', .3, 1.25, .3, { op: .85 }); if (Math.random() < .3) word(e.pos); }
+  if (crit) { flash(e.pos.clone().setY(.45), 'halo', '#ffc93a', .3, 1.25, .3, { op: .85 }); if (Math.random() < .3) word(e.pos); hitStop(.03); }
   if (e.hp <= 0) kill(e);
 }
 
 function kill(e) {
   e.dead = true; e.corpse = true;
-  const reward = Math.max(1, Math.round(e.f.reward * BAL.rw * (1 + G.wave * BAL.rwG) * e.rk));
+  const reward = Math.max(1, Math.round(e.f.reward * BAL.rw * (1 + G.wave * BAL.rwG) * e.rk * (1 + .2 * pk('coins'))));
   G.coins += reward; updateHUD(); coinFly(e.pos);
   G.kills[e.type] = (G.kills[e.type] || 0) + 1; PROF.kills++;
   const col = '#' + FOE_MAT[e.type].color.getHexString();
   FX.dead.push({ mesh: e.mesh, t: 0, dur: e.f.boss ? .55 : .16, bs: e.mesh.userData.bs, col, pos: e.pos.clone(), y: e.mesh.position.y, segs: e.segs, popped: 0, boss: e.f.boss });
-  AU.play(e.f.boss ? 'boom' : 'die', e.pos.x, e.f.boss ? 1 : .8);
+  AU.play(e.f.boss ? 'boom' : 'die', e.pos.x, e.f.boss ? 1 : .8, 1 + Math.min(G.combo, 30) * .014);   // чем длиннее серия, тем выше звук
+  addRage(e.f.boss ? 25 : 2.2);
+  if (e.f.big) hitStop(.05);
+  if (!e.f.boss && (e.depth || 0) < 3) G.chainQ.push({ pos: e.pos.clone(), dmg: e.maxHp * BAL.chain * (1 + .6 * pk('chain')), t: .09, depth: (e.depth || 0) + 1, col });
+  if (e.f.big || Math.random() < .16) dropLoot(e.pos, reward);
   if (e.f.boss) { G.slow = 1.2; shake(.3); screenFlash('#ffffff', .55, 500); ring(e.pos, '#ffd36b', 3, .8); word(e.pos, 'ПОБЕДА!'); }
-  G.combo = G.comboT > 0 ? G.combo + 1 : 1; G.comboT = 1.4;
+  G.combo = G.comboT > 0 ? G.combo + 1 : 1; G.comboT = 2;
   if (G.combo >= 5) {
     comboEl.innerHTML = 'Комбо <span>×' + G.combo + '</span>'; comboEl.classList.add('on'); comboEl.classList.toggle('t2', G.combo >= 20 && G.combo < 50); comboEl.classList.toggle('t3', G.combo >= 50);
     comboEl.animate([{ transform: 'translateX(-50%) scale(1.22)' }, { transform: 'translateX(-50%) scale(1)' }], { duration: 170, easing: 'ease-out' });
@@ -2177,11 +2252,11 @@ function applyHit(e, u, s, opt = {}) {
   if (e.dead) return;
   if (d.slow) {
     const tg = d.fac === 'guard' ? tier('guard') : 0;
-    const amt = Math.min(.75, d.slow[0] + [0, .15, .3][tg]), dur = d.slow[1] * [1, 1.5, 2][tg];
+    const amt = Math.min(.8, d.slow[0] + [0, .15, .3][tg] + .1 * pk('slow')), dur = d.slow[1] * [1, 1.5, 2][tg];
     e.slow = Math.max(e.slowT > 0 ? e.slow : 0, amt); e.slowT = Math.max(e.slowT, dur);
   }
   if (d.stun) e.stunT = Math.max(e.stunT, d.stun * [1, 1.5, 2][tier('guard')]);
-  if (d.burn) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.burn = Math.max(e.burn, d.burn[0] * LV_DMG[u.level - 1] * m); e.burnT = d.burn[1]; }
+  if (d.burn) { const m = [1, 1.5, 2.2][tier('dissolve')] * (1 + .4 * pk('poison')); e.burn = Math.max(e.burn, d.burn[0] * LV_DMG[u.level - 1] * m); e.burnT = d.burn[1]; }
   if (d.shred) { const m = [1, 1.5, 2.2][tier('dissolve')]; e.shredT = d.shred * m; e.shredAmp = Math.max(e.shredAmp, .2 * m); }
   if (d.weaken) { e.weak = Math.max(e.weak, d.weaken[0]); e.weakT = d.weaken[1]; }
 }
@@ -2250,7 +2325,7 @@ function fire(u, e, s) {
 function addMesh(m, p) { m.position.copy(p); scene.add(m); return m; }
 
 function explode(pos, u, s, radius, opt = {}) {
-  const r = radius * (u.def.fac === 'bomb' ? [1, 1.25, 1.5][tier('bomb')] : 1);
+  const r = radius * (u.def.fac === 'bomb' ? [1, 1.25, 1.5][tier('bomb')] : 1) * (1 + .25 * pk('aoe'));
   for (const e of G.foes) if (!e.dead && e.pos.distanceTo(pos) <= r) applyHit(e, u, s, opt);
   const c = u.def.gran || u.def.col, p = pos.clone().setY(.2);
   ring(pos, c, r, .4); gfx(pos, 'halo', c, r * .5, r * 1.15, .3, { op: .6 });
@@ -2291,36 +2366,81 @@ function ult(u, s) {
   return true;
 }
 
-/* ---------- Цитокиновый удар: игрок сам бьёт по скоплению микробов ---------- */
-const SKILL = { cd: 18, r: 1.7 }, skillBtn = document.getElementById('skillBtn');
-const skillPower = () => 42 * hpScale(Math.max(1, G.wave));
-function skillUI() { skillBtn.hidden = G.phase !== 'wave'; skillBtn.classList.toggle('aim', G.aim); stage.classList.toggle('aiming', G.aim); }
-let skillShown = -1;
+/* ---------- Игрок в бою: удар пальцем, цепи, ярость, трофеи ---------- */
+const skillBtn = document.getElementById('skillBtn');
+const skillPower = () => 42 * waveScale(Math.max(1, G.wave));
+const tapPower = () => BAL.tap * Math.pow(waveScale(Math.max(1, G.wave)), BAL.tapP) * (1 + .7 * pk('tap'));
+function hitStop(t) { if (G.stop <= 0) G.stop = t; }   // миг заморозки: удар ощущается весомым
+function skillUI() { skillBtn.hidden = G.phase !== 'wave'; }
+function addRage(n) { G.rage = Math.min(100, G.rage + n * BAL.rage * (1 + .4 * pk('rage'))); }
+const frenzyK = () => (G.combo >= 50 ? .5 : G.combo >= 25 ? .3 : G.combo >= 10 ? .15 : 0) + (G.frenzyT > 0 ? .5 : 0);
+let skillShown = -1, frenzyShown = 0;
 function updateSkill(dt) {
-  if (G.skillT > 0) G.skillT = Math.max(0, G.skillT - dt);
-  const p = Math.round((1 - G.skillT / SKILL.cd) * 100);
+  G.frenzyT = Math.max(0, G.frenzyT - dt);
+  const p = Math.round(G.rage);
   if (p !== skillShown) { skillShown = p; skillBtn.style.setProperty('--p', p + '%'); skillBtn.classList.toggle('ready', p >= 100); }
-  for (let i = G.pend.length - 1; i >= 0; i--) { const z = G.pend[i]; z.t -= dt; if (z.t <= 0) { G.pend.splice(i, 1); skillBlast(z.p); } }
+  const f = G.frenzyT > 0 ? 3 : G.combo >= 50 ? 3 : G.combo >= 25 ? 2 : G.combo >= 10 ? 1 : 0;
+  if (f !== frenzyShown) { frenzyShown = f; $('frenzy').className = f ? 'f' + f : ''; if (f > 0 && G.phase === 'wave') AU.play('merge', 0, .25); }
+  // цепные взрывы: лопнувший микроб задевает соседей
+  for (let i = G.chainQ.length - 1; i >= 0; i--) {
+    const c = G.chainQ[i]; c.t -= dt; if (c.t > 0) continue;
+    G.chainQ.splice(i, 1);
+    let n = 0;
+    for (const e of G.foes) if (!e.dead && Math.hypot(e.pos.x - c.pos.x, e.pos.z - c.pos.z) < .95) { e.depth = c.depth; hurt(e, c.dmg, null, { chain: true }); n++; }
+    if (n) { ring(c.pos, c.col, .95, .28, PATH_Y + .08); AU.play('chain', c.pos.x, .5, 1 + c.depth * .12); if (c.depth >= 2) word(c.pos, 'ЦЕПЬ ×' + (c.depth + 1)); addRage(.6 * n); }
+  }
+  // трофеи ждут, пока их смахнут
+  for (let i = G.loot.length - 1; i >= 0; i--) {
+    const l = G.loot[i]; l.t += dt; const u = Math.min(1, l.t / .4);
+    l.s.position.set(l.x + (l.tx - l.x) * u, .55 + Math.sin(u * Math.PI) * .7 + Math.sin(l.t * 5) * .04, l.z + (l.tz - l.z) * u);
+    l.s.scale.setScalar(l.t > 3.2 ? Math.max(.01, .38 * (3.8 - l.t) / .6) : .38);
+    if (l.t > 3.8) { scene.remove(l.s); G.loot.splice(i, 1); }
+  }
 }
-function castSkill(p) {
-  G.aim = false; G.skillT = SKILL.cd; skillUI();
-  const q = new T.Vector3(p.x, 0, p.z);
-  // замах: круг сжимается к цели, потом вспышка
-  gfx(q, 'aim', '#ffd36b', SKILL.r * 1.5, SKILL.r * .75, .4, { op: .95, spin: -4, hold: .75, y: .14 });
-  flash(q.clone().setY(2.6), 'star', '#fff0c0', .3, .9, .38, { vy: -5.8, spin: 8 });
-  AU.play('lob', q.x, .8); G.pend.push({ t: .38, p: q });
+const coinTex = canvasTex(64, 64, (g, W) => { const c = W / 2, rg = g.createRadialGradient(24, 22, 3, c, c, 30); rg.addColorStop(0, '#fff6c0'); rg.addColorStop(.5, '#ffc93a'); rg.addColorStop(1, '#c87a10'); g.fillStyle = rg; g.beginPath(); g.arc(c, c, 28, 0, 7); g.fill(); g.lineWidth = 4; g.strokeStyle = '#8a5208'; g.stroke(); g.lineWidth = 3; g.strokeStyle = '#fff0b0'; g.beginPath(); g.arc(c, c, 19, 0, 7); g.stroke(); });
+const lootMat = new T.SpriteMaterial({ map: coinTex, transparent: true, depthWrite: false });
+function dropLoot(pos, v) {
+  if (G.loot.length >= 14) return;
+  const s = new T.Sprite(lootMat); s.renderOrder = 5; scene.add(s);
+  const a = Math.random() * 6.28, r = .3 + Math.random() * .4;
+  G.loot.push({ s, x: pos.x, z: pos.z, tx: pos.x + Math.cos(a) * r, tz: pos.z + Math.sin(a) * r, t: 0, v: Math.max(1, Math.round(v * .7)) });
 }
-function skillBlast(q) {
-  const p = q.clone().setY(.3), dmg = skillPower();
-  for (const e of G.foes) if (!e.dead && Math.hypot(e.pos.x - q.x, e.pos.z - q.z) <= SKILL.r) { hurt(e, dmg, null, { ult: true }); if (!e.dead) { e.squash = 1; e.flash = 1; e.jolt = 1; e.slow = Math.max(e.slow, .5); e.slowT = Math.max(e.slowT, 1.8); } }
-  flash(p, 'star', '#ffffff', .6, 3.6, .2); flash(p, 'halo', '#ffd36b', .6, 3.2, .34, { op: .95 });
-  gfx(q, 'swirl', '#ffc93a', SKILL.r * .5, SKILL.r * 1.2, .95, { spin: 4.2, hold: .15, y: .16 }); gfx(q, 'halo', '#ff9a3a', .5, SKILL.r * 1.3, .55, { op: .55 });
-  ring(q, '#ffffff', SKILL.r * 1.25, .4); ring(q, '#ffd36b', SKILL.r * 1.6, .6);
-  pillar(q, '#ffd36b', .7, 4.2, .55); chunk(p, '#ffd36b', 16, 3.6, .15); spark(p, '#ffe9a8', 16, 3.2, .3, .55, 1.8);
-  for (let i = 0; i < 5; i++) flash(p.clone().add(new T.Vector3((Math.random() - .5) * 1.4, .1, (Math.random() - .5) * 1.4)), 'smoke', '#e8d8c0', .4, 1.3, .7, { solid: true, op: .45, vy: .7 });
-  shake(.2); screenFlash('#fff2c8', .3, 260); G.wordT = 0; word(q, 'БА-БАХ!'); AU.play('boom', q.x, 1); AU.play('ult', q.x, .7); buzz(50);
+function takeLoot(l, i, quiet) {
+  G.coins += l.v; scene.remove(l.s); G.loot.splice(i, 1); updateHUD(); G.coinT = 0; coinFly(l.s.position);
+  if (!quiet) { AU.play('coin', l.tx, .7, 1 + Math.min(G.lootRun = (G.lootRun || 0) + 1, 12) * .05); flash(l.s.position, 'star', '#ffd36b', .2, .7, .16); popNum(l.s.position, '+' + l.v, 'ult'); }
 }
-skillBtn.onclick = () => { if (G.phase !== 'wave' || G.skillT > 0) { if (G.skillT > 0) toast('Удар ещё заряжается'); return; } G.aim = !G.aim; if (G.aim) toast('Нажми на скопление микробов'); skillUI(); };
+function fieldPoint(cx, cy, y) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  ray.setFromCamera({ x: (cx - rect.left) / rect.width * 2 - 1, y: -(cy - rect.top) / rect.height * 2 + 1 }, camera);
+  const p = new T.Vector3(); tapPlane.constant = -y; return ray.ray.intersectPlane(tapPlane, p) ? p : null;
+}
+function sweepLoot(cx, cy) {
+  if (!G.loot.length) return false;
+  const p = fieldPoint(cx, cy, .5); if (!p) return false; let got = false;
+  for (let i = G.loot.length - 1; i >= 0; i--) { const q = G.loot[i].s.position; if (Math.hypot(q.x - p.x, q.z - p.z) < .8) { takeLoot(G.loot[i], i); got = true; } }
+  return got;
+}
+function tapFoe(cx, cy) {
+  const p = fieldPoint(cx, cy, 0); if (!p) return false;
+  let best = null, bd = .85;
+  for (const e of G.foes) { if (e.dead) continue; const d = Math.hypot(e.pos.x - p.x, e.pos.z - p.z); if (d < bd) { bd = d; best = e; } }
+  if (!best) return false;
+  const at = best.pos.clone().setY(best.mesh.position.y);
+  hurt(best, tapPower(), null, { tap: true });
+  flash(at, 'star', '#ffffff', .25, 1.05, .14); flash(at, 'halo', '#ffe08a', .2, .8, .16, { op: .8 }); gfx(at, 'aim', '#ffffff', .2, .75, .2, { op: .8, y: PATH_Y + .1 });
+  addRage(.3); AU.play('tap', at.x, .8, 1 + Math.random() * .1); shake(.018); buzz(8);
+  return true;
+}
+function rageBlast() {
+  if (G.phase !== 'wave' || G.rage < 100) return;
+  G.rage = 0; G.slow = .85; G.frenzyT = 6; hitStop(.09);
+  const dmg = skillPower() * 1.15, c = TER.box.getCenter(new T.Vector3());
+  for (const e of [...G.foes]) { if (e.dead) continue; const at = e.pos.clone().setY(.4); hurt(e, dmg, null, { ult: true }); if (!e.dead) { e.squash = 1; e.flash = 1; e.jolt = 1; e.stunT = Math.max(e.stunT, .7); } flash(at, 'star', '#fff4c8', .3, 1.5, .24); }
+  for (const u of G.units) { pillar(u.pos, u.def.col, .5, 4, .6); u.kick = 1; u.mergeFx = .8; }
+  gfx(c, 'swirl', '#ffc93a', 1.5, 9, 1, { spin: 2.4, hold: .1, y: .4 }); gfx(c, 'halo', '#ff9a3a', 1, 10, .6, { op: .6, y: .42 }); ring(c, '#ffffff', 9, .55, .45); ring(c, '#ffd36b', 12, .8, .45);
+  shake(.34); screenFlash('#fff0b0', .6, 420); G.wordT = 0; word(c, 'ЯРОСТЬ!'); AU.play('rage', 0, 1); buzz(120);
+}
+skillBtn.onclick = () => { if (G.rage >= 100) rageBlast(); else toast('Шкала копится от убийств и твоих ударов'); };
 
 /* ---------- Главный цикл ---------- */
 const tmpV = new T.Vector3(), tmpQ = new T.Vector3();
@@ -2405,7 +2525,7 @@ function update(dt) {
   // Клетки
   for (const u of G.units) {
     const s = unitStats(u);
-    u.cd -= dt;
+    u.cd -= dt * (1 + frenzyK());
     if (u.def.ultCd) { u.ultT -= dt; if (u.ultT <= 0 && G.phase === 'wave') { if (ult(u, s)) u.ultT = u.def.ultCd; else u.ultT = .5; } }
     if (u.cd <= 0) {
       const e = pickTarget(u, s.range);
@@ -2733,17 +2853,22 @@ function showBanner(title, sub = '', kind = '') {
 }
 
 /* ---------- Нажатия по полю ---------- */
-const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.3);
+const ray = new T.Raycaster(), plane = new T.Plane(new T.Vector3(0, 1, 0), -.3), tapPlane = new T.Plane(new T.Vector3(0, 1, 0), 0);
 let downAt = null;
-renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  downAt = [e.clientX, e.clientY]; G.tapHit = false;
+  if (G.phase !== 'wave' || G.sel) return;
+  G.tapHit = sweepLoot(e.clientX, e.clientY) || tapFoe(e.clientX, e.clientY);
+});
+renderer.domElement.addEventListener('pointermove', (e) => { if (e.buttons || e.pressure > 0) sweepLoot(e.clientX, e.clientY); });
 renderer.domElement.addEventListener('pointerup', (e) => {
+  if (G.tapHit) { G.tapHit = false; return; }
   if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 12) return;
   const rect = renderer.domElement.getBoundingClientRect();
   ray.setFromCamera({ x: (e.clientX - rect.left) / rect.width * 2 - 1, y: -(e.clientY - rect.top) / rect.height * 2 + 1 }, camera);
   const hit = new T.Vector3(); if (!ray.ray.intersectPlane(plane, hit)) return;
   let pad = null, bd = .75; pads.forEach(p => { const d = Math.hypot(p.pos.x - hit.x, p.pos.z - hit.z); if (d < bd) { bd = d; pad = p; } });
   if (G.phase === 'menu' || G.phase === 'end') return;
-  if (G.aim) { castSkill(hit); return; }
   if (G.sel) { if (pad) placeOn(pad); else toast('Ставить можно только на светлые плиты у сосуда'); return; }
   if (pad && pad.unit) openUnit(pad.unit); else closeUnit();
 });
@@ -2760,7 +2885,8 @@ function startGame(mode, lvl = G.level || 0) {
   for (const z of G.spikes) z.meshes.forEach(m => scene.remove(m));
   buildBoard(makeLayout(stageAspect())); fit();
   PROF.games++; saveProf();
-  Object.assign(G, { mode, phase: 'build', paused: false, coins: BAL.start, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null, skillT: 0, aim: false, pend: [], boss: null, slow: 0 });
+  Object.assign(G, { mode, phase: 'build', paused: false, coins: BAL.start, hp: MAX_HP, wave: 0, units: [], foes: [], shots: [], spikes: [], queue: [], kills: {}, combo: 0, comboT: 0, legTab: false, sel: null, rage: 0, frenzyT: 0, perk: {}, chainQ: [], boss: null, slow: 0, stop: 0 });
+  G.loot.forEach(l => scene.remove(l.s)); G.loot = [];
   $('bossBar').classList.remove('on'); skillUI();
   $('legBtn').classList.remove('on');
   screenStack = []; show(null); closeUnit();
@@ -2772,21 +2898,25 @@ function startWave() {
   G.wave++; G.phase = 'wave'; G.queue = makeWave(G.wave); G.spawnT = 0;
   G.units.forEach(u => { u.dealt = 0; });
   if (G.wave % 10 !== 0) { showBanner(isSwarm(G.wave) ? 'Нашествие!' : 'Волна ' + G.wave, waveTypes(G.wave).map(t => FOES[t].many).join(' + ') + (isSwarm(G.wave) ? ' · их вдвое больше' : ''), 'wave'); AU.play('wave', 0, .9); }
+  if (G.wave === 1) toast('Нажимай на микробов пальцем: ты тоже бьёшь!', 3000);
   // ворота просыпаются
   { const door = pathAt(.75); portal.userData.burst = 2.4; ring(door, '#ffd8a0', 2.4, .7); shake(.05); }
   skillUI(); updateHUD();
 }
 function waveCleared() {
   const bonus = BAL.wb[0] + G.wave * BAL.wb[1];
-  G.coins += bonus; G.phase = 'build'; G.aim = false; skillUI();
+  G.coins += bonus; G.phase = 'build'; skillUI();
+  for (let i = G.loot.length - 1; i >= 0; i--) takeLoot(G.loot[i], i, true);   // что не смахнул — собирается само
+  G.lootRun = 0;
   if (G.mode === 'endless' && G.wave > G.best) { G.best = G.wave; try { localStorage.setItem('immuneBest', G.best); } catch (e) {} }
   if (G.mode === 'campaign' && G.wave >= CAMPAIGN_WAVES) return finish(true);
   const top = G.units.reduce((a, u) => (u.dealt || 0) > (a?.dealt || 0) ? u : a, null);
   showBanner('Волна отбита', `+${bonus} монет` + (top ? ` · лучший боец: ${top.def.name}, ${Math.round(top.dealt)} урона` : ''), 'win'); AU.play('coin', 0, 1);
   rollShop(); highlight(); updateHUD();
+  if (G.wave % 3 === 0) setTimeout(openPerks, 700);
 }
 function finish(win) {
-  G.phase = 'end'; G.aim = false; skillUI(); $('bossBar').classList.remove('on'); updateHUD();
+  G.phase = 'end'; skillUI(); $('bossBar').classList.remove('on'); updateHUD();
   const stars = !win ? 0 : G.hp === MAX_HP ? 3 : G.hp > MAX_HP / 2 ? 2 : 1;
   const L = LEVELS[G.level || 0];
   if (win && G.mode === 'campaign') { PROF.wins++; PROF.lv[L.id] = Math.max(PROF.lv[L.id] || 0, stars); }
@@ -2902,7 +3032,6 @@ const AMBS = [
   { id: 'night', name: 'Ночь и сверчки' }, { id: 'thunder', name: 'Дождь и далёкий гром' }, { id: 'waterfall', name: 'Водопад' }, { id: 'beach', name: 'Морской берег' },
   { id: 'wind', name: 'Ветер в поле' }, { id: 'softrain', name: 'Тихий дождь' }
 ];
-const SFXS = [{ id: 'real', name: 'Объёмные', sub: 'глубокие записи, как в кино' }, { id: 'juicy', name: 'Сочные', sub: 'синтез, с басом' }, { id: 'soft', name: 'Мягкие', sub: 'тихие и тёплые' }, { id: 'chip', name: '8 бит', sub: 'как на приставке' }];
 let lookTab = 'bg', lookFrom = null;
 function openLook(from) {
   lookFrom = from; AU.init();
@@ -2926,21 +3055,19 @@ function renderLook() {
     h += `<label class="lookvol">Громкость фона<input type="range" id="ambVol" min="0" max="100" step="5" value="${SET.ambVol}"></label>`;
     h += `<button class="opt wide no" data-no="Звук фона">Ничего не нравится</button>`;
   } else {
-    h = SFXS.map(x => `<button class="opt wide${(SET.sfx || 'real') === x.id ? ' on' : ''}" data-sfx="${x.id}"><span><b>${x.name}</b> · <small>${x.sub}</small></span></button>`).join('');
-    h += `<button class="opt wide" data-demo="1">▶ Послушать набор</button>`;
+    h = `<p class="sfxhint">Нажимай на цифры и слушай. Какой вариант нажал последним, тот и будет в игре.</p>`;
+    h += Object.entries(SFX_KINDS).map(([k, [nm, n]]) => `<div class="sfxrow"><b>${nm}</b><span>${[...Array(n)].map((_, v) => `<button class="${(SET.pick || {})[k] === v ? 'on' : ''}" data-sv="${k}:${v}">${v + 1}</button>`).join('')}</span></div>`).join('');
     h += `<button class="opt wide no" data-no="Эффекты">Ничего не нравится</button>`;
   }
   $('lookBody').innerHTML = h;
   const v = $('ambVol'); if (v) v.oninput = () => { SET.ambVol = +v.value; saveSet(); if (AU.ab) AU.ab.gain.value = SET.ambVol / 100 * .7; };
 }
-function sfxDemo() { ['place', 'pop', 'shot', 'dart', 'spit', 'zip', 'thump', 'boom', 'die', 'merge', 'coin'].forEach((k, i) => setTimeout(() => { AU.last = {}; AU.play(k, (i % 3 - 1) * 2, 1); }, i * 320)); }
 $('lookTabs').onclick = (e) => { const b = e.target.closest('[data-t]'); if (!b) return; lookTab = b.dataset.t; $('lookNote').textContent = ''; renderLook(); AU.play('ui'); };
 $('lookBody').onclick = (e) => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.th !== undefined) { SET.theme = +b.dataset.th; saveSet(); applyTheme(SET.theme >= 0 ? SET.theme : LEVELS[G.level || 0].theme); renderLook(); AU.play('ui'); $('lookNote').textContent = SET.theme >= 0 ? `Фон «${THEMES[SET.theme].name}» включён для всех органов.` : 'У каждого органа будет свой фон.'; }
   else if (b.dataset.amb) { SET.amb = b.dataset.amb; saveSet(); AU.init(); if (!SET.sound) { $('lookNote').textContent = 'Звук выключен в настройках — включи его, чтобы услышать.'; } AU.amb(SET.amb); renderLook(); }
-  else if (b.dataset.sfx) { SET.sfx = b.dataset.sfx; saveSet(); renderLook(); sfxDemo(); }
-  else if (b.dataset.demo) sfxDemo();
+  else if (b.dataset.sv) { const [k, v] = b.dataset.sv.split(':'); (SET.pick ||= {})[k] = +v; saveSet(); AU.tryVar(k, +v); renderLook(); }
   else if (b.dataset.no) { $('lookNote').textContent = `Понял! Напиши мне в чат: «${b.dataset.no}: ничего не нравится» — и я придумаю 10 новых вариантов.`; }
 };
 $('lookDone').onclick = () => { AU.play('ui'); closeLook(); };
@@ -3075,7 +3202,9 @@ function renderGuide() {
       ['Улучшай', 'Нажми на поставленную клетку → <b>«Улучшить»</b>. Уровней пять: от ★ до ★★★★★, урон растёт почти вчетверо. Ненужную клетку можно разрушить и вернуть половину монет.'],
       ['Собирай отряды', 'Плашка сверху карточки — это <b>отряд</b>. Две клетки одного отряда на поле дают бонус всем клеткам отряда, четыре — бонус больше. Значки отрядов светятся над полем.'],
       ['Легенды', 'Во вкладке «Легендарные» — <b>Антитела</b> (иммуноглобулины). Дорогие, но очень сильные, а вместе ещё сильнее: 2, 3 и 5 штук дают огромный бонус.'],
-      ['Цитокиновый удар', 'Во время волны внизу справа появляется <b>золотая кнопка</b>. Нажми её, потом нажми на скопление микробов — по ним придётся мощный удар, и они замедлятся. Заряжается 18 секунд. Каждая пятая волна — <b>нашествие</b>: микробов вдвое больше, но они слабее.'],
+      ['Бей сам', 'Во время волны <b>нажимай на микробов пальцем</b>: это твой удар. Лопнувший микроб задевает соседей — так идут <b>цепные взрывы</b>. Монеты на поле можно смахивать.'],
+      ['Ярость', 'Убийства и удары копят <b>оранжевую шкалу</b> на круглой кнопке. Полная — жми: удар по всем микробам, замедление времени и бешеная скорость клеток на 6 секунд. Длинная серия тоже ускоряет клетки.'],
+      ['Усиления', 'Каждые 3 волны выбираешь одно из трёх усилений. Каждая игра складывается по-своему. Каждая пятая волна — <b>нашествие</b>: микробов вдвое больше, но они слабее.'],
       ['Звёзды', 'Ни один микроб не дошёл — <b>★★★</b>. Потерял меньше половины здоровья — ★★. Больше — ★. Победа открывает следующий орган на карте.']
     ];
     h = steps.map(([t, d], k) => `<div class="gcard"><div class="gstep"><i>${k + 1}</i><div><h3>${t}</h3><p>${d}</p></div></div></div>`).join('');
@@ -3182,8 +3311,9 @@ new ResizeObserver(fit).observe(stage); fit();
 let lastT = performance.now();
 function loop(t) {
   const raw = Math.min(.05, (t - lastT) / 1000); lastT = t;
-  let dt = raw; if (G.slow > 0) { G.slow -= raw; dt = raw * .32; }   // замедление на гибели босса
-  if (!G.paused) for (let i = 0; i < G.speed; i++) update(dt);
+  let dt = raw; if (G.slow > 0) { G.slow -= raw; dt = raw * .32; }   // замедление на гибели босса и ярости
+  if (G.stop > 0) { G.stop -= raw; dt = 0; }
+  if (!G.paused && $('perks').hidden && dt > 0) for (let i = 0; i < G.speed; i++) update(dt);
   renderNums(raw);
   let sx = 0, sz = 0;
   if (G.shakeA > .003 && !G.paused) { G.shakeA *= Math.pow(.004, raw); sx = (Math.random() - .5) * 2 * G.shakeA; sz = (Math.random() - .5) * 2 * G.shakeA; camera.position.x += sx; camera.position.z += sz; }
